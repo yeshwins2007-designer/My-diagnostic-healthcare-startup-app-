@@ -88,12 +88,50 @@ export function demoRoutePoints(): LatLng[] {
 
 // --- simulated ---------------------------------------------------------------
 
+/**
+ * Real centroids for Bengaluru pincodes the demo actually uses.
+ *
+ * Without these the simulator hashes the address string and jitters around the
+ * anchor, which puts every address — Whitefield included — comfortably inside
+ * the service zone. That would make the radius rule undemonstrable in demo
+ * mode, and the radius rule is the single most important thing this product
+ * does. A small table of genuine coordinates makes the refusal real.
+ */
+const KNOWN_PINCODES: Record<string, { position: LatLng; area: string }> = {
+  // Inside the Jayanagar zone
+  '560011': { position: { lat: 12.925, lng: 77.5838 }, area: 'Jayanagar 4th Block' },
+  '560041': { position: { lat: 12.9279, lng: 77.5937 }, area: 'Jayanagar 3rd Block' },
+  '560069': { position: { lat: 12.9166, lng: 77.5833 }, area: 'Jayanagar 7th Block' },
+  '560070': { position: { lat: 12.9255, lng: 77.5697 }, area: 'Banashankari 2nd Stage' },
+  '560082': { position: { lat: 12.9081, lng: 77.5726 }, area: 'JP Nagar' },
+  // Outside it — these must be refused into the waitlist
+  '560066': { position: { lat: 12.9698, lng: 77.75 }, area: 'Whitefield' },
+  '560003': { position: { lat: 13.0035, lng: 77.5709 }, area: 'Malleshwaram' },
+  '560102': { position: { lat: 12.9121, lng: 77.6446 }, area: 'HSR Layout' },
+  '560001': { position: { lat: 12.9767, lng: 77.5993 }, area: 'Bengaluru GPO' },
+  '560037': { position: { lat: 12.9592, lng: 77.6974 }, area: 'Marathahalli' },
+};
+
 class SimulatedMapsProvider implements MapsProvider {
   readonly mode = 'simulated' as const;
 
   async geocode(address: string, cityHint = 'Bengaluru'): Promise<GeocodeResult | null> {
-    // Deterministic jitter from the address string, so the same address always
-    // lands on the same point across restarts and reseeds.
+    // A recognised pincode resolves to its real centroid, so the radius rule
+    // behaves in demo mode the way it will in production.
+    const pincode = address.match(/\b(5\d{5})\b/)?.[1];
+    const known = pincode ? KNOWN_PINCODES[pincode] : undefined;
+
+    if (known) {
+      return {
+        formattedAddress: `${address}, ${known.area}, ${cityHint}, Karnataka`,
+        position: known.position,
+        pincode,
+        approximate: true,
+      };
+    }
+
+    // Otherwise: deterministic jitter from the address string, so the same
+    // address always lands on the same point across restarts and reseeds.
     let hash = 0;
     for (let i = 0; i < address.length; i++) {
       hash = (hash * 31 + address.charCodeAt(i)) | 0;
@@ -107,7 +145,7 @@ class SimulatedMapsProvider implements MapsProvider {
         lat: DEMO_ANCHOR.lat + offsetLat,
         lng: DEMO_ANCHOR.lng + offsetLng,
       },
-      pincode: '560041',
+      pincode: pincode ?? '560041',
       // The simulator is honest that it did not really resolve anything.
       approximate: true,
     };

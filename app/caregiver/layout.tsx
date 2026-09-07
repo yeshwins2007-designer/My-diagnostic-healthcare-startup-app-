@@ -59,7 +59,10 @@ export default async function CaregiverLayout({
         </div>
       </header>
 
-      {children}
+      {/* Bottom padding so page content can always scroll clear of the
+          floating assistant button, which otherwise sits on top of whatever
+          is at the end of the page. */}
+      <div className="pb-28">{children}</div>
 
       {/* The voice assistant is available on every caregiver screen, because
           the moment someone wants to talk to a person is rarely the moment

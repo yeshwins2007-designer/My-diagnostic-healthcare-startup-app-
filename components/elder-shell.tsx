@@ -109,7 +109,10 @@ export function ElderShell({
         </div>
       </header>
 
-      <main id="elder-main" className="mx-auto max-w-2xl px-5 py-8">
+      {/* The read-aloud bar is sticky, so the last tile needs room to clear it
+          when scrolled to the bottom — otherwise it sits under the bar, which
+          is exactly the tile an elderly user is most likely to be reaching for. */}
+      <main id="elder-main" className="mx-auto max-w-2xl px-5 pt-8 pb-28">
         {screen === 'HOME' && (
           <div className="flex flex-col gap-6">
             <h1 className="text-[var(--text-h1)] font-bold">
