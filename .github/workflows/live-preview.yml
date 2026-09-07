@@ -1,0 +1,111 @@
+# Runs the real app on a GitHub-hosted runner and puts it behind a public
+# HTTPS URL, so it can be opened from any browser or phone.
+#
+# The URL is printed to the run summary. It is temporary: the tunnel dies with
+# the job. This is a preview, not a deployment.
+name: Live preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: How long to keep the preview up, in minutes
+        default: '60'
+        required: false
+  # Load-bearing: workflow_dispatch is only dispatchable once a workflow exists
+  # on the default branch, and this lives on a feature branch. Filtering on the
+  # workflow's own path keeps unrelated commits from starting a preview.
+  push:
+    branches: [claude/home-diagnostic-lab-app-6uo1h7]
+    paths: ['.github/workflows/live-preview.yml']
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    # Bounded so a wedged job cannot quietly burn the 6-hour ceiling.
+    timeout-minutes: ${{ fromJSON(inputs.minutes || '60') + 10 }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # matches the Dockerfile
+          cache: npm
+
+      - run: npm ci
+
+      - name: Configure
+        # Written from scratch rather than copied from .env.example, which
+        # already assigns AUTH_SECRET — two assignments of one key in one file
+        # is ambiguous. lib/env.ts refuses to boot in production while that
+        # placeholder value is in place, hence a real generated secret here.
+        # Everything omitted stays on its simulator.
+        run: |
+          {
+            echo 'DATABASE_URL="file:./dev.db"'
+            echo "AUTH_SECRET=\"$(openssl rand -base64 48 | tr -d '\n')\""
+            echo "FIELD_ENCRYPTION_KEY=\"$(openssl rand -hex 32)\""
+            echo 'ABDM_ENV="sandbox"'
+          } > .env.local
+
+      - name: Set up the database
+        run: |
+          npx prisma generate
+          npx prisma db push --skip-generate
+          npm run seed
+
+      - run: npm run build
+
+      - name: Serve it through a tunnel
+        # App, tunnel and keep-alive share one step deliberately: background
+        # processes are far more reliable within a step than across them.
+        env:
+          MINUTES: ${{ inputs.minutes || '60' }}
+        run: |
+          set -euo pipefail
+
+          npm run start &
+          for _ in $(seq 1 60); do
+            if curl -sf -o /dev/null http://localhost:3000/; then break; fi
+            sleep 2
+          done
+          curl -sf -o /dev/null http://localhost:3000/ \
+            || { echo "::error::the app never answered on port 3000"; exit 1; }
+          echo "app is up"
+
+          curl -sSL -o cloudflared \
+            https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          chmod +x cloudflared
+          ./cloudflared tunnel --no-autoupdate --url http://localhost:3000 \
+            > tunnel.log 2>&1 &
+
+          URL=""
+          for _ in $(seq 1 40); do
+            URL="$(grep -om1 'https://[a-z0-9-]*\.trycloudflare\.com' tunnel.log || true)"
+            [ -n "$URL" ] && break
+            sleep 3
+          done
+          [ -n "$URL" ] || { echo "::error::no tunnel URL appeared"; cat tunnel.log; exit 1; }
+
+          {
+            echo "## The app is live"
+            echo
+            echo "### $URL"
+            echo
+            echo "Open it on any browser or phone. It stays up for ${MINUTES} minutes."
+            echo
+            echo "Sign in with a seeded number — the code is shown on screen,"
+            echo "because SMS is not configured:"
+            echo
+            echo "| Surface | Number |"
+            echo "| --- | --- |"
+            echo '| Caregiver | `+919845000101` |'
+            echo '| Ops console | `+919845000001` |'
+            echo '| Field technician | `+919845000010` |'
+            echo '| Partner lab | `+919845100200` |'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "PREVIEW URL: $URL"
+
+          sleep $(( MINUTES * 60 ))
