@@ -12,11 +12,17 @@ export default async function LabLayout({ children }: { children: React.ReactNod
     <div className="min-h-dvh bg-[var(--color-canvas)]">
       <header className="border-b-2 border-[var(--color-line)] bg-[var(--color-surface)]">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-8">
-          <Link href="/lab" className="text-[var(--text-lead)] font-bold">
+          <Link
+            href="/lab"
+            className="inline-flex min-h-12 items-center text-[var(--text-lead)] font-bold"
+          >
             Partner laboratory
           </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/lab/agreement" className="font-semibold underline">
+          <div className="flex flex-wrap items-center gap-4">
+            <Link
+              href="/lab/agreement"
+              className="inline-flex min-h-12 items-center font-semibold underline"
+            >
               Agreement
             </Link>
             <form action={signOut}>

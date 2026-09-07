@@ -90,7 +90,13 @@ export default async function CriticalValuesPage() {
                     <div className="grid gap-2">
                       <Muted>
                         Caregiver: <strong>{caregiver?.name}</strong> ·{' '}
-                        <a href={`tel:${caregiver?.phone}`} className="underline">
+                        {/* The protocol is to ring this number now. It is the
+                            most urgent tap in the product and must not be a
+                            25px line of text. */}
+                        <a
+                          href={`tel:${caregiver?.phone}`}
+                          className="inline-flex min-h-12 items-center font-semibold underline"
+                        >
                           {caregiver?.phone}
                         </a>
                       </Muted>

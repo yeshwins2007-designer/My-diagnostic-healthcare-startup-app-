@@ -96,21 +96,27 @@ export default async function VisitPage({
             <Muted>
               {booking.address.city} {booking.address.pincode}
             </Muted>
+            {/* Tapped one-handed, outdoors, often in poor light — so this is a
+                full-size target rather than a line of underlined text. */}
             <a
               href={`https://www.google.com/maps/dir/?api=1&destination=${booking.address.latitude},${booking.address.longitude}`}
-              className="font-semibold underline"
+              className="inline-flex min-h-[var(--size-touch)] items-center justify-center rounded-[var(--radius-control)] border-2 border-[var(--color-primary)] px-5 font-semibold text-[var(--color-primary)]"
               target="_blank"
               rel="noreferrer"
             >
               Open directions
             </a>
             {caregiver && (
-              <Muted>
-                Family contact: {caregiver.name} ·{' '}
-                <a href={`tel:${caregiver.phone}`} className="underline">
+              <div className="flex flex-col gap-1">
+                <Muted>Family contact: {caregiver.name}</Muted>
+                {/* Dialled when nobody answers the door. */}
+                <a
+                  href={`tel:${caregiver.phone}`}
+                  className="inline-flex min-h-12 items-center font-semibold underline"
+                >
                   {caregiver.phone}
                 </a>
-              </Muted>
+              </div>
             )}
           </Stack>
         </Card>

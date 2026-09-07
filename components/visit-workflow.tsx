@@ -255,7 +255,7 @@ export function VisitWorkflow({
                 <input
                   type="checkbox"
                   name="labelledAtBedside"
-                  className="mt-1 h-8 w-8 shrink-0 accent-[var(--color-primary)]"
+                  className="mt-1 h-12 w-12 shrink-0 accent-[var(--color-primary)]"
                 />
                 <span className="font-semibold">
                   I labelled this vial at the bedside, with both identifiers.
@@ -305,7 +305,7 @@ export function VisitWorkflow({
                   type="checkbox"
                   name="boxSealed"
                   defaultChecked
-                  className="mt-1 h-8 w-8 shrink-0 accent-[var(--color-primary)]"
+                  className="mt-1 h-12 w-12 shrink-0 accent-[var(--color-primary)]"
                 />
                 <span className="font-semibold">The box is sealed.</span>
               </label>

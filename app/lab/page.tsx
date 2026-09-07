@@ -170,7 +170,10 @@ export default async function LabHome({
                 <DataRow
                   label="Service agreement"
                   value={
-                    <Link href="/lab/agreement" className="underline">
+                    <Link
+                      href="/lab/agreement"
+                      className="inline-flex min-h-12 items-center underline"
+                    >
                       version {lab.agreements[0].version} ·{' '}
                       {lab.agreements[0].status.toLowerCase()}
                     </Link>

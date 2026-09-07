@@ -37,7 +37,7 @@ export function CriticalCallForm({ alertId }: { alertId: string }) {
             <input
               type="checkbox"
               name="writtenFollowUpSent"
-              className="mt-1 h-8 w-8 shrink-0 accent-[var(--color-primary)]"
+              className="mt-1 h-12 w-12 shrink-0 accent-[var(--color-primary)]"
             />
             <span>
               I have also sent the written follow-up.

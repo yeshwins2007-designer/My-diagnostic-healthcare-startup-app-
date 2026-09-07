@@ -27,11 +27,26 @@ const IN_ZONE = {
   pincode: '560011',
 };
 
+/** Existing seeded account, for the staff surfaces. */
+async function signIn(page: Page, phone: string) {
+  await page.goto('/login');
+  await page.getByLabel(/mobile number/i).fill(phone);
+  await page.getByRole('button', { name: /send me a code/i }).click();
+  const otp = (await page.locator('strong.font-mono').first().innerText()).trim();
+  await page.getByLabel(/six-digit code/i).fill(otp);
+  await page.getByRole('button', { name: /verify and continue/i }).click();
+  await page.waitForURL(/\/(caregiver|ops|field|lab)/, { timeout: 30_000 });
+}
+
 async function horizontalOverflow(page: Page) {
   return page.evaluate(() => {
     const el = document.documentElement;
     const overflow = el.scrollWidth - el.clientWidth;
     if (overflow <= 0) return null;
+    // The width is the authoritative signal; this list is a hint. It also
+    // names anything scrolled out of an intentionally swipeable container
+    // (the ops tab bar sets overflow-x: auto), so read it as a starting
+    // point rather than a verdict.
     const guilty: string[] = [];
     document.querySelectorAll('*').forEach((n) => {
       const r = n.getBoundingClientRect();
@@ -77,6 +92,44 @@ async function inspect(page: Page, name: string, scheme: string) {
   console.log(`   under 44px: ${small.length ? JSON.stringify(small) : 'none'}`);
   return { overflow, small };
 }
+
+/**
+ * The staff surfaces carry the SOP checkboxes — sample labelling, cold-chain
+ * seal, the written follow-up that gates closing a critical-value alert. A
+ * technician taps those standing at a door, so they are checked on a phone
+ * too, not only the surfaces a family sees.
+ */
+test.describe('staff surfaces on a phone', () => {
+  test.use({ viewport: PHONE, deviceScaleFactor: 2 });
+  test.describe.configure({ mode: 'serial' });
+  test.setTimeout(180_000);
+
+  const surfaces = [
+    { phone: '9845000010', path: '/field', name: 'field-route' },
+    { phone: '9845000001', path: '/ops/critical', name: 'ops-critical' },
+    { phone: '9845100200', path: '/lab/apply', name: 'lab-apply' },
+  ];
+
+  for (const s of surfaces) {
+    test(`${s.name} has no undersized control`, async ({ page }) => {
+      await signIn(page, s.phone);
+      await page.goto(s.path, { waitUntil: 'domcontentloaded' });
+
+      // The field route lists visits; the checkboxes live one level in.
+      if (s.path === '/field') {
+        const visit = page.getByRole('link', { name: /start|open|visit|SS-/i }).first();
+        if (await visit.count()) {
+          await visit.click().catch(() => {});
+          await page.waitForTimeout(1200);
+        }
+      }
+
+      const r = await inspect(page, `staff-${s.name}`, 'light');
+      expect(r.overflow, `${s.name} scrolls sideways`).toBeNull();
+      expect(r.small, `${s.name} has controls under 44px`).toEqual([]);
+    });
+  }
+});
 
 test.describe('the light/dark control', () => {
   test.use({ viewport: PHONE, colorScheme: 'light', deviceScaleFactor: 2 });

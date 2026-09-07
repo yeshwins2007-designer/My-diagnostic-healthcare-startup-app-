@@ -19,7 +19,10 @@ export default async function FieldLayout({ children }: { children: React.ReactN
     <div className="min-h-dvh bg-[var(--color-canvas)]">
       <header className="sticky top-0 z-30 border-b-2 border-[var(--color-line)] bg-[var(--color-surface)]">
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-4 px-5 py-4">
-          <Link href="/field" className="text-[var(--text-lead)] font-bold">
+          <Link
+            href="/field"
+            className="inline-flex min-h-12 items-center text-[var(--text-lead)] font-bold"
+          >
             Today’s route
           </Link>
           <form action={signOut}>

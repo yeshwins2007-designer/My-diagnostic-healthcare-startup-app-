@@ -97,7 +97,10 @@ export default async function WaitlistPage() {
                   </div>
                   <Muted>
                     {entry.addressText} · {entry.callerName} ·{' '}
-                    <a href={`tel:${entry.callerPhone}`} className="underline">
+                    <a
+                      href={`tel:${entry.callerPhone}`}
+                      className="inline-flex min-h-12 items-center font-semibold underline"
+                    >
                       {entry.callerPhone}
                     </a>
                   </Muted>

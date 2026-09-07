@@ -57,7 +57,10 @@ export default async function LandingPage() {
                   Sign in
                 </Link>{' '}
                 · Prefer to talk?{' '}
-                <a href={`tel:${brand.supportPhone.replace(/\s/g, '')}`} className="font-semibold underline">
+                <a
+                  href={`tel:${brand.supportPhone.replace(/\s/g, '')}`}
+                  className="inline-flex min-h-12 items-center font-semibold underline"
+                >
                   {brand.supportPhone}
                 </a>
               </Muted>

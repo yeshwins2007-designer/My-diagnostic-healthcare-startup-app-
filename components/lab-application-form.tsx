@@ -183,7 +183,7 @@ export function LabApplicationForm() {
               <input
                 type="checkbox"
                 name="brandingConsent"
-                className="mt-1 h-8 w-8 shrink-0 accent-[var(--color-primary)]"
+                className="mt-1 h-12 w-12 shrink-0 accent-[var(--color-primary)]"
               />
               <span>
                 We permit SwasthaSetu to name us in its materials.

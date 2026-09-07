@@ -101,7 +101,10 @@ export default async function FollowUpsPage() {
 
                     <Muted>
                       Call <strong>{caregiver?.name}</strong> on{' '}
-                      <a href={`tel:${caregiver?.phone}`} className="underline">
+                      <a
+                        href={`tel:${caregiver?.phone}`}
+                        className="inline-flex min-h-12 items-center font-semibold underline"
+                      >
                         {caregiver?.phone}
                       </a>{' '}
                       · report released{' '}

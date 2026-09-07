@@ -33,7 +33,7 @@ export default async function CaregiverLayout({
             <div className="flex items-center gap-4">
               <a
                 href={`tel:${brand.supportPhone.replace(/\s/g, '')}`}
-                className="font-semibold underline"
+                className="inline-flex min-h-12 items-center font-semibold underline"
               >
                 {brand.supportPhone}
               </a>

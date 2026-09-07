@@ -33,8 +33,13 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
       <header className="border-b-2 border-[var(--color-line)] bg-[var(--color-surface)]">
         <div className="mx-auto max-w-7xl px-5 py-4 sm:px-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <Link href="/ops" className="text-[var(--text-lead)] font-bold">
+            {/* Wraps because three alert badges beside the title overflow a
+                phone: the coordinator checks critical values on a handset. */}
+            <div className="flex flex-wrap items-center gap-4">
+              <Link
+                href="/ops"
+                className="inline-flex min-h-12 items-center text-[var(--text-lead)] font-bold"
+              >
                 Ops console
               </Link>
               {openCriticals > 0 && (
