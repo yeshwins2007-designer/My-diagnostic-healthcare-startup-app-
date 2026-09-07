@@ -1,0 +1,75 @@
+# SwasthaSetu — hybrid pilot stack.
+#
+#   docker compose --profile quick up --build     first look, throwaway URL
+#   docker compose --profile named up -d          the actual pilot, stable URL
+#
+# The tunnel exists because geolocation and the microphone are blocked by
+# browsers on insecure origins. Without HTTPS the field app's GPS tracking and
+# the voice assistant cannot be tested on a real phone at all, and external
+# partner labs cannot reach a LAN address.
+
+services:
+  app:
+    build:
+      context: .
+    # Written by ./scripts/pilot-setup.sh. Compose fails fast if it is absent,
+    # which is the intended nudge to run that script first.
+    env_file: .env.pilot
+    environment:
+      # Set here rather than in .env.pilot so it always wins: the database
+      # belongs on the volume, never inside the container's writable layer.
+      DATABASE_URL: "file:/data/pilot.db"
+      NODE_ENV: production
+    volumes:
+      - pilot-data:/data
+    # Bound to loopback deliberately. The tunnel is the way in; publishing on
+    # the LAN would invite plain-HTTP access, which is the failure mode this
+    # whole setup exists to avoid.
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      # node:22-slim ships neither curl nor wget; node's global fetch is the
+      # one thing guaranteed to be present.
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    restart: unless-stopped
+
+  # Zero configuration, no Cloudflare account. Mints a random
+  # *.trycloudflare.com hostname and prints it to the log:
+  #   docker compose logs tunnel-quick | grep trycloudflare
+  # The hostname changes on every restart, so this is for a first look only.
+  tunnel-quick:
+    profiles: ["quick"]
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --url http://app:3000
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # A stable hostname on a domain you control. Needs TUNNEL_TOKEN in
+  # .env.pilot, from the Cloudflare Zero Trust dashboard. Required for the
+  # real pilot: the Razorpay webhook URL is registered in their dashboard and
+  # a rotating hostname breaks it silently on every restart.
+  tunnel-named:
+    profiles: ["named"]
+    image: cloudflare/cloudflared:latest
+    # cloudflared reads TUNNEL_TOKEN from the environment, so it comes through
+    # env_file rather than ${...} interpolation — compose only interpolates
+    # from the shell or a .env file, never from env_file.
+    env_file: .env.pilot
+    command: tunnel --no-autoupdate run
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pilot-data:

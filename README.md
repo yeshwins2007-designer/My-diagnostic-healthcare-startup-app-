@@ -14,6 +14,15 @@ npm run dev          # http://localhost:3000
 
 It runs with **zero API keys**. Every external integration has a working simulator.
 
+To put it in front of a pilot group instead — Docker plus a Cloudflare tunnel, so
+GPS and the microphone work on real phones and partner labs can reach it — see
+[`docs/pilot-setup.md`](docs/pilot-setup.md):
+
+```bash
+./scripts/pilot-setup.sh
+docker compose --profile quick up --build
+```
+
 ---
 
 ## The decision this codebase encodes

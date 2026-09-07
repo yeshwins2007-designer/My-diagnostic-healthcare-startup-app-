@@ -8,6 +8,9 @@ dist/
 .env
 .env.local
 .env.*.local
+# Written by scripts/pilot-setup.sh; carries the pilot's real signing and
+# field-encryption keys.
+.env.pilot
 
 # Local database + uploads
 *.db
