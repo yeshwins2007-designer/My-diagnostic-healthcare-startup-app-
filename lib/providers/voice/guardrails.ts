@@ -130,6 +130,10 @@ const DIAGNOSIS_PATTERNS: RegExp[] = [
 const RESULT_VALUE_PATTERNS: RegExp[] = [
   /\b(?:what|tell\s+me|read\s+(?:out|me))\b.*\b(?:hba1c|a1c|sugar|glucose|creatinine|haemoglobin|hemoglobin|cholesterol|tsh|value|reading|number|level|count)\b/i,
   /\bmy\s+(?:hba1c|sugar|creatinine|cholesterol|tsh)\s+(?:is|was)?\b/i,
+  // "Read out the report to me", "read me the report", "read the results".
+  // Deliberately narrow: it must be a request to READ one, so ordinary
+  // questions like "has the report come?" stay allowed.
+  /\bread\s+(?:out|me|aloud)?\s*(?:the\s+|her\s+|his\s+|my\s+)?(?:report|result)/i,
   /रिपोर्ट\s*(?:पढ़|बता|सुना)/,
   /\breport\s*(?:padh|bata|suna)/i,
   /শুগার\s*কত|சர்க்கரை\s*எவ்வளவு|షుగర్\s*ఎంత|ಸಕ್ಕರೆ\s*ಎಷ್ಟು/,
@@ -157,17 +161,28 @@ const UNSAFE_OUTPUT_PATTERNS: { pattern: RegExp; category: GuardCategory }[] = [
   { pattern: /\b(?:normal|reference)\s+range\s+(?:is|for)\b/i, category: 'CLINICAL_INTERPRETATION' },
   { pattern: /\b(?:slightly|mildly|significantly|dangerously)\s+(?:high|low|elevated|raised|reduced)\b/i, category: 'CLINICAL_INTERPRETATION' },
   { pattern: /\byou\s+(?:have|may\s+have|might\s+have|likely\s+have)\b.*\b(?:diabetes|anaemia|anemia|infection|deficiency|disease)\b/i, category: 'DIAGNOSIS_REQUEST' },
-  { pattern: /\b(?:take|start|stop|increase|reduce|continue)\s+(?:your|the|his|her)?\s*(?:tablet|medicine|medication|dose|insulin|metformin)\b/i, category: 'MEDICATION_ADVICE' },
+  // Allows for the words people actually put in between — "continue taking
+  // your usual tablet" was slipping through a tighter version of this.
+  { pattern: /\b(?:take|taking|start|stop|increase|reduce|continue|keep)\b[^.]{0,40}\b(?:tablets?|medicines?|medications?|dose|dosage|insulin|metformin|pills?)\b/i, category: 'MEDICATION_ADVICE' },
   { pattern: /\b\d+\s*(?:mg|ml|units?)\b\s*(?:daily|twice|once|per day)/i, category: 'MEDICATION_ADVICE' },
   { pattern: /\b(?:nothing\s+to\s+worry|don'?t\s+worry|it'?s\s+(?:fine|normal|okay))\b.*\b(?:result|report|value|level)\b/i, category: 'CLINICAL_INTERPRETATION' },
   { pattern: /\bhba1c\s+of\s+\d/i, category: 'RESULT_VALUE_REQUEST' },
 ];
 
+/**
+ * Order matters. Every branch refuses and hands off, so this is not a safety
+ * ordering — it decides which deflection the caller hears, and the most
+ * specific intent should win.
+ *
+ * Interpretation sits above value-request on purpose: "what does her HbA1c
+ * mean?" is a request to have something explained, not a request to have a
+ * number read out, and the explanation deflection is the better answer.
+ */
 const CHECKS: { patterns: RegExp[]; category: GuardCategory }[] = [
   { patterns: MEDICATION_PATTERNS, category: 'MEDICATION_ADVICE' },
   { patterns: DIAGNOSIS_PATTERNS, category: 'DIAGNOSIS_REQUEST' },
-  { patterns: RESULT_VALUE_PATTERNS, category: 'RESULT_VALUE_REQUEST' },
   { patterns: CLINICAL_INTERPRETATION_PATTERNS, category: 'CLINICAL_INTERPRETATION' },
+  { patterns: RESULT_VALUE_PATTERNS, category: 'RESULT_VALUE_REQUEST' },
   { patterns: INJECTION_PATTERNS, category: 'PROMPT_INJECTION' },
 ];
 
@@ -185,7 +200,9 @@ export const DEFLECTION_SCRIPTS: Record<Exclude<GuardCategory, 'EMERGENCY'>, str
   CLINICAL_INTERPRETATION: `I'm not able to explain what results mean — only a doctor can do that, and it would be wrong of me to guess. Please show the report to your physician. I'm opening a ticket now so one of our coordinators calls you back, and I can help with the appointment, the report delivery or the plan in the meantime.`,
   MEDICATION_ADVICE: `I can't advise on any medicine or dose — that has to come from the treating doctor. Please don't change anything without speaking to them. I'm asking a coordinator to call you back, and I can help with scheduling or billing right now.`,
   DIAGNOSIS_REQUEST: `I can't tell you whether someone has a condition. ${brand.name} arranges the collection and the delivery of the report; the diagnosis is the doctor's, working from the signed laboratory report. I'm arranging a callback from our coordinator.`,
-  RESULT_VALUE_REQUEST: `I don't have access to any test values, and I'm not able to read results out. The signed report is in the app under Reports, and your doctor is the right person to go through it with. I can tell you whether the report has been released, and help with your next visit.`,
+  // Every deflection must end somewhere a person is waiting. A refusal with no
+  // route to a human is a wall, and this one was one until a test caught it.
+  RESULT_VALUE_REQUEST: `I don't have access to any test values, and I'm not able to read results out. The signed report is in the app under Reports, and your doctor is the right person to go through it with. I'm asking a coordinator to call you back so you're not left with this on your own, and I can tell you whether the report has been released and help with your next visit.`,
   PROMPT_INJECTION: `I can only help with appointments, reports delivery, plans and billing for ${brand.name}. I can't take on another role. Would you like me to book, move or explain a visit?`,
 };
 
