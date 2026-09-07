@@ -177,9 +177,9 @@ npm run dev              # development server
 npm run build            # production build
 npm run seed             # demo data — 1 zone, 3 labs, 12 families, live bookings
 npm run demo:track       # replays a GPS route; the caregiver map moves
-npm test                 # 167 unit tests: SOP rules + voice red-team
+npm test                 # 180 unit tests: SOP rules, voice red-team, rate limits
 npm run lint:copy        # fails on speed claims and urgency patterns
-npm run test:e2e         # Playwright
+npm run test:e2e         # 12 Playwright specs against the running app
 npm run typecheck        # tsc --noEmit
 npm run retention:purge  # GPS/transcript retention job (run on a schedule)
 npm run provision:voice  # (re)create the ElevenLabs agent from source
@@ -211,6 +211,15 @@ OTP codes print to the server console.
    *"what does her HbA1c mean?"* **refuses and opens a human ticket**
 8. `/ops/audit` → hash chain recomputed live and shown intact
 
+Every step above is covered by `tests/e2e/journey.spec.ts`, so these are
+assertions rather than instructions that rot.
+
+### Screenshots
+
+```bash
+npx playwright test screenshots   # writes 24 PNGs to screenshots/ (gitignored)
+```
+
 ---
 
 ## Deliberately not built
@@ -233,6 +242,10 @@ OTP codes print to the server console.
   deliberately avoids `enum`, `Json` and scalar lists so that switch is two lines.
 - **The audit hash chain serialises writes in-process.** A multi-instance deployment
   needs a database advisory lock or a single writer.
+- **Rate limiting is in-process too.** It protects one instance against casual
+  abuse of the two endpoints reachable without a session — the assistant and the
+  OTP request. Behind a load balancer it needs Redis or the platform's own edge
+  limiter.
 - **Translations need a native reviewer** before launch. They are carefully written,
   not professionally reviewed.
 - **ABDM production access is a certification process**, not a code change.

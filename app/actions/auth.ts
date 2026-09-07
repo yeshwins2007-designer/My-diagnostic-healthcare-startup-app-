@@ -9,6 +9,7 @@ import { createUser, requestOtp, verifyOtp, normalisePhone } from '@/lib/auth/ot
 import { audit } from '@/lib/compliance/audit';
 import { UserRole } from '@/lib/enums';
 import { LOCALE_KEYS } from '@/lib/i18n/locales';
+import { rateLimit } from '@/lib/rate-limit';
 
 export interface AuthState {
   step: 'PHONE' | 'CODE' | 'PROFILE';
@@ -19,6 +20,8 @@ export interface AuthState {
   devCode?: string;
   /** Which sign-up path the visitor chose on /join. */
   intent?: 'individual' | 'business';
+  /** Set when a cooldown or rate limit is in force. */
+  retryAfterSeconds?: number;
 }
 
 const phoneSchema = z.object({
@@ -30,6 +33,24 @@ export async function sendCode(
   _prev: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
+  // The per-phone cooldown in requestOtp stops one number being spammed. It
+  // does nothing about an attacker rotating numbers — spraying SMS at other
+  // people's phones, at our expense — so limit the sender as well.
+  const headerList = await headers();
+  const ip =
+    headerList.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    headerList.get('x-real-ip') ??
+    'unknown';
+
+  const limit = rateLimit(`otp:${ip}`, { limit: 10, windowSeconds: 600 });
+  if (!limit.allowed) {
+    return {
+      step: 'PHONE',
+      error: `Too many attempts. Please wait ${Math.ceil(limit.retryAfterSeconds / 60)} minutes, or call us.`,
+      retryAfterSeconds: limit.retryAfterSeconds,
+    };
+  }
+
   const parsed = phoneSchema.safeParse({
     phone: String(formData.get('phone') ?? ''),
     intent: String(formData.get('intent') ?? 'individual'),

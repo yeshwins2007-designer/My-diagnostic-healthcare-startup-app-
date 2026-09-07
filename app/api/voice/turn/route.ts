@@ -11,6 +11,7 @@ import {
 import { simulatedReply } from '@/lib/providers/voice';
 import { env, providerMode } from '@/lib/env';
 import { DEFAULT_LOCALE, isLocale, type Locale } from '@/lib/i18n/locales';
+import { clientKey, rateLimit } from '@/lib/rate-limit';
 
 /**
  * One conversational turn, guarded.
@@ -30,6 +31,20 @@ const turnSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  // This endpoint is deliberately reachable without a session — someone should
+  // be able to ask about a visit before signing in. That also makes it a way
+  // to flood the support queue, so it is rate limited per client.
+  const limit = rateLimit(clientKey(request, 'voice'), {
+    limit: 20,
+    windowSeconds: 60,
+  });
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: 'Too many messages. Please wait a moment, or call us.' },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } },
+    );
+  }
+
   const body = await request.json().catch(() => null);
   const parsed = turnSchema.safeParse(body);
   if (!parsed.success) {
