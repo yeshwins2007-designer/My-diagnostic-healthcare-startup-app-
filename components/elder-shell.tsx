@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { LOCALES, localeDir, type Locale } from '@/lib/i18n/locales';
 import { t } from '@/lib/i18n/dictionary';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export interface ElderVisit {
   id: string;
@@ -106,6 +107,7 @@ export function ElderShell({
               </button>
             ))}
           </div>
+          <ThemeToggle />
         </div>
       </header>
 

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { brand } from '@/lib/brand';
 import { getSessionUser } from '@/lib/auth/session';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 const HOME_FOR_ROLE: Record<string, string> = {
   CAREGIVER: '/caregiver',
@@ -31,6 +32,7 @@ export async function SiteHeader() {
         </Link>
 
         <nav className="flex flex-wrap items-center gap-2">
+          <ThemeToggle />
           <Link
             href="/plans"
             className="rounded-[var(--radius-control)] px-4 py-3 font-semibold hover:bg-[var(--color-surface-sunken)]"
