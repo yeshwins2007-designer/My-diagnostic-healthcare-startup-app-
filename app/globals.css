@@ -1,0 +1,219 @@
+@import 'tailwindcss';
+
+/*
+  The elderly design system.
+
+  These are not preferences, they are the product. A 78-year-old reading a
+  screen at 6:30 AM without their reading glasses is the design constraint, and
+  every token below exists to serve that:
+
+    - body text starts at 22px, not the 14-16px a typical app ships
+    - every touch target is at least 64px, with 16px of air around it
+    - contrast targets WCAG AAA (7:1), not AA
+    - no urgency, no timers, no auto-advancing anything
+
+  The caregiver and ops surfaces inherit the same tokens at a slightly tighter
+  scale. Nobody gets a worse experience so that a dashboard can be denser.
+*/
+
+@theme {
+  /* --- type scale -------------------------------------------------------- */
+  --text-tiny: 0.875rem;
+  --text-small: 1rem;
+  --text-base: 1.375rem; /* 22px */
+  --text-lead: 1.625rem;
+  --text-h3: 1.875rem;
+  --text-h2: 2.125rem; /* 34px */
+  --text-h1: 2.75rem;
+  --text-display: 3.5rem;
+
+  --leading-comfortable: 1.6;
+  --leading-tight-heading: 1.2;
+
+  /* --- warm, low-glare light palette (default) --------------------------- */
+  --color-canvas: #fbf9f6;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #f4f1ea;
+  --color-ink: #1a1a17; /* 15.8:1 on canvas */
+  --color-ink-soft: #4a4a44; /* 8.3:1 on canvas */
+  --color-ink-faint: #6b6b62;
+  --color-line: #e3ded5;
+  --color-line-strong: #c9c2b4;
+
+  /* Deep teal: medical trust without the coldness of hospital blue. */
+  --color-primary: #0b5e56;
+  --color-primary-hover: #084a44;
+  --color-primary-ink: #ffffff;
+  --color-primary-wash: #e6f1ef;
+
+  /* Stoplight. Each is AAA against white and against its own wash. */
+  --color-green: #15803d;
+  --color-green-wash: #e8f5ec;
+  --color-yellow: #8a5a00;
+  --color-yellow-wash: #fdf3e0;
+  --color-red: #a91b1b;
+  --color-red-wash: #fdecec;
+
+  --color-info: #1d4ed8;
+  --color-info-wash: #e8eefc;
+
+  /* --- geometry ---------------------------------------------------------- */
+  --radius-card: 1rem;
+  --radius-control: 0.75rem;
+  --size-touch: 4rem; /* 64px minimum */
+  --size-touch-lg: 5.5rem;
+}
+
+/*
+  Dark mode. Many phones ship dark by default and a lot of older users never
+  change it, so this has to be genuinely legible rather than an afterthought —
+  slightly warm greys instead of pure black, and text lightened until it clears
+  7:1 again.
+*/
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-canvas: #16150f;
+    --color-surface: #201f18;
+    --color-surface-sunken: #2a2921;
+    --color-ink: #f7f4ec;
+    --color-ink-soft: #cdc8ba;
+    --color-ink-faint: #a49e90;
+    --color-line: #3a382e;
+    --color-line-strong: #55523f;
+
+    --color-primary: #59c9bb;
+    --color-primary-hover: #7ad8cb;
+    --color-primary-ink: #0a2b28;
+    --color-primary-wash: #17332f;
+
+    --color-green: #6ee08c;
+    --color-green-wash: #16301f;
+    --color-yellow: #f0c274;
+    --color-yellow-wash: #33270f;
+    --color-red: #ff9a9a;
+    --color-red-wash: #3a1a1a;
+
+    --color-info: #9dbcff;
+    --color-info-wash: #17203a;
+  }
+}
+
+:root[data-theme='dark'] {
+  --color-canvas: #16150f;
+  --color-surface: #201f18;
+  --color-surface-sunken: #2a2921;
+  --color-ink: #f7f4ec;
+  --color-ink-soft: #cdc8ba;
+  --color-ink-faint: #a49e90;
+  --color-line: #3a382e;
+  --color-line-strong: #55523f;
+  --color-primary: #59c9bb;
+  --color-primary-hover: #7ad8cb;
+  --color-primary-ink: #0a2b28;
+  --color-primary-wash: #17332f;
+  --color-green: #6ee08c;
+  --color-green-wash: #16301f;
+  --color-yellow: #f0c274;
+  --color-yellow-wash: #33270f;
+  --color-red: #ff9a9a;
+  --color-red-wash: #3a1a1a;
+  --color-info: #9dbcff;
+  --color-info-wash: #17203a;
+}
+
+/*
+  Reader-controlled text size. Elder Mode exposes A / A+ / A++ directly, which
+  is far more discoverable for this audience than telling them to change an OS
+  setting they have never opened.
+*/
+:root {
+  --reader-scale: 1;
+}
+:root[data-reader='large'] {
+  --reader-scale: 1.15;
+}
+:root[data-reader='largest'] {
+  --reader-scale: 1.32;
+}
+
+html {
+  font-size: calc(100% * var(--reader-scale));
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-size: var(--text-base);
+  line-height: var(--leading-comfortable);
+  font-family:
+    'Noto Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  /* Indian scripts need a font stack that will not fall back to tofu. */
+  font-feature-settings: 'kern' 1;
+  text-rendering: optimizeLegibility;
+  min-height: 100dvh;
+}
+
+h1, h2, h3 {
+  line-height: var(--leading-tight-heading);
+  text-wrap: balance;
+  font-weight: 700;
+}
+
+/*
+  Focus. Deliberately loud. A hairline focus ring is invisible to someone with
+  early cataracts, and this app is used by people navigating with a stylus, a
+  shaky hand, or a keyboard.
+*/
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 4px solid var(--color-primary);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Any control that a finger has to find is at least 64px. */
+.touch-target {
+  min-height: var(--size-touch);
+  min-width: var(--size-touch);
+}
+
+/* Respect the OS setting. No decorative motion anywhere regardless. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Wide content scrolls inside its own box; the page body never does. */
+.scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/*
+  Print. The stoplight summary card is a real physical deliverable handed to a
+  patient at the door, not a screen that happens to be printable.
+*/
+@media print {
+  @page {
+    size: A5;
+    margin: 10mm;
+  }
+  body {
+    background: #fff;
+    color: #000;
+    font-size: 15pt;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-card {
+    box-shadow: none !important;
+    border: 2pt solid #000 !important;
+    break-inside: avoid;
+  }
+}

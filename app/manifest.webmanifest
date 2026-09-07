@@ -1,0 +1,19 @@
+{
+  "name": "SwasthaSetu — doorstep diagnostics",
+  "short_name": "SwasthaSetu",
+  "description": "The same trusted person, at your parents' door, every month.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fbf9f6",
+  "theme_color": "#0b5e56",
+  "categories": ["health", "medical"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
