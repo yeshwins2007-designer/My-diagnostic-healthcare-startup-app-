@@ -27,6 +27,14 @@ jobs:
     # on a push event. Covers the 60-minute default plus setup.
     timeout-minutes: 75
 
+    # Real environment variables rather than a dotenv file. prisma.config.ts
+    # loads .env* itself, but only when the Prisma CLI reads that config —
+    # `npm run seed` shells straight to `tsx scripts/seed.ts`, which never
+    # loads it and so saw no DATABASE_URL. process.env is read by everything.
+    env:
+      DATABASE_URL: file:./dev.db
+      ABDM_ENV: sandbox
+
     steps:
       - uses: actions/checkout@v4
 
@@ -37,19 +45,18 @@ jobs:
 
       - run: npm ci
 
-      - name: Configure
-        # Written from scratch rather than copied from .env.example, which
-        # already assigns AUTH_SECRET — two assignments of one key in one file
-        # is ambiguous. lib/env.ts refuses to boot in production while that
-        # placeholder value is in place, hence a real generated secret here.
-        # Everything omitted stays on its simulator.
+      - name: Generate secrets
+        # lib/env.ts refuses to boot in production while AUTH_SECRET still holds
+        # the placeholder from .env.example, so a real one is minted per run.
+        # Masked so it cannot surface in logs. Everything omitted here — Maps,
+        # Razorpay, ElevenLabs, SMS — stays on its simulator.
         run: |
-          {
-            echo 'DATABASE_URL="file:./dev.db"'
-            echo "AUTH_SECRET=\"$(openssl rand -base64 48 | tr -d '\n')\""
-            echo "FIELD_ENCRYPTION_KEY=\"$(openssl rand -hex 32)\""
-            echo 'ABDM_ENV="sandbox"'
-          } > .env.local
+          AUTH="$(openssl rand -base64 48 | tr -d '\n')"
+          KEY="$(openssl rand -hex 32)"
+          echo "::add-mask::$AUTH"
+          echo "::add-mask::$KEY"
+          echo "AUTH_SECRET=$AUTH" >> "$GITHUB_ENV"
+          echo "FIELD_ENCRYPTION_KEY=$KEY" >> "$GITHUB_ENV"
 
       - name: Set up the database
         run: |
