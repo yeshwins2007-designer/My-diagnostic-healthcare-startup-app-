@@ -20,6 +20,8 @@
  */
 
 import { brand } from '../../brand';
+import { t } from '../../i18n/dictionary';
+import type { Locale } from '../../i18n/locales';
 
 export type GuardCategory =
   | 'CLINICAL_INTERPRETATION'
@@ -278,4 +280,33 @@ export function guardTurn(input: {
   const inbound = guardInput(input.userUtterance);
   if (!inbound.allowed) return inbound;
   return guardOutput(input.agentResponse);
+}
+
+/**
+ * The refusal, in the caller's own language.
+ *
+ * A wall of English delivered to someone who asked in Tamil is barely a
+ * refusal — they hear noise and keep pressing, which is exactly the failure
+ * mode the guardrail exists to prevent.
+ *
+ * Diagnosis and value-read-out requests share the clinical script: for a
+ * message that will be spoken aloud the distinction is academic, and three
+ * carefully translated messages beat six mediocre ones. Prompt injection keeps
+ * the English scope message — the audience there is an attacker, not a worried
+ * family member.
+ */
+export function localisedReplacement(verdict: GuardVerdict, locale: Locale): string {
+  if (verdict.allowed) return '';
+  if (verdict.isEmergency) return t(locale, 'guard.emergency');
+
+  switch (verdict.category) {
+    case 'MEDICATION_ADVICE':
+      return t(locale, 'guard.medication');
+    case 'CLINICAL_INTERPRETATION':
+    case 'DIAGNOSIS_REQUEST':
+    case 'RESULT_VALUE_REQUEST':
+      return t(locale, 'guard.clinical');
+    default:
+      return verdict.replacement ?? DEFLECTION_SCRIPTS.PROMPT_INJECTION;
+  }
 }

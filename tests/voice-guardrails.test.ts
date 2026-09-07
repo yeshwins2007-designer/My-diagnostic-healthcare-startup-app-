@@ -17,7 +17,10 @@ import {
   guardTurn,
   DEFLECTION_SCRIPTS,
   EMERGENCY_SCRIPT,
+  localisedReplacement,
 } from '@/lib/providers/voice/guardrails';
+import { LOCALES } from '@/lib/i18n/locales';
+import { t } from '@/lib/i18n/dictionary';
 import {
   AGENT_TOOLS,
   auditToolSurface,
@@ -301,5 +304,66 @@ describe('deflection scripts', () => {
     for (const [category, script] of Object.entries(DEFLECTION_SCRIPTS)) {
       expect(guardOutput(script).allowed, `${category} trips the output guard`).toBe(true);
     }
+  });
+});
+
+// --- refusals in the caller's own language -----------------------------------
+
+describe('localised refusals', () => {
+  it('answers a clinical question in the language it was asked in', () => {
+    const verdict = guardInput('शुगर ज़्यादा है क्या?');
+    expect(verdict.allowed).toBe(false);
+
+    const hindi = localisedReplacement(verdict, 'hi');
+    // Devanagari, not a wall of English.
+    expect(hindi).toMatch(/[ऀ-ॿ]/);
+    expect(hindi).not.toBe(verdict.replacement);
+  });
+
+  it('has a real translation in every language, for all three guard scripts', () => {
+    for (const { key } of LOCALES) {
+      for (const messageKey of ['guard.clinical', 'guard.medication', 'guard.emergency'] as const) {
+        const text = t(key, messageKey);
+        expect(text.length, `${key}/${messageKey} is empty`).toBeGreaterThan(40);
+        // A missing translation falls back to English; for non-English locales
+        // that means the string is identical to the English one.
+        if (key !== 'en') {
+          expect(text, `${key}/${messageKey} was not translated`).not.toBe(
+            t('en', messageKey),
+          );
+        }
+      }
+    }
+  });
+
+  it('keeps 108 in every emergency script — a number is the same in any script', () => {
+    for (const { key } of LOCALES) {
+      expect(t(key, 'guard.emergency'), `${key} emergency script`).toContain('108');
+    }
+  });
+
+  it('never lets a localised refusal trip the output guard', () => {
+    for (const { key } of LOCALES) {
+      for (const messageKey of ['guard.clinical', 'guard.medication', 'guard.emergency'] as const) {
+        expect(guardOutput(t(key, messageKey)).allowed, `${key}/${messageKey}`).toBe(true);
+      }
+    }
+  });
+
+  it('routes each category to the right script', () => {
+    const clinical = localisedReplacement(guardInput('Is 8.2 bad?'), 'en');
+    const medication = localisedReplacement(
+      guardInput('Should I stop her metformin?'),
+      'en',
+    );
+    const emergency = localisedReplacement(guardInput('She has chest pain'), 'en');
+
+    expect(clinical).toBe(t('en', 'guard.clinical'));
+    expect(medication).toBe(t('en', 'guard.medication'));
+    expect(emergency).toBe(t('en', 'guard.emergency'));
+  });
+
+  it('returns nothing for an allowed turn', () => {
+    expect(localisedReplacement(guardInput('When is the next visit?'), 'hi')).toBe('');
   });
 });

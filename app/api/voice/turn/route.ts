@@ -3,9 +3,14 @@ import { z } from 'zod';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
 import { audit } from '@/lib/compliance/audit';
-import { guardInput, guardOutput } from '@/lib/providers/voice/guardrails';
+import {
+  guardInput,
+  guardOutput,
+  localisedReplacement,
+} from '@/lib/providers/voice/guardrails';
 import { simulatedReply } from '@/lib/providers/voice';
 import { env, providerMode } from '@/lib/env';
+import { DEFAULT_LOCALE, isLocale, type Locale } from '@/lib/i18n/locales';
 
 /**
  * One conversational turn, guarded.
@@ -41,8 +46,11 @@ export async function POST(request: Request) {
   let intent: string;
   let guard = inbound;
 
+  // A refusal is only a refusal if the caller can read it.
+  const callerLocale: Locale = isLocale(locale) ? locale : DEFAULT_LOCALE;
+
   if (!inbound.allowed) {
-    replyText = inbound.replacement ?? '';
+    replyText = localisedReplacement(inbound, callerLocale);
     intent = inbound.isEmergency ? 'emergency' : `blocked:${inbound.category}`;
   } else if (providerMode.voice === 'live' && agentDraft) {
     // 2. Screen what the agent wants to say. This runs even when the question
@@ -50,14 +58,18 @@ export async function POST(request: Request) {
     //    and "her numbers look a bit high" is a clinical answer.
     const outbound = guardOutput(agentDraft);
     guard = outbound;
-    replyText = outbound.allowed ? agentDraft : (outbound.replacement ?? '');
+    replyText = outbound.allowed
+      ? agentDraft
+      : localisedReplacement(outbound, callerLocale);
     intent = outbound.allowed ? 'agent' : `blocked_output:${outbound.category}`;
   } else {
     const scripted = simulatedReply(utterance);
     // The simulator routes through the same guards, so a demo demonstrates the
     // real refusal behaviour rather than a mock of it.
     guard = scripted.guard;
-    replyText = scripted.text;
+    replyText = scripted.guard.allowed
+      ? scripted.text
+      : localisedReplacement(scripted.guard, callerLocale);
     intent = scripted.intent;
   }
 
