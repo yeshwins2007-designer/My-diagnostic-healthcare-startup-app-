@@ -22,6 +22,11 @@ on:
 jobs:
   preview:
     runs-on: ubuntu-latest
+
+    # pull-requests: write is only for posting the URL comment below.
+    permissions:
+      contents: read
+      pull-requests: write
     # A fixed ceiling, not derived from the input: job-level timeout-minutes is
     # evaluated before the job starts, where the inputs context does not exist
     # on a push event. Covers the 60-minute default plus setup.
@@ -132,6 +137,46 @@ jobs:
         with:
           name: preview-url
           path: preview-url.txt
+
+      - name: Comment the URL onto the PR
+        # Artifact *bytes* are served from blob storage on a different host,
+        # which some networks will not reach. The issues API is on
+        # api.github.com like everything else here, so a comment is the one
+        # channel reliably readable from anywhere the rest of this already works.
+        # Never fails the job: the preview itself does not depend on it.
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          PR=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+                "https://api.github.com/repos/$REPO/commits/$GITHUB_SHA/pulls" \
+                | python3 -c "import json,sys; d=json.load(sys.stdin); print(d[0]['number'] if d else '')" \
+                2>/dev/null || true)
+          [ -n "$PR" ] || { echo "no PR for this commit; skipping"; exit 0; }
+
+          python3 - "$PR" "$(cat preview-url.txt)" <<'PY'
+          import json, os, sys, urllib.request
+          pr, url = sys.argv[1], sys.argv[2]
+          body = (
+              f"Live preview is up: {url}\n\n"
+              "Sign in with `+919845000101` (caregiver), `+919845000001` (ops), "
+              "`+919845000010` (field) or `+919845100200` (lab). The code is shown "
+              "on screen because SMS is not configured. The tunnel dies with the job."
+          )
+          req = urllib.request.Request(
+              f"https://api.github.com/repos/{os.environ['REPO']}/issues/{pr}/comments",
+              data=json.dumps({"body": body}).encode(),
+              method="POST",
+              headers={
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "Accept": "application/vnd.github+json",
+              },
+          )
+          urllib.request.urlopen(req)
+          print("commented on PR", pr)
+          PY
+
 
       - name: Hold the tunnel open
         # The app and cloudflared were backgrounded in an earlier step; they
