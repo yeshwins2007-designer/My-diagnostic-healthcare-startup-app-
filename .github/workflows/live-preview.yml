@@ -120,5 +120,22 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
           echo "PREVIEW URL: $URL"
+          echo "$URL" > preview-url.txt
 
-          sleep $(( MINUTES * 60 ))
+      - name: Publish the URL
+        # The logs API serves nothing at all for an in-progress job, and this
+        # job stays in progress for the whole life of the tunnel — so the URL
+        # can never be read back from logs while it is still valid. An artifact
+        # becomes readable through the API the moment this step ends, with the
+        # job still running. That is what lets the URL escape in time.
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-url
+          path: preview-url.txt
+
+      - name: Hold the tunnel open
+        # The app and cloudflared were backgrounded in an earlier step; they
+        # are children of the job, so they outlive the step that started them.
+        env:
+          MINUTES_INPUT: ${{ github.event.inputs.minutes }}
+        run: sleep $(( ${MINUTES_INPUT:-60} * 60 ))
