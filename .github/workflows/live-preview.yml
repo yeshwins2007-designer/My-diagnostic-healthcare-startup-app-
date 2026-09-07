@@ -22,8 +22,10 @@ on:
 jobs:
   preview:
     runs-on: ubuntu-latest
-    # Bounded so a wedged job cannot quietly burn the 6-hour ceiling.
-    timeout-minutes: ${{ fromJSON(inputs.minutes || '60') + 10 }}
+    # A fixed ceiling, not derived from the input: job-level timeout-minutes is
+    # evaluated before the job starts, where the inputs context does not exist
+    # on a push event. Covers the 60-minute default plus setup.
+    timeout-minutes: 75
 
     steps:
       - uses: actions/checkout@v4
@@ -61,9 +63,13 @@ jobs:
         # App, tunnel and keep-alive share one step deliberately: background
         # processes are far more reliable within a step than across them.
         env:
-          MINUTES: ${{ inputs.minutes || '60' }}
+          # github.event.inputs, not inputs: the latter is undefined on a push
+          # event. Empty here, so the shell supplies the default.
+          MINUTES_INPUT: ${{ github.event.inputs.minutes }}
         run: |
           set -euo pipefail
+
+          MINUTES="${MINUTES_INPUT:-60}"
 
           npm run start &
           for _ in $(seq 1 60); do
