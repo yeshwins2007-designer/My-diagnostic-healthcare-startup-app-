@@ -94,7 +94,7 @@ export function LabIntakePanel({
               <H3>Upload results</H3>
               <Muted>
                 The report is signed by your pathologist here. It does not reach the family until
-                a SwasthaSetu coordinator has verified that the identifiers on the report match
+                a MEDWYN coordinator has verified that the identifiers on the report match
                 the physical sample — that check is permanent, not a launch precaution.
               </Muted>
 

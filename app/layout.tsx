@@ -21,9 +21,13 @@ export const viewport: Viewport = {
   // Never lock zoom. Pinch-to-zoom is an accessibility tool for this audience.
   maximumScale: 5,
   userScalable: true,
+  // Let the page own the area behind the notch and the home indicator. Without
+  // this every env(safe-area-inset-*) resolves to zero and the .safe-* helpers
+  // in globals.css do nothing.
+  viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#fbf9f6' },
-    { media: '(prefers-color-scheme: dark)', color: '#16150f' },
+    { media: '(prefers-color-scheme: light)', color: '#f4fafb' },
+    { media: '(prefers-color-scheme: dark)', color: '#08171c' },
   ],
 };
 

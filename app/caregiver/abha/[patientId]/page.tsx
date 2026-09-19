@@ -134,7 +134,7 @@ export default async function AbhaPage({
           <Stack gap="md">
             <Card tone="sunken">
               <Stack gap="sm">
-                <H3>You do not need this to use SwasthaSetu</H3>
+                <H3>You do not need this to use MEDWYN</H3>
                 <p>
                   Everything works exactly the same without it. Most people {patient.name}’s age
                   do not have an ABHA, and that has never stopped us collecting a sample or

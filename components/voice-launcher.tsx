@@ -129,7 +129,7 @@ export function VoiceLauncher() {
     <div className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-lg border-t-2 border-[var(--color-line-strong)] bg-[var(--color-surface)] sm:bottom-5 sm:right-5 sm:left-auto sm:mx-0 sm:rounded-[var(--radius-card)] sm:border-2 sm:shadow-2xl">
       <div className="flex items-center justify-between gap-3 border-b-2 border-[var(--color-line)] p-4">
         <div>
-          <p className="font-bold">SwasthaSetu Sahayak</p>
+          <p className="font-bold">MEDWYN Sahayak</p>
           <p className="text-[var(--text-tiny)] text-[var(--color-ink-faint)]">
             Visits, reports and billing. This chat may be kept so a coordinator can follow up.
           </p>

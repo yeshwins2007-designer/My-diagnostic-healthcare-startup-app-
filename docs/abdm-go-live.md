@@ -13,7 +13,7 @@ This document exists so nobody mistakes a working simulator for a live integrati
 | Role | Who holds it | What it means here |
 |---|---|---|
 | **HIP** — Health Information Provider | **The partner laboratory** | The lab generates the record; its pathologist signs it. We act as its technical integrator, linking the care context to the patient's ABHA. |
-| **HIU** — Health Information User | **SwasthaSetu** | With the patient's consent, we pull existing records so the caregiver sees history and the technician knows conditions and medications before a visit. |
+| **HIU** — Health Information User | **MEDWYN** | With the patient's consent, we pull existing records so the caregiver sees history and the technician knows conditions and medications before a visit. |
 | **Consent Manager** | ABDM | Holds the consent artefact that governs record exchange. |
 
 The HIP role belongs to the laboratory, not to us. This matters legally and it is
@@ -120,7 +120,7 @@ revoke or imply the other.
 
 A draft, an unverified summary or an AI-generated narrative never reaches a national
 health record. The FHIR bundle is built from the signed report only, and attributes
-authorship to the **laboratory and its pathologist**, never to SwasthaSetu.
+authorship to the **laboratory and its pathologist**, never to MEDWYN.
 
 ### Publishing failure never blocks the family
 

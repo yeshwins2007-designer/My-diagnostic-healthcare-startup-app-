@@ -28,7 +28,7 @@ class ConsoleSmsProvider implements SmsProvider {
   readonly mode = 'simulated' as const;
 
   async sendOtp(phone: string, code: string): Promise<DeliveryResult> {
-    console.info(`\n  [simulated SMS] to ${phone}\n  Your ${'SwasthaSetu'} code is ${code}. It expires in 10 minutes.\n`);
+    console.info(`\n  [simulated SMS] to ${phone}\n  Your ${'MEDWYN'} code is ${code}. It expires in 10 minutes.\n`);
     return { ok: true, simulated: true, providerRef: `sim_${Date.now()}` };
   }
 

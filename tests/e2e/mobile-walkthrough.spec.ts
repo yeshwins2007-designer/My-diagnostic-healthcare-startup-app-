@@ -75,7 +75,7 @@ async function smallTouchTargets(page: Page) {
           .trim()
           .replace(/\s+/g, ' ')
           .slice(0, 40);
-        if (label === 'SwasthaSetu') return;
+        if (label === 'MEDWYN') return;
         if (r.height < 44) out.push({ label, w: Math.round(r.width), h: Math.round(r.height) });
       });
     return out;

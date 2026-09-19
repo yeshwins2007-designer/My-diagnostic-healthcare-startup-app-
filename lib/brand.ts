@@ -3,7 +3,7 @@
  * everywhere — page titles, the voice agent's introduction, printed cards.
  */
 export const brand = {
-  name: 'SwasthaSetu',
+  name: 'MEDWYN',
   /** Shown under the name. Deliberately not a speed claim. */
   tagline: 'The same trusted person, at your parents’ door, every month.',
   /**

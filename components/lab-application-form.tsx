@@ -186,7 +186,7 @@ export function LabApplicationForm() {
                 className="mt-1 h-12 w-12 shrink-0 accent-[var(--color-primary)]"
               />
               <span>
-                We permit SwasthaSetu to name us in its materials.
+                We permit MEDWYN to name us in its materials.
                 <span className="block text-[var(--text-small)] text-[var(--color-ink-faint)]">
                   For example: “Processed at Ananya Diagnostics, NABL-accredited MC-2417.” We
                   will not use your name anywhere without this.

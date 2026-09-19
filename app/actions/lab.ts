@@ -249,7 +249,7 @@ const resultSchema = z.object({
  * Uploading results.
  *
  * The report is created as PATHOLOGIST_SIGNED, not RELEASED. Nothing reaches a
- * family until a human at SwasthaSetu has verified that the structure of the
+ * family until a human at MEDWYN has verified that the structure of the
  * report matches the physical patient identifiers — and that gate is permanent,
  * not an early-stage precaution.
  */
@@ -371,7 +371,7 @@ export async function uploadResults(
   revalidatePath('/lab');
   return {
     ok: true,
-    message: `Report signed. It will reach the family once a SwasthaSetu coordinator has verified the identifiers.${overall === 'RED' ? ' A critical value has been flagged and will be called immediately.' : ''}`,
+    message: `Report signed. It will reach the family once a MEDWYN coordinator has verified the identifiers.${overall === 'RED' ? ' A critical value has been flagged and will be called immediately.' : ''}`,
   };
 }
 

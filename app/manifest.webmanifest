@@ -1,13 +1,16 @@
 {
-  "name": "SwasthaSetu — doorstep diagnostics",
-  "short_name": "SwasthaSetu",
+  "name": "MEDWYN — doorstep diagnostics",
+  "short_name": "MEDWYN",
   "description": "The same trusted person, at your parents' door, every month.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#fbf9f6",
-  "theme_color": "#0b5e56",
-  "categories": ["health", "medical"],
+  "background_color": "#f4fafb",
+  "theme_color": "#08576b",
+  "categories": [
+    "health",
+    "medical"
+  ],
   "icons": [
     {
       "src": "/icon.svg",

@@ -86,7 +86,7 @@ export function ElderShell({
     <div dir={dir} lang={locale} className="min-h-dvh bg-[var(--color-canvas)]">
       <header className="border-b-2 border-[var(--color-line)] bg-[var(--color-surface)] px-5 py-4">
         <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3">
-          <p className="text-[var(--text-lead)] font-bold">{patientName || 'SwasthaSetu'}</p>
+          <p className="text-[var(--text-lead)] font-bold">{patientName || 'MEDWYN'}</p>
           <div className="flex items-center gap-2">
             <span className="text-[var(--text-small)]">A</span>
             {(['normal', 'large', 'largest'] as const).map((size, i) => (

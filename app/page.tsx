@@ -33,10 +33,16 @@ export default async function LandingPage() {
       <Page wide>
         <Stack gap="lg">
           {/* The positioning, stated plainly. Note what is absent: no "instant",
-              no "15 minutes", no countdown. We do not race on speed. */}
-          <section className="grid gap-8 lg:grid-cols-[1.2fr_1fr] lg:items-center">
+              no "15 minutes", no countdown. We do not race on speed.
+
+              The hero is the one full-strength brand surface on this page: the
+              logo's turquoise only clears contrast on dark, so this is where it
+              is allowed to carry the identity. */}
+          <section className="brand-surface rise-in -mx-5 grid gap-8 px-5 py-10 sm:-mx-8 sm:px-8 sm:py-12 lg:grid-cols-[1.2fr_1fr] lg:items-center lg:rounded-[var(--radius-card)] lg:px-12">
             <Stack gap="md">
-              <Badge tone="primary">For families with parents at home</Badge>
+              <span className="brand-accent text-[var(--text-small)] font-semibold tracking-wide uppercase">
+                For families with parents at home
+              </span>
               <H1>
                 Not the fastest lab in the city.
                 <br />
@@ -46,24 +52,29 @@ export default async function LandingPage() {
 
               <div className="flex flex-wrap gap-3">
                 <ButtonLink href="/join?as=individual">Set up care for a parent</ButtonLink>
-                <ButtonLink href="/join?as=business" tone="secondary">
+                <a
+                  href="/join?as=business"
+                  className="inline-flex min-h-[var(--size-touch)] items-center justify-center rounded-[var(--radius-control)] border-2 border-[color-mix(in_oklab,var(--brand-glow)_55%,transparent)] px-6 text-[var(--text-lead)] font-semibold text-[var(--brand-ink)]"
+                >
                   Register a diagnostic lab
-                </ButtonLink>
+                </a>
               </div>
 
-              <Muted>
+              {/* Not <Muted>: its ink token is tuned for the light canvas and
+                  would sink into the brand surface. */}
+              <p className="text-[var(--text-small)] text-[color-mix(in_oklab,var(--brand-ink)_82%,transparent)]">
                 Already with us?{' '}
-                <Link href="/login" className="font-semibold underline">
+                <Link href="/login" className="font-semibold text-[var(--brand-glow)] underline">
                   Sign in
                 </Link>{' '}
                 · Prefer to talk?{' '}
                 <a
                   href={`tel:${brand.supportPhone.replace(/\s/g, '')}`}
-                  className="inline-flex min-h-12 items-center font-semibold underline"
+                  className="inline-flex min-h-12 items-center font-semibold text-[var(--brand-glow)] underline"
                 >
                   {brand.supportPhone}
                 </a>
-              </Muted>
+              </p>
             </Stack>
 
             <Card tone="primary">

@@ -30,21 +30,42 @@
   --leading-comfortable: 1.6;
   --leading-tight-heading: 1.2;
 
-  /* --- warm, low-glare light palette (default) --------------------------- */
-  --color-canvas: #fbf9f6;
+  /* --- turquoise light palette (default) --------------------------------- */
+  /*
+    Drawn from the MEDWYN mark. Every hue below sits between 180 and 193
+    degrees, so the whole interface reads as one turquoise family rather than
+    a neutral app wearing a coloured header. The tints are kept near-white:
+    saturation belongs on the brand surfaces, not behind body text.
+  */
+  --color-canvas: #f4fafb; /* turquoise-tinted, 3% saturation */
   --color-surface: #ffffff;
-  --color-surface-sunken: #f4f1ea;
-  --color-ink: #1a1a17; /* 15.8:1 on canvas */
-  --color-ink-soft: #4a4a44; /* 8.3:1 on canvas */
-  --color-ink-faint: #6b6b62;
-  --color-line: #e3ded5;
-  --color-line-strong: #c9c2b4;
+  --color-surface-sunken: #e8f2f4;
+  --color-ink: #0c1f24; /* 16.1:1 on canvas — turquoise-black, not neutral */
+  --color-ink-soft: #3a5158; /* 8.0:1 on canvas */
+  --color-ink-faint: #5c767e; /* 4.6:1 — captions only, never body */
+  --color-line: #d3e4e8;
+  --color-line-strong: #afcad1;
 
-  /* Deep teal: medical trust without the coldness of hospital blue. */
-  --color-primary: #0b5e56;
-  --color-primary-hover: #084a44;
+  /*
+    The logo's turquoise is hue 170 at full brightness: 1.7:1 on white, which
+    is unusable for anything a person has to read. This is the same colour
+    pushed bluer and darkened until it clears AAA — 8.1:1 on white, better
+    than the deep teal it replaces.
+  */
+  --color-primary: #08576b;
+  --color-primary-hover: #064355;
   --color-primary-ink: #ffffff;
-  --color-primary-wash: #e6f1ef;
+  --color-primary-wash: #e3f2f5;
+
+  /*
+    Brand surfaces. The logo's bright turquoise only works on dark, so that is
+    the only place it is allowed: --brand-glow on --brand-deep is 8.8:1, the
+    same pairing that makes the mark itself legible.
+  */
+  --brand-deep: #072a34; /* white on it: 15.1:1 */
+  --brand-deep-soft: #0d3d4a;
+  --brand-glow: #30dbdb;
+  --brand-ink: #ffffff;
 
   /* Stoplight. Each is AAA against white and against its own wash. */
   --color-green: #15803d;
@@ -67,24 +88,25 @@
 /*
   Dark mode. Many phones ship dark by default and a lot of older users never
   change it, so this has to be genuinely legible rather than an afterthought —
-  slightly warm greys instead of pure black, and text lightened until it clears
-  7:1 again.
+  deep turquoise-navy instead of pure black, and text lightened until it clears
+  7:1 again. This is the mode the logo was drawn for: bright turquoise on dark
+  is exactly the pairing the mark uses.
 */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --color-canvas: #16150f;
-    --color-surface: #201f18;
-    --color-surface-sunken: #2a2921;
-    --color-ink: #f7f4ec;
-    --color-ink-soft: #cdc8ba;
-    --color-ink-faint: #a49e90;
-    --color-line: #3a382e;
-    --color-line-strong: #55523f;
+    --color-canvas: #08171c;
+    --color-surface: #0e2229;
+    --color-surface-sunken: #143038;
+    --color-ink: #eaf6f8; /* 16.6:1 on canvas */
+    --color-ink-soft: #b4ced4; /* 11.1:1 */
+    --color-ink-faint: #8aa8b0;
+    --color-line: #1d3d47;
+    --color-line-strong: #2d5561;
 
-    --color-primary: #59c9bb;
-    --color-primary-hover: #7ad8cb;
-    --color-primary-ink: #0a2b28;
-    --color-primary-wash: #17332f;
+    --color-primary: #5fd9d9; /* 10.8:1 on canvas */
+    --color-primary-hover: #7fe6e6;
+    --color-primary-ink: #052229;
+    --color-primary-wash: #0e3a44;
 
     --color-green: #6ee08c;
     --color-green-wash: #16301f;
@@ -95,22 +117,26 @@
 
     --color-info: #9dbcff;
     --color-info-wash: #17203a;
+
+    /* Lifted, so the hero still reads as a raised panel on a dark canvas. */
+    --brand-deep: #0b3542;
+    --brand-deep-soft: #14515f;
   }
 }
 
 :root[data-theme='dark'] {
-  --color-canvas: #16150f;
-  --color-surface: #201f18;
-  --color-surface-sunken: #2a2921;
-  --color-ink: #f7f4ec;
-  --color-ink-soft: #cdc8ba;
-  --color-ink-faint: #a49e90;
-  --color-line: #3a382e;
-  --color-line-strong: #55523f;
-  --color-primary: #59c9bb;
-  --color-primary-hover: #7ad8cb;
-  --color-primary-ink: #0a2b28;
-  --color-primary-wash: #17332f;
+  --color-canvas: #08171c;
+  --color-surface: #0e2229;
+  --color-surface-sunken: #143038;
+  --color-ink: #eaf6f8;
+  --color-ink-soft: #b4ced4;
+  --color-ink-faint: #8aa8b0;
+  --color-line: #1d3d47;
+  --color-line-strong: #2d5561;
+  --color-primary: #5fd9d9;
+  --color-primary-hover: #7fe6e6;
+  --color-primary-ink: #052229;
+  --color-primary-wash: #0e3a44;
   --color-green: #6ee08c;
   --color-green-wash: #16301f;
   --color-yellow: #f0c274;
@@ -119,6 +145,122 @@
   --color-red-wash: #3a1a1a;
   --color-info: #9dbcff;
   --color-info-wash: #17203a;
+  --brand-deep: #0b3542;
+  --brand-deep-soft: #14515f;
+}
+
+/*
+  Brand surfaces.
+
+  The one place the logo's full-strength turquoise is allowed, because it is
+  the one place it is legible: --brand-glow on --brand-deep measures 8.8:1,
+  and white on --brand-deep is 15.1:1. Nothing here sits behind body copy —
+  the flowing curves are the mark's motif, reproduced as ornament only.
+*/
+.brand-surface {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(
+      120% 140% at 12% 0%,
+      var(--brand-deep-soft) 0%,
+      var(--brand-deep) 58%
+    );
+  color: var(--brand-ink);
+  overflow: hidden;
+}
+
+/*
+  The waves. Two broad strokes of the brand turquoise, held well below full
+  opacity so nothing laid over them loses contrast. Decorative and hidden from
+  assistive tech.
+*/
+.brand-surface::before {
+  content: '';
+  position: absolute;
+  inset: -20% -10% auto -10%;
+  height: 150%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      52% 38% at 78% 18%,
+      color-mix(in oklab, var(--brand-glow) 26%, transparent) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      46% 30% at 22% 86%,
+      color-mix(in oklab, var(--brand-glow) 18%, transparent) 0%,
+      transparent 72%
+    );
+}
+
+/* Text sitting on a brand surface. */
+.brand-surface :where(h1, h2, h3, p, li) {
+  color: var(--brand-ink);
+}
+.brand-accent {
+  color: var(--brand-glow);
+}
+
+/*
+  Motion. Short, and only on things a finger or pointer just touched — the
+  reduced-motion block below switches all of it off, which is why decorative
+  animation is never added here.
+*/
+@theme {
+  --ease-out-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur-tap: 120ms;
+  --dur-settle: 220ms;
+}
+
+:where(a, button, [role='button']) {
+  transition:
+    background-color var(--dur-tap) var(--ease-out-soft),
+    border-color var(--dur-tap) var(--ease-out-soft),
+    color var(--dur-tap) var(--ease-out-soft),
+    transform var(--dur-tap) var(--ease-out-soft);
+  /* The grey iOS flash reads as a glitch; a real :active state reads as a press. */
+  -webkit-tap-highlight-color: transparent;
+}
+:where(a, button, [role='button']):active {
+  transform: scale(0.985);
+}
+
+/* Content arriving after a skeleton, so it resolves rather than snapping in. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise-in {
+  animation: rise-in var(--dur-settle) var(--ease-out-soft) both;
+}
+
+/*
+  Installed as an app, the page owns the whole screen — including the area
+  behind the notch and the home indicator. viewport-fit=cover in layout.tsx is
+  what makes these insets resolve to anything but zero.
+*/
+.safe-top {
+  padding-top: max(1rem, env(safe-area-inset-top));
+}
+.safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+.safe-x {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+body {
+  /* No rubber-banding the whole page behind the app shell. */
+  overscroll-behavior-y: contain;
 }
 
 /*

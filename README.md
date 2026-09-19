@@ -1,4 +1,4 @@
-# SwasthaSetu
+# MEDWYN
 
 **The same trusted person, at your parents' door, every month.**
 
@@ -269,5 +269,5 @@ npx playwright test screenshots   # writes 24 PNGs to screenshots/ (gitignored)
 ---
 
 *This is information infrastructure, not a medical device. Reports are produced and
-signed by NABL-accredited partner laboratories and their pathologists. SwasthaSetu
+signed by NABL-accredited partner laboratories and their pathologists. MEDWYN
 coordinates logistics and communication, and never issues a diagnosis.*

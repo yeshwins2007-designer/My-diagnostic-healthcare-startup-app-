@@ -283,17 +283,17 @@ async function main() {
       turnaroundCommitment:
         'Biochemistry and haematology by 6 PM same day; immunoassay within 24 hours.',
       referralProtection:
-        'Existing doctor-referred and walk-in patients are never deprioritised for SwasthaSetu volume.',
+        'Existing doctor-referred and walk-in patients are never deprioritised for MEDWYN volume.',
       capacityCeilingNote: '40 samples per day; 24 hours notice required above that.',
       exclusivityNote:
-        'SwasthaSetu routes all Jayanagar zone volume here. The lab remains free to serve anyone.',
+        'MEDWYN routes all Jayanagar zone volume here. The lab remains free to serve anyone.',
       brandingNote:
         'Written permission granted to state "Processed at Ananya Diagnostics, NABL-accredited MC-2417".',
       exitNote:
-        '60 days notice either side. Patient records remain with the lab; SwasthaSetu retains coordination records only.',
+        '60 days notice either side. Patient records remain with the lab; MEDWYN retains coordination records only.',
       status: 'SIGNED',
       signedByLabName: 'Dr. Sudha Rao',
-      signedByPlatformName: 'SwasthaSetu Health Services Pvt. Ltd.',
+      signedByPlatformName: 'MEDWYN Health Services Pvt. Ltd.',
       signedAt: at(-108, 16),
     },
   });
@@ -331,7 +331,7 @@ async function main() {
       name: 'Yeshwin (founder)',
       role: 'OPS',
       locale: 'en',
-      email: 'ops@swasthasetu.example',
+      email: 'ops@medwyn.example',
     },
   });
 

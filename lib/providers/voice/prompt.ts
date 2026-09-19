@@ -84,7 +84,7 @@ End by stating what will happen next and who will do it — "Priya will be at th
  */
 export const KNOWLEDGE_BASE_DOCUMENTS: { name: string; text: string }[] = [
   {
-    name: 'What SwasthaSetu is and is not',
+    name: 'What MEDWYN is and is not',
     text: [
       brand.oneLiner,
       '',
