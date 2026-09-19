@@ -166,7 +166,6 @@
       var(--brand-deep-soft) 0%,
       var(--brand-deep) 58%
     );
-  color: var(--brand-ink);
   overflow: hidden;
 }
 
@@ -195,8 +194,14 @@
     );
 }
 
-/* Text sitting on a brand surface. */
-.brand-surface :where(h1, h2, h3, p, li) {
+/*
+  Brand ink is scoped to the content wrapper, never to the surface itself. A
+  Card dropped inside a brand surface sets its own light background but
+  inherits its text colour, so colouring the whole surface white turned any
+  such card into white-on-near-white.
+*/
+.brand-content,
+.brand-content :where(h1, h2, h3, p, li, span) {
   color: var(--brand-ink);
 }
 .brand-accent {

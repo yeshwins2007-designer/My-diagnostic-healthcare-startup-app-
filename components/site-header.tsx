@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { brand } from '@/lib/brand';
 import { getSessionUser } from '@/lib/auth/session';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { BrandMark } from '@/components/brand-mark';
 
 const HOME_FOR_ROLE: Record<string, string> = {
   CAREGIVER: '/caregiver',
@@ -17,12 +18,7 @@ export async function SiteHeader() {
     <header className="border-b-2 border-[var(--color-line)] bg-[var(--color-surface)]">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-8">
         <Link href="/" className="flex items-center gap-3">
-          <span
-            aria-hidden
-            className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-primary)] text-[var(--text-lead)] font-bold text-[var(--color-primary-ink)]"
-          >
-            स
-          </span>
+          <BrandMark size={48} className="shrink-0 rounded-xl" />
           <span className="flex flex-col leading-tight">
             <span className="text-[var(--text-lead)] font-bold">{brand.name}</span>
             <span className="text-[var(--text-tiny)] text-[var(--color-ink-faint)]">

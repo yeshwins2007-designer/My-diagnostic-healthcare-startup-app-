@@ -3,6 +3,7 @@ import { brand } from '@/lib/brand';
 import { db } from '@/lib/db';
 import { formatINR } from '@/lib/money';
 import { SiteHeader } from '@/components/site-header';
+import { BrandWaves } from '@/components/brand-mark';
 import {
   Badge,
   ButtonLink,
@@ -39,7 +40,8 @@ export default async function LandingPage() {
               logo's turquoise only clears contrast on dark, so this is where it
               is allowed to carry the identity. */}
           <section className="brand-surface rise-in -mx-5 grid gap-8 px-5 py-10 sm:-mx-8 sm:px-8 sm:py-12 lg:grid-cols-[1.2fr_1fr] lg:items-center lg:rounded-[var(--radius-card)] lg:px-12">
-            <Stack gap="md">
+            <BrandWaves />
+            <Stack gap="md" className="brand-content">
               <span className="brand-accent text-[var(--text-small)] font-semibold tracking-wide uppercase">
                 For families with parents at home
               </span>
@@ -48,7 +50,6 @@ export default async function LandingPage() {
                 <br />
                 The one your parents’ family trusts.
               </H1>
-              <Lead>{brand.oneLiner}</Lead>
 
               <div className="flex flex-wrap gap-3">
                 <ButtonLink href="/join?as=individual">Set up care for a parent</ButtonLink>
@@ -60,24 +61,9 @@ export default async function LandingPage() {
                 </a>
               </div>
 
-              {/* Not <Muted>: its ink token is tuned for the light canvas and
-                  would sink into the brand surface. */}
-              <p className="text-[var(--text-small)] text-[color-mix(in_oklab,var(--brand-ink)_82%,transparent)]">
-                Already with us?{' '}
-                <Link href="/login" className="font-semibold text-[var(--brand-glow)] underline">
-                  Sign in
-                </Link>{' '}
-                · Prefer to talk?{' '}
-                <a
-                  href={`tel:${brand.supportPhone.replace(/\s/g, '')}`}
-                  className="inline-flex min-h-12 items-center font-semibold text-[var(--brand-glow)] underline"
-                >
-                  {brand.supportPhone}
-                </a>
-              </p>
             </Stack>
 
-            <Card tone="primary">
+            <Card tone="primary" className="text-[var(--color-ink)]">
               <Stack gap="sm">
                 <H3>What you actually get</H3>
                 <ul className="flex flex-col gap-3">
@@ -99,6 +85,24 @@ export default async function LandingPage() {
               </Stack>
             </Card>
           </section>
+
+          {/* Reading copy lives on the canvas, at 16:1, never over ornament. */}
+          <Stack gap="md">
+            <Lead>{brand.oneLiner}</Lead>
+            <Muted>
+              Already with us?{' '}
+              <Link href="/login" className="font-semibold underline">
+                Sign in
+              </Link>{' '}
+              · Prefer to talk?{' '}
+              <a
+                href={`tel:${brand.supportPhone.replace(/\s/g, '')}`}
+                className="inline-flex min-h-12 items-center font-semibold underline"
+              >
+                {brand.supportPhone}
+              </a>
+            </Muted>
+          </Stack>
 
           {/* Two humans in every sale. Saying it out loud is more honest than
               pretending the app is for the patient. */}
