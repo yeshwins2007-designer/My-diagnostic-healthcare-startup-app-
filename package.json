@@ -2,7 +2,7 @@
   "name": "medwyn",
   "version": "0.1.0",
   "private": true,
-  "description": "Hyperlocal elderly-first doorstep diagnostics platform — caregiver, elder, field agent, partner lab and ops surfaces in one PWA.",
+  "description": "Hyperlocal elderly-first doorstep diagnostics platform \u2014 caregiver, elder, field agent, partner lab and ops surfaces in one PWA.",
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
@@ -18,7 +18,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "verify:maps": "tsx scripts/verify-maps.ts"
   },
   "dependencies": {
     "@elevenlabs/react": "1.15.1",

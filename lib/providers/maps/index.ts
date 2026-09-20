@@ -15,7 +15,7 @@ import {
   pathLengthKm,
   type LatLng,
 } from '../../geo';
-import { env, providerMode } from '../../env';
+import { env } from '../../env';
 
 export interface GeocodeResult {
   formattedAddress: string;
@@ -211,12 +211,47 @@ function nearestNeighbourRoute(origin: LatLng, stops: RouteStop[]): RoutePlan {
 
 // --- live --------------------------------------------------------------------
 
+/**
+ * Google answers a misconfigured key with HTTP 200 and a status string, so a
+ * plain `!res.ok` check treats "your key is rejected" as "no results found".
+ * That failure is invisible in exactly the way that costs a day: signup
+ * quietly stops geocoding and every address falls back to approximate.
+ */
+function reportGoogleStatus(api: string, status: string, message?: string) {
+  if (status === 'OK' || status === 'ZERO_RESULTS') return;
+  console.error(
+    `[maps] Google ${api} returned ${status}${message ? `: ${message}` : ''}. ` +
+      'REQUEST_DENIED usually means the key is referrer-restricted and cannot ' +
+      'be used server-side — set GOOGLE_MAPS_SERVER_KEY to an IP-restricted key.',
+  );
+}
+
 class GoogleMapsProvider implements MapsProvider {
   readonly mode = 'live' as const;
 
+  /**
+   * Server-side calls need the server key. Falling back to the public key is
+   * deliberate but lossy: a referrer-restricted key has no Referer header on a
+   * server request and Google rejects it, so this warns rather than failing
+   * silently later.
+   */
   private get key(): string {
-    return env.GOOGLE_MAPS_SERVER_KEY || env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+    if (env.GOOGLE_MAPS_SERVER_KEY) return env.GOOGLE_MAPS_SERVER_KEY;
+    if (env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
+      if (!this.warnedAboutKey) {
+        this.warnedAboutKey = true;
+        console.warn(
+          '[maps] GOOGLE_MAPS_SERVER_KEY is not set; using the public browser ' +
+            'key for server-side calls. If that key is restricted by HTTP ' +
+            'referrer, Google will answer REQUEST_DENIED.',
+        );
+      }
+      return env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    }
+    return '';
   }
+
+  private warnedAboutKey = false;
 
   async geocode(address: string, cityHint = 'Bengaluru'): Promise<GeocodeResult | null> {
     const url = new URL('https://maps.googleapis.com/maps/api/geocode/json');
@@ -224,17 +259,26 @@ class GoogleMapsProvider implements MapsProvider {
     url.searchParams.set('region', 'in');
     url.searchParams.set('key', this.key);
 
-    const res = await fetch(url);
-    if (!res.ok) return null;
-
-    const data = (await res.json()) as {
+    let data: {
       status: string;
+      error_message?: string;
       results: {
         formatted_address: string;
         geometry: { location: { lat: number; lng: number }; location_type: string };
         address_components: { long_name: string; types: string[] }[];
       }[];
     };
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      data = await res.json();
+    } catch {
+      // Google unreachable. The caller falls back to a hand-dropped pin; it
+      // must not see an exception mid-signup.
+      return null;
+    }
+
+    reportGoogleStatus('geocode', data.status, data.error_message);
 
     const top = data.results?.[0];
     if (data.status !== 'OK' || !top) return null;
@@ -274,17 +318,24 @@ class GoogleMapsProvider implements MapsProvider {
     url.searchParams.set('mode', 'driving');
     url.searchParams.set('key', this.key);
 
-    const res = await fetch(url);
-    if (!res.ok) return nearestNeighbourRoute(origin, stops);
-
-    const data = (await res.json()) as {
+    let data: {
       status: string;
+      error_message?: string;
       routes: {
         overview_polyline: { points: string };
         waypoint_order: number[];
         legs: { distance: { value: number }; duration: { value: number } }[];
       }[];
     };
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return nearestNeighbourRoute(origin, stops);
+      data = await res.json();
+    } catch {
+      return nearestNeighbourRoute(origin, stops);
+    }
+
+    reportGoogleStatus('directions', data.status, data.error_message);
 
     const route = data.routes?.[0];
     if (data.status !== 'OK' || !route) return nearestNeighbourRoute(origin, stops);
@@ -319,8 +370,11 @@ class GoogleMapsProvider implements MapsProvider {
     try {
       const res = await fetch(url);
       const data = (await res.json()) as {
+        status?: string;
+        error_message?: string;
         rows: { elements: { duration_in_traffic?: { value: number }; duration?: { value: number } }[] }[];
       };
+      if (data.status) reportGoogleStatus('distancematrix', data.status, data.error_message);
       const element = data.rows?.[0]?.elements?.[0];
       const seconds = element?.duration_in_traffic?.value ?? element?.duration?.value;
       if (seconds) return Math.ceil(seconds / 60);
@@ -333,10 +387,28 @@ class GoogleMapsProvider implements MapsProvider {
 
 let cached: MapsProvider | null = null;
 
+/**
+ * Deliberately NOT gated on providerMode.maps.
+ *
+ * providerMode.maps answers a browser question — "will the basemap render?" —
+ * and so it only looks at the public key. This factory answers a server
+ * question: can we geocode and plan routes for real? Those calls use
+ * GOOGLE_MAPS_SERVER_KEY, and gating them on the public key meant that setting
+ * only the server key — which is the correct, IP-restricted way to do
+ * server-side Maps — left geocoding simulated, quietly resolving every family's
+ * address to invented coordinates and dispatching technicians to them.
+ */
 export function getMapsProvider(): MapsProvider {
   if (!cached) {
-    cached =
-      providerMode.maps === 'live' ? new GoogleMapsProvider() : new SimulatedMapsProvider();
+    const hasKey = Boolean(
+      env.GOOGLE_MAPS_SERVER_KEY || env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
+    );
+    cached = hasKey ? new GoogleMapsProvider() : new SimulatedMapsProvider();
   }
   return cached;
+}
+
+/** Test seam: the provider is cached for the process lifetime. */
+export function __resetMapsProvider() {
+  cached = null;
 }
