@@ -237,10 +237,71 @@ export async function bookVisit(
   const startOfDay = new Date(`${parsed.data.date}T00:00:00`);
   const endOfDay = new Date(startOfDay.getTime() + 86_400_000);
 
-  const lab = await db.lab.findUnique({
+  /**
+   * The family's chosen lab wins, but only while it can still do the work.
+   * A preference recorded weeks ago can go stale — an accreditation lapses, a
+   * panel gains a discipline the lab is not accredited for — so it is offered
+   * to evaluateRouting first and silently falls back to the zone's anchor if
+   * it no longer passes. Falling back beats refusing the booking: the family
+   * still gets their visit, and the substitution is written to the audit log
+   * rather than hidden.
+   */
+  let lab = await db.lab.findUnique({
     where: { id: zone.anchorLabId },
     include: { accreditation: true },
   });
+
+  if (patient.preferredLabId && patient.preferredLabId !== zone.anchorLabId) {
+    const preferred = await db.lab.findUnique({
+      where: { id: patient.preferredLabId },
+      include: { accreditation: true },
+    });
+    if (preferred) {
+      const preferredVolume = await db.booking.count({
+        where: { labId: preferred.id, windowStart: { gte: startOfDay, lt: endOfDay } },
+      });
+      const check = evaluateRouting(
+        {
+          id: preferred.id,
+          name: preferred.name,
+          status: preferred.status,
+          capacityCeiling: preferred.capacityCeiling,
+          todayVolume: preferredVolume,
+          accreditation: preferred.accreditation
+            ? {
+                certificateNumber: preferred.accreditation.certificateNumber,
+                scope: preferred.accreditation.scope,
+                validUntil: preferred.accreditation.validUntil,
+              }
+            : null,
+        },
+        panel.items.map((i) => ({
+          code: i.test.code,
+          name: i.test.name,
+          discipline: i.test.discipline,
+        })),
+      );
+
+      if (isRefusal(check)) {
+        await audit({
+          action: 'LAB_ROUTING_REFUSED',
+          entityType: 'Lab',
+          entityId: preferred.id,
+          actorUserId: user.id,
+          actorRole: 'CAREGIVER',
+          detail: {
+            reason: check.reason,
+            panel: panel.code,
+            fellBackTo: zone.anchorLabId,
+            wasPreferred: true,
+          },
+        });
+      } else {
+        lab = preferred;
+      }
+    }
+  }
+
   if (!lab) return { ok: false, message: 'The zone has no anchor laboratory.' };
 
   const todayVolume = await db.booking.count({
@@ -377,4 +438,158 @@ export async function loadRouteGeometry(bookingId: string) {
   });
   if (!booking?.route?.encodedPolyline) return [];
   return decodePolyline(booking.route.encodedPolyline);
+}
+
+/**
+ * The laboratories this patient's family may choose between.
+ *
+ * Candidates are every ACTIVE lab, ranked by distance from the patient's own
+ * door and put through the same evaluateRouting the booking uses. Ineligible
+ * labs come back too, carrying their reason, so the screen can say why the
+ * lab around the corner is not on offer instead of quietly omitting it.
+ */
+export async function labChoicesForPatient(patientId: string, panelId?: string) {
+  const user = await requireRole('CAREGIVER');
+
+  const patient = await db.patient.findFirst({
+    // Scoped through the family membership: a caregiver must never enumerate
+    // labs — or anything else — for a patient who is not theirs.
+    where: { id: patientId, family: { members: { some: { userId: user.id } } } },
+    include: { addresses: { take: 1 }, family: true },
+  });
+  if (!patient) return { ok: false as const, message: 'Patient not found.' };
+
+  const address = patient.addresses[0];
+  const zone = address?.zoneId
+    ? await db.zone.findUnique({ where: { id: address.zoneId } })
+    : null;
+
+  const panel = panelId
+    ? await db.panel.findUnique({
+        where: { id: panelId },
+        include: { items: { include: { test: true } } },
+      })
+    : await db.panel.findFirst({
+        where: { isActive: true },
+        orderBy: { sortOrder: 'asc' },
+        include: { items: { include: { test: true } } },
+      });
+  if (!panel) return { ok: false as const, message: 'No panel available.' };
+
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const labs = await db.lab.findMany({
+    where: { status: 'ACTIVE' },
+    include: { accreditation: true },
+  });
+
+  const volumes = await db.booking.groupBy({
+    by: ['labId'],
+    where: { windowStart: { gte: startOfDay } },
+    _count: { _all: true },
+  });
+  const volumeFor = new Map(volumes.map((v) => [v.labId, v._count._all]));
+
+  const { rankLabChoices } = await import('@/lib/sop/labRouting');
+  const { haversineKm } = await import('@/lib/geo');
+
+  const choices = rankLabChoices(
+    labs.map((l) => ({
+      id: l.id,
+      name: l.name,
+      status: l.status,
+      capacityCeiling: l.capacityCeiling,
+      todayVolume: volumeFor.get(l.id) ?? 0,
+      latitude: l.latitude,
+      longitude: l.longitude,
+      accreditation: l.accreditation
+        ? {
+            certificateNumber: l.accreditation.certificateNumber,
+            scope: l.accreditation.scope,
+            validUntil: l.accreditation.validUntil,
+          }
+        : null,
+    })),
+    panel.items.map((i) => ({
+      code: i.test.code,
+      name: i.test.name,
+      discipline: i.test.discipline,
+    })),
+    {
+      from:
+        address && address.latitude != null && address.longitude != null
+          ? { lat: address.latitude, lng: address.longitude }
+          : null,
+      zoneAnchorLabId: zone?.anchorLabId ?? null,
+      distanceKm: haversineKm,
+    },
+  );
+
+  return {
+    ok: true as const,
+    panelName: panel.name,
+    selectedLabId: patient.preferredLabId,
+    choices,
+  };
+}
+
+/**
+ * Record — or clear — the family's preferred laboratory.
+ *
+ * The chosen lab is re-validated here rather than trusted from the form: the
+ * list the browser rendered may be minutes old, and a lab can fall out of
+ * eligibility between render and submit. Passing an empty id clears the
+ * preference and returns the patient to the zone's anchor lab.
+ */
+export async function setPreferredLab(
+  patientId: string,
+  labId: string,
+): Promise<{ ok: boolean; message?: string; reason?: string; remedy?: string }> {
+  const user = await requireRole('CAREGIVER');
+
+  const patient = await db.patient.findFirst({
+    where: { id: patientId, family: { members: { some: { userId: user.id } } } },
+  });
+  if (!patient) return { ok: false, message: 'Patient not found.' };
+
+  if (!labId) {
+    await db.patient.update({ where: { id: patient.id }, data: { preferredLabId: null } });
+    await audit({
+      action: 'LAB_PREFERENCE_CLEARED',
+      entityType: 'Patient',
+      entityId: patient.id,
+      actorUserId: user.id,
+      actorRole: 'CAREGIVER',
+      detail: {},
+    });
+    revalidatePath('/caregiver');
+    return { ok: true, message: 'We will use the laboratory assigned to your area.' };
+  }
+
+  const available = await labChoicesForPatient(patientId);
+  if (!available.ok) return { ok: false, message: available.message };
+
+  const chosen = available.choices.find((c) => c.id === labId);
+  if (!chosen) return { ok: false, message: 'That laboratory is not available.' };
+  if (!chosen.eligible) {
+    return {
+      ok: false,
+      reason: chosen.reason ?? `${chosen.name} cannot process this panel.`,
+      remedy:
+        'Choose a laboratory accredited for every test in the panel. A result produced outside a laboratory’s accredited scope is not a valid result.',
+    };
+  }
+
+  await db.patient.update({ where: { id: patient.id }, data: { preferredLabId: labId } });
+  await audit({
+    action: 'LAB_PREFERENCE_SET',
+    entityType: 'Patient',
+    entityId: patient.id,
+    actorUserId: user.id,
+    actorRole: 'CAREGIVER',
+    detail: { labId, labName: chosen.name },
+  });
+  revalidatePath('/caregiver');
+  return { ok: true, message: `Samples will be sent to ${chosen.name}.` };
 }

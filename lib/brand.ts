@@ -33,7 +33,7 @@ export const brand = {
     'A pathology lab — our NABL-accredited partner lab is',
     'An on-demand transactional test-booking app',
     'Accountable for diagnostic accuracy — that sits with the accredited lab and its pathologist',
-    'A price-comparison marketplace between labs',
+    'A price-comparison marketplace — families may choose between our accredited partner laboratories, but we do not rank them on price or bid them against each other',
   ],
 
   /**

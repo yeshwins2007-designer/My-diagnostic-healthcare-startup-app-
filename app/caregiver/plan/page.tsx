@@ -5,6 +5,8 @@ import { loadFamilyContext } from '@/lib/queries/caregiver';
 import { formatINR, formatINRWithWords } from '@/lib/money';
 import { providerMode } from '@/lib/env';
 import { PlanChooser } from '@/components/plan-chooser';
+import { LabChooser } from '@/components/lab-chooser';
+import { labChoicesForPatient } from '@/app/actions/caregiver';
 import {
   Badge,
   Card,
@@ -46,6 +48,18 @@ export default async function PlanPage({
     family.patients.find((p) => p.id === patientParam) ?? unsubscribed[0] ?? null;
 
   const foundingSpotsLeft = Math.max(0, 25 - activeSubscriberCount);
+
+  // Fetched for every patient, not just the one being subscribed: the chooser
+  // tells families they can change laboratory at any time, and that is only
+  // true if an already-subscribed parent has the control too.
+  const labChoicesByPatient = new Map(
+    await Promise.all(
+      family.patients.map(
+        async (p) => [p.id, await labChoicesForPatient(p.id)] as const,
+      ),
+    ),
+  );
+  const labChoices = target ? labChoicesByPatient.get(target.id) : null;
 
   return (
     <Page>
@@ -111,6 +125,23 @@ export default async function PlanPage({
                 </Card>
               );
             })}
+
+            {/* Changing laboratory must stay available after subscribing —
+                the chooser promises exactly that. */}
+            {subscribed.map((patient) => {
+              const c = labChoicesByPatient.get(patient.id);
+              if (!c?.ok || c.choices.length === 0) return null;
+              return (
+                <LabChooser
+                  key={`lab-${patient.id}`}
+                  patientId={patient.id}
+                  patientName={patient.name}
+                  panelName={c.panelName}
+                  options={c.choices}
+                  selectedLabId={c.selectedLabId}
+                />
+              );
+            })}
           </Stack>
         )}
 
@@ -132,6 +163,16 @@ export default async function PlanPage({
                   </Muted>
                 </Stack>
               </Card>
+            )}
+
+            {labChoices?.ok && labChoices.choices.length > 0 && (
+              <LabChooser
+                patientId={target.id}
+                patientName={target.name}
+                panelName={labChoices.panelName}
+                options={labChoices.choices}
+                selectedLabId={labChoices.selectedLabId}
+              />
             )}
 
             <PlanChooser

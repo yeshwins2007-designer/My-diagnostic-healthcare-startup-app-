@@ -140,6 +140,13 @@ model Patient {
   needsProxyConsent Boolean @default(false)
   /// Free text: "hard of hearing, speak on the left", "has dementia — greet slowly"
   careNotes    String    @default("")
+  /// The family's chosen laboratory, when they expressed one. Null means "use
+  /// the zone's anchor lab". A preference is never trusted on its own: every
+  /// booking re-runs evaluateRouting against it, and falls back to the anchor
+  /// if the chosen lab can no longer do the work — its accreditation lapsed,
+  /// the panel changed, or it is at its daily ceiling.
+  preferredLabId String?
+  preferredLab   Lab?    @relation("PatientPreferredLab", fields: [preferredLabId], references: [id], onDelete: SetNull)
   isActive     Boolean   @default(true)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -364,6 +371,7 @@ model Lab {
 
   accreditation LabAccreditation?
   members       LabMember[]
+  preferredByPatients Patient[] @relation("PatientPreferredLab")
   agreements    LabAgreement[]
   rateCard      LabRateCardEntry[]
   zones         Zone[]

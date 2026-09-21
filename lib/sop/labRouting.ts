@@ -15,7 +15,7 @@
  */
 
 import { Discipline, DISCIPLINE_LABELS, type LabStatus } from '../enums';
-import { allow, refuse, warn, type Decision } from './types';
+import { allow, isRefusal, refuse, warn, type Decision } from './types';
 
 export interface RoutableLab {
   id: string;
@@ -189,4 +189,81 @@ export function selectLab(
     ),
     rejections,
   };
+}
+
+/**
+ * The labs a family may legitimately choose between.
+ *
+ * Choice is offered inside the routing gate, never around it. Every candidate
+ * is put through the same evaluateRouting used at booking time, so a lab the
+ * family can see is a lab that can actually produce a valid result for this
+ * panel — not one they pick and then get refused at checkout.
+ *
+ * Ineligible labs are returned too, carrying the reason, so the UI can explain
+ * why a nearby lab is not on offer rather than silently omitting it. That
+ * matters for trust: "the lab down the road is not accredited for this test"
+ * is a better answer than an unexplained short list.
+ */
+export interface LabChoice {
+  id: string;
+  name: string;
+  eligible: boolean;
+  /** Straight-line km from the patient's door. Ordering only, never an ETA. */
+  distanceKm: number | null;
+  certificateNumber: string | null;
+  /** Populated when eligible is false. */
+  reason?: string;
+  /** True when this is the zone's default, used when the family expresses no preference. */
+  isZoneAnchor: boolean;
+}
+
+export function rankLabChoices(
+  labs: (RoutableLab & {
+    latitude?: number | null;
+    longitude?: number | null;
+  })[],
+  tests: RoutableTest[],
+  options: {
+    from?: { lat: number; lng: number } | null;
+    zoneAnchorLabId?: string | null;
+    now?: Date;
+    distanceKm?: (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => number;
+  } = {},
+): LabChoice[] {
+  const { from = null, zoneAnchorLabId = null, now = new Date(), distanceKm } = options;
+
+  const choices = labs.map((lab): LabChoice => {
+    const decision = evaluateRouting(lab, tests, now);
+    const refused = isRefusal(decision);
+    const hasPoint =
+      from != null &&
+      typeof lab.latitude === 'number' &&
+      typeof lab.longitude === 'number';
+
+    return {
+      id: lab.id,
+      name: lab.name,
+      eligible: !refused,
+      distanceKm:
+        hasPoint && distanceKm
+          ? Math.round(distanceKm(from, { lat: lab.latitude as number, lng: lab.longitude as number }) * 10) / 10
+          : null,
+      certificateNumber: lab.accreditation?.certificateNumber ?? null,
+      reason: refused ? decision.reason : undefined,
+      isZoneAnchor: lab.id === zoneAnchorLabId,
+    };
+  });
+
+  // Eligible first, then nearest, then the zone default ahead of equals so the
+  // recommended option surfaces when distances tie or are unknown.
+  return choices.sort((a, b) => {
+    if (a.eligible !== b.eligible) return a.eligible ? -1 : 1;
+    if (a.distanceKm !== b.distanceKm) {
+      if (a.distanceKm === null) return 1;
+      if (b.distanceKm === null) return -1;
+      return a.distanceKm - b.distanceKm;
+    }
+    if (a.isZoneAnchor !== b.isZoneAnchor) return a.isZoneAnchor ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
 }
