@@ -10,7 +10,7 @@ on:
     inputs:
       minutes:
         description: How long to keep the preview up, in minutes
-        default: '60'
+        default: '300'
         required: false
   # Load-bearing: workflow_dispatch is only dispatchable once a workflow exists
   # on the default branch, and this lives on a feature branch. Filtering on the
@@ -29,8 +29,9 @@ jobs:
       pull-requests: write
     # A fixed ceiling, not derived from the input: job-level timeout-minutes is
     # evaluated before the job starts, where the inputs context does not exist
-    # on a push event. Covers the 60-minute default plus setup.
-    timeout-minutes: 75
+    # on a push event. Covers the 300-minute default plus setup, and stays
+    # under the 360-minute ceiling GitHub imposes on hosted runners.
+    timeout-minutes: 315
 
     # Real environment variables rather than a dotenv file. prisma.config.ts
     # loads .env* itself, but only when the Prisma CLI reads that config —
@@ -81,7 +82,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          MINUTES="${MINUTES_INPUT:-60}"
+          MINUTES="${MINUTES_INPUT:-300}"
 
           npm run start &
           for _ in $(seq 1 60); do
@@ -186,4 +187,4 @@ jobs:
         # are children of the job, so they outlive the step that started them.
         env:
           MINUTES_INPUT: ${{ github.event.inputs.minutes }}
-        run: sleep $(( ${MINUTES_INPUT:-60} * 60 ))
+        run: sleep $(( ${MINUTES_INPUT:-300} * 60 ))
