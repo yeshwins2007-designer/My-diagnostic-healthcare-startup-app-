@@ -1,0 +1,22 @@
+{
+  "name": "MEDWYN — doorstep diagnostics",
+  "short_name": "MEDWYN",
+  "description": "The same trusted person, at your parents' door, every month.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4fafb",
+  "theme_color": "#08576b",
+  "categories": [
+    "health",
+    "medical"
+  ],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

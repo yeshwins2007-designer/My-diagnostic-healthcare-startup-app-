@@ -1,0 +1,190 @@
+# Runs the real app on a GitHub-hosted runner and puts it behind a public
+# HTTPS URL, so it can be opened from any browser or phone.
+#
+# The URL is printed to the run summary. It is temporary: the tunnel dies with
+# the job. This is a preview, not a deployment.
+name: Live preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: How long to keep the preview up, in minutes
+        default: '300'
+        required: false
+  # Load-bearing: workflow_dispatch is only dispatchable once a workflow exists
+  # on the default branch, and this lives on a feature branch. Filtering on the
+  # workflow's own path keeps unrelated commits from starting a preview.
+  push:
+    branches: [claude/home-diagnostic-lab-app-6uo1h7]
+    paths: ['.github/workflows/live-preview.yml']
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+
+    # pull-requests: write is only for posting the URL comment below.
+    permissions:
+      contents: read
+      pull-requests: write
+    # A fixed ceiling, not derived from the input: job-level timeout-minutes is
+    # evaluated before the job starts, where the inputs context does not exist
+    # on a push event. Covers the 300-minute default plus setup, and stays
+    # under the 360-minute ceiling GitHub imposes on hosted runners.
+    timeout-minutes: 315
+
+    # Real environment variables rather than a dotenv file. prisma.config.ts
+    # loads .env* itself, but only when the Prisma CLI reads that config —
+    # `npm run seed` shells straight to `tsx scripts/seed.ts`, which never
+    # loads it and so saw no DATABASE_URL. process.env is read by everything.
+    env:
+      DATABASE_URL: file:./dev.db
+      ABDM_ENV: sandbox
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # matches the Dockerfile
+          cache: npm
+
+      - run: npm ci
+
+      - name: Generate secrets
+        # lib/env.ts refuses to boot in production while AUTH_SECRET still holds
+        # the placeholder from .env.example, so a real one is minted per run.
+        # Masked so it cannot surface in logs. Everything omitted here — Maps,
+        # Razorpay, ElevenLabs, SMS — stays on its simulator.
+        run: |
+          AUTH="$(openssl rand -base64 48 | tr -d '\n')"
+          KEY="$(openssl rand -hex 32)"
+          echo "::add-mask::$AUTH"
+          echo "::add-mask::$KEY"
+          echo "AUTH_SECRET=$AUTH" >> "$GITHUB_ENV"
+          echo "FIELD_ENCRYPTION_KEY=$KEY" >> "$GITHUB_ENV"
+
+      - name: Set up the database
+        run: |
+          npx prisma generate
+          npx prisma db push --skip-generate
+          npm run seed
+
+      - run: npm run build
+
+      - name: Serve it through a tunnel
+        # App, tunnel and keep-alive share one step deliberately: background
+        # processes are far more reliable within a step than across them.
+        env:
+          # github.event.inputs, not inputs: the latter is undefined on a push
+          # event. Empty here, so the shell supplies the default.
+          MINUTES_INPUT: ${{ github.event.inputs.minutes }}
+        run: |
+          set -euo pipefail
+
+          MINUTES="${MINUTES_INPUT:-300}"
+
+          npm run start &
+          for _ in $(seq 1 60); do
+            if curl -sf -o /dev/null http://localhost:3000/; then break; fi
+            sleep 2
+          done
+          curl -sf -o /dev/null http://localhost:3000/ \
+            || { echo "::error::the app never answered on port 3000"; exit 1; }
+          echo "app is up"
+
+          curl -sSL -o cloudflared \
+            https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          chmod +x cloudflared
+          ./cloudflared tunnel --no-autoupdate --url http://localhost:3000 \
+            > tunnel.log 2>&1 &
+
+          URL=""
+          for _ in $(seq 1 40); do
+            URL="$(grep -om1 'https://[a-z0-9-]*\.trycloudflare\.com' tunnel.log || true)"
+            [ -n "$URL" ] && break
+            sleep 3
+          done
+          [ -n "$URL" ] || { echo "::error::no tunnel URL appeared"; cat tunnel.log; exit 1; }
+
+          {
+            echo "## The app is live"
+            echo
+            echo "### $URL"
+            echo
+            echo "Open it on any browser or phone. It stays up for ${MINUTES} minutes."
+            echo
+            echo "Sign in with a seeded number — the code is shown on screen,"
+            echo "because SMS is not configured:"
+            echo
+            echo "| Surface | Number |"
+            echo "| --- | --- |"
+            echo '| Caregiver | `+919845000101` |'
+            echo '| Ops console | `+919845000001` |'
+            echo '| Field technician | `+919845000010` |'
+            echo '| Partner lab | `+919845100200` |'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "PREVIEW URL: $URL"
+          echo "$URL" > preview-url.txt
+
+      - name: Publish the URL
+        # The logs API serves nothing at all for an in-progress job, and this
+        # job stays in progress for the whole life of the tunnel — so the URL
+        # can never be read back from logs while it is still valid. An artifact
+        # becomes readable through the API the moment this step ends, with the
+        # job still running. That is what lets the URL escape in time.
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-url
+          path: preview-url.txt
+
+      - name: Comment the URL onto the PR
+        # Artifact *bytes* are served from blob storage on a different host,
+        # which some networks will not reach. The issues API is on
+        # api.github.com like everything else here, so a comment is the one
+        # channel reliably readable from anywhere the rest of this already works.
+        # Never fails the job: the preview itself does not depend on it.
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          PR=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+                "https://api.github.com/repos/$REPO/commits/$GITHUB_SHA/pulls" \
+                | python3 -c "import json,sys; d=json.load(sys.stdin); print(d[0]['number'] if d else '')" \
+                2>/dev/null || true)
+          [ -n "$PR" ] || { echo "no PR for this commit; skipping"; exit 0; }
+
+          python3 - "$PR" "$(cat preview-url.txt)" <<'PY'
+          import json, os, sys, urllib.request
+          pr, url = sys.argv[1], sys.argv[2]
+          body = (
+              f"Live preview is up: {url}\n\n"
+              "Sign in with `+919845000101` (caregiver), `+919845000001` (ops), "
+              "`+919845000010` (field) or `+919845100200` (lab). The code is shown "
+              "on screen because SMS is not configured.\n\n"
+              "Sign-in is rate limited to 10 codes per 10 minutes per IP, so if you "
+              "switch roles repeatedly you will be asked to wait a few minutes — that "
+              "is the limiter working, not a fault. The tunnel dies with the job."
+          )
+          req = urllib.request.Request(
+              f"https://api.github.com/repos/{os.environ['REPO']}/issues/{pr}/comments",
+              data=json.dumps({"body": body}).encode(),
+              method="POST",
+              headers={
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "Accept": "application/vnd.github+json",
+              },
+          )
+          urllib.request.urlopen(req)
+          print("commented on PR", pr)
+          PY
+
+
+      - name: Hold the tunnel open
+        # The app and cloudflared were backgrounded in an earlier step; they
+        # are children of the job, so they outlive the step that started them.
+        env:
+          MINUTES_INPUT: ${{ github.event.inputs.minutes }}
+        run: sleep $(( ${MINUTES_INPUT:-300} * 60 ))
