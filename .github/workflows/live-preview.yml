@@ -162,7 +162,10 @@ jobs:
               f"Live preview is up: {url}\n\n"
               "Sign in with `+919845000101` (caregiver), `+919845000001` (ops), "
               "`+919845000010` (field) or `+919845100200` (lab). The code is shown "
-              "on screen because SMS is not configured. The tunnel dies with the job."
+              "on screen because SMS is not configured.\n\n"
+              "Sign-in is rate limited to 10 codes per 10 minutes per IP, so if you "
+              "switch roles repeatedly you will be asked to wait a few minutes — that "
+              "is the limiter working, not a fault. The tunnel dies with the job."
           )
           req = urllib.request.Request(
               f"https://api.github.com/repos/{os.environ['REPO']}/issues/{pr}/comments",
