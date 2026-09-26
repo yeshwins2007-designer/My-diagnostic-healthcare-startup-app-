@@ -1,0 +1,31 @@
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# Secrets — never commit. See .env.example for the shape.
+.env
+.env.local
+.env.*.local
+# Written by scripts/pilot-setup.sh; carries the pilot's real signing and
+# field-encryption keys.
+.env.pilot
+
+# Local database + uploads
+*.db
+*.db-journal
+prisma/dev.db*
+storage/
+
+# Test + tooling output
+coverage/
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+screenshots/
+*.tsbuildinfo
+next-env.d.ts
+
+.DS_Store

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="MEDWYN">
+  <!--
+    Maskable: platforms crop to a circle of radius ~205 around the centre, so
+    every part of the mark stays inside the middle 80%. The bleed to the edges
+    is background only.
+  -->
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#30DBDB"/>
+      <stop offset="1" stop-color="#2BB9A8"/>
+    </linearGradient>
+    <radialGradient id="bg" cx="0.2" cy="0" r="1.1">
+      <stop offset="0" stop-color="#14515F"/>
+      <stop offset="0.6" stop-color="#072A34"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#bg)"/>
+
+  <!-- The mark's flowing curves, as ornament behind the glyph. -->
+  <g fill="none" stroke="#30DBDB" stroke-linecap="round" opacity="0.22">
+    <path d="M40 360c70-46 126 30 196-16s126 26 196-26" stroke-width="12"/>
+    <path d="M40 410c70-46 126 30 196-16s126 26 196-26" stroke-width="8" opacity="0.7"/>
+  </g>
+
+  <!-- Double helix: two strands with rungs between them. -->
+  <g stroke="url(#g)" stroke-width="20" stroke-linecap="round" fill="none">
+    <path d="M196 150c60 36 60 176 0 212"/>
+    <path d="M316 150c-60 36-60 176 0 212"/>
+    <g stroke-width="14" opacity="0.85">
+      <path d="M206 196h100"/>
+      <path d="M186 256h140"/>
+      <path d="M206 316h100"/>
+    </g>
+  </g>
+
+  <!-- Pulse line: the diagnostic half of the idea, laid across the helix. -->
+  <path d="M136 256h44l26-42 30 84 26-42h114"
+        fill="none" stroke="#F4FAFB" stroke-width="18"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

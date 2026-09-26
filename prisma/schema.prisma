@@ -1,0 +1,1235 @@
+// SwasthaSetu — data model.
+//
+// Portability note: this schema deliberately uses only String / Int / Float /
+// Boolean / DateTime and relations. No `enum`, no scalar lists, no `Json`, no
+// `@db.*` attributes — all of which are Postgres-only or provider-specific.
+// The result is that switching from SQLite to Postgres for production is a
+// two-line change in the `datasource` block and nothing else.
+//
+// Enum-like columns are plain Strings whose allowed values live in
+// `lib/enums.ts` and are enforced by Zod at every write boundary.
+// JSON blobs are stored as String and read through typed helpers in
+// `lib/json.ts`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity & access
+// ---------------------------------------------------------------------------
+
+model User {
+  id        String   @id @default(cuid())
+  phone     String   @unique // E.164, e.g. +919845012345
+  name      String
+  email     String?
+  /// UserRole: CAREGIVER | TECHNICIAN | LAB | OPS
+  role      String
+  /// BCP-47-ish locale key from lib/i18n: en | hi | bn | mr | te | ta | kn | gu | ml | pa | ur | as
+  locale    String   @default("en")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  families        FamilyMember[]
+  technician      Technician?
+  labMemberships  LabMember[]
+  auditEvents     AuditLog[]
+  followUpCalls   FollowUpCall[]  @relation("FollowUpCallPlacedBy")
+  accreditationChecks AccreditationCheck[]
+  sessions        AuthSession[]
+  supportTickets  SupportTicket[] @relation("SupportTicketRaisedBy")
+
+  @@index([role])
+}
+
+/// Phone + OTP is the real login flow in India. Codes are stored hashed and
+/// are single-use; attempts are capped so an OTP cannot be brute-forced.
+model OtpChallenge {
+  id          String    @id @default(cuid())
+  phone       String
+  codeHash    String
+  /// OtpPurpose: LOGIN | ABHA_LINK | CONSENT | PATIENT_VERIFY
+  purpose     String    @default("LOGIN")
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5)
+  consumedAt  DateTime?
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+
+  @@index([phone, purpose])
+  @@index([expiresAt])
+}
+
+/// JWTs are stateless, so this table exists purely so a session can be
+/// revoked (lost phone, staff offboarding) without waiting for expiry.
+model AuthSession {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenId   String    @unique
+  userAgent String?
+  revokedAt DateTime?
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Families & patients
+//
+// The paying customer (the adult child) and the served patient (the elderly
+// parent) are different people. The schema models that split explicitly rather
+// than pretending one User row covers both.
+// ---------------------------------------------------------------------------
+
+model Family {
+  id        String   @id @default(cuid())
+  name      String // e.g. "Iyer family"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members       FamilyMember[]
+  patients      Patient[]
+  subscriptions Subscription[]
+  bookings      Booking[]
+  tickets       SupportTicket[]
+}
+
+model FamilyMember {
+  id       String   @id @default(cuid())
+  familyId String
+  family   Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// FamilyRole: PRIMARY_CAREGIVER | SECONDARY_CAREGIVER
+  role     String   @default("PRIMARY_CAREGIVER")
+  /// Only the primary caregiver may change plans or payment instruments.
+  canManageBilling Boolean @default(true)
+  createdAt DateTime @default(now())
+
+  @@unique([familyId, userId])
+}
+
+model Patient {
+  id           String    @id @default(cuid())
+  familyId     String
+  family       Family    @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  name         String
+  dateOfBirth  DateTime?
+  ageYears     Int
+  /// Sex: MALE | FEMALE | OTHER
+  sex          String
+  phone        String? // often the patient has none, or shares the caregiver's
+  /// AgeBand, derived and cached: BAND_60_70 | BAND_70_80 | BAND_80_PLUS
+  ageBand      String
+  /// Comma-separated free text; deliberately not a scalar list (SQLite).
+  conditions   String    @default("")
+  medications  String    @default("")
+  /// MobilityLevel: INDEPENDENT | ASSISTED | HOUSEBOUND — drives visit slot length.
+  mobility     String    @default("INDEPENDENT")
+  /// True when the patient cannot give informed consent themselves; a
+  /// documented family authorisation is then required on every visit.
+  needsProxyConsent Boolean @default(false)
+  /// Free text: "hard of hearing, speak on the left", "has dementia — greet slowly"
+  careNotes    String    @default("")
+  /// The family's chosen laboratory, when they expressed one. Null means "use
+  /// the zone's anchor lab". A preference is never trusted on its own: every
+  /// booking re-runs evaluateRouting against it, and falls back to the anchor
+  /// if the chosen lab can no longer do the work — its accreditation lapsed,
+  /// the panel changed, or it is at its daily ceiling.
+  preferredLabId String?
+  preferredLab   Lab?    @relation("PatientPreferredLab", fields: [preferredLabId], references: [id], onDelete: SetNull)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  addresses     PatientAddress[]
+  abhaAccount   AbhaAccount?
+  bookings      Booking[]
+  subscriptions Subscription[]
+  reports       Report[]
+  consents      ConsentRecord[]
+
+  @@index([familyId])
+}
+
+model PatientAddress {
+  id        String   @id @default(cuid())
+  patientId String
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  line1     String
+  line2     String   @default("")
+  /// Indian addresses frequently need this to actually find the door; the
+  /// geocode alone is not enough, especially in older colonies.
+  landmark  String   @default("")
+  city      String
+  state     String
+  pincode   String
+  latitude  Float
+  longitude Float
+  /// True when the pin was dropped by hand rather than geocoded — the field
+  /// agent app shows a warning so they call ahead.
+  pinnedManually Boolean @default(false)
+  zoneId    String?
+  zone      Zone?    @relation(fields: [zoneId], references: [id])
+  isPrimary Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  bookings Booking[]
+
+  @@index([patientId])
+  @@index([zoneId])
+}
+
+// ---------------------------------------------------------------------------
+// ABHA / ABDM
+//
+// ABHA is optional and never blocks a booking: most 70-80 year olds do not
+// have one, and gating service delivery on it would be both wrong and
+// commercially fatal.
+// ---------------------------------------------------------------------------
+
+model AbhaAccount {
+  id            String    @id @default(cuid())
+  patientId     String    @unique
+  patient       Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  /// 14-digit ABHA number, stored formatted: 91-XXXX-XXXX-XXXX
+  abhaNumber    String    @unique
+  /// ABHA address, e.g. lakshmi.iyer@abdm (or @sbx in sandbox)
+  abhaAddress   String?
+  /// AbhaVerificationMethod: AADHAAR_OTP | MOBILE_OTP | LINKED_EXISTING
+  verifyMethod  String
+  /// AbhaKycStatus: PENDING | VERIFIED | FAILED
+  kycStatus     String    @default("PENDING")
+  /// Who authorised creation, when the patient could not do it themselves.
+  authorisedByUserId String?
+  linkedAt      DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  consents     AbdmConsentArtefact[]
+  careContexts CareContext[]
+}
+
+/// An ABDM consent artefact governs health-record *exchange* through the
+/// Consent Manager. It is deliberately a separate table from ConsentRecord
+/// (which is our DPDP consent for collection, storage and family sharing).
+/// Collapsing the two is the compliance mistake this schema refuses to make.
+model AbdmConsentArtefact {
+  id            String    @id @default(cuid())
+  abhaAccountId String
+  abhaAccount   AbhaAccount @relation(fields: [abhaAccountId], references: [id], onDelete: Cascade)
+  /// Consent id issued by the ABDM Consent Manager.
+  consentId     String    @unique
+  /// AbdmConsentPurpose: CAREMGT | DIAGNOSTICS | SELF
+  purpose       String
+  /// Comma-separated HI types: DiagnosticReport,OPConsultation,Prescription
+  hiTypes       String
+  fromDate      DateTime
+  toDate        DateTime
+  expiresAt     DateTime
+  /// AbdmConsentStatus: REQUESTED | GRANTED | DENIED | EXPIRED | REVOKED
+  status        String    @default("REQUESTED")
+  revokedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([abhaAccountId, status])
+}
+
+/// A care context links one of our visits/reports to the patient's ABHA so it
+/// becomes discoverable in their national health record.
+model CareContext {
+  id             String   @id @default(cuid())
+  abhaAccountId  String
+  abhaAccount    AbhaAccount @relation(fields: [abhaAccountId], references: [id], onDelete: Cascade)
+  bookingId      String?  @unique
+  booking        Booking? @relation(fields: [bookingId], references: [id])
+  referenceNumber String  @unique
+  display        String
+  /// CareContextStatus: PENDING | LINKED | FAILED
+  status         String   @default("PENDING")
+  linkedAt       DateTime?
+  createdAt      DateTime @default(now())
+
+  fhirBundles FhirBundle[]
+}
+
+model FhirBundle {
+  id            String   @id @default(cuid())
+  careContextId String
+  careContext   CareContext @relation(fields: [careContextId], references: [id], onDelete: Cascade)
+  reportId      String?
+  /// FHIR R4 Bundle serialised as JSON text.
+  bundleJson    String
+  /// FhirBundleStatus: DRAFT | PUBLISHED | FAILED
+  status        String   @default("DRAFT")
+  publishedAt   DateTime?
+  createdAt     DateTime @default(now())
+
+  @@index([careContextId])
+}
+
+// ---------------------------------------------------------------------------
+// Geography — the radius is a business rule, so it lives in the database
+// ---------------------------------------------------------------------------
+
+model Zone {
+  id            String   @id @default(cuid())
+  name          String // "Jayanagar 4th Block"
+  city          String
+  /// Anchor point: normally the partner lab's front door.
+  centerLat     Float
+  centerLng     Float
+  /// The blueprint's core radius. Bookings outside it are waitlisted, not taken.
+  radiusKm      Float    @default(5)
+  /// Optional GeoJSON polygon (as text) for a hand-drawn boundary that
+  /// overrides the plain radius when present.
+  polygonJson   String?
+  anchorLabId   String?
+  anchorLab     Lab?     @relation(fields: [anchorLabId], references: [id])
+  isActive      Boolean  @default(true)
+  /// Zone 1 is opened by hand; zone 2+ must pass GrowthGate checks.
+  sequence      Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  addresses   PatientAddress[]
+  bookings    Booking[]
+  waitlist    WaitlistEntry[]
+  technicians Technician[]
+  gates       GrowthGateEvaluation[]
+  metrics     MetricSnapshot[]
+}
+
+/// Out-of-radius demand is captured rather than discarded — it is the evidence
+/// used later to justify opening zone 2, and it stops "just this once"
+/// exceptions from destroying route density.
+model WaitlistEntry {
+  id            String   @id @default(cuid())
+  zoneId        String?
+  zone          Zone?    @relation(fields: [zoneId], references: [id])
+  callerName    String
+  callerPhone   String
+  patientName   String
+  patientAge    Int
+  addressText   String
+  latitude      Float?
+  longitude     Float?
+  distanceKm    Float?
+  nearestZoneId String?
+  note          String   @default("")
+  /// WaitlistStatus: WAITING | CONVERTED | DECLINED
+  status        String   @default("WAITING")
+  createdAt     DateTime @default(now())
+
+  @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Partner labs & NABL accreditation
+// ---------------------------------------------------------------------------
+
+model Lab {
+  id            String   @id @default(cuid())
+  name          String
+  legalName     String
+  contactName   String
+  contactPhone  String
+  contactEmail  String
+  addressLine   String
+  city          String
+  state         String
+  pincode       String
+  latitude      Float
+  longitude     Float
+  /// LabStatus: DRAFT | SUBMITTED | UNDER_REVIEW | VERIFIED | ACTIVE | SUSPENDED | REJECTED
+  /// A sample is never routed to a lab that is not ACTIVE.
+  status        String   @default("DRAFT")
+  statusReason  String   @default("")
+  /// The maximum daily sample volume we may send without advance notice.
+  capacityCeiling Int    @default(50)
+  /// AbdmMode: LAB_SELF | PLATFORM_FACILITATED | NONE — established labs
+  /// often already push to ABDM themselves; double-publishing would create
+  /// duplicate records in the patient's account.
+  abdmMode      String   @default("NONE")
+  /// Written permission to name the lab in our marketing ("Processed at X,
+  /// NABL-accredited"). The trust page will not render the line without it.
+  brandingConsent Boolean @default(false)
+  submittedAt   DateTime?
+  activatedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  accreditation LabAccreditation?
+  members       LabMember[]
+  preferredByPatients Patient[] @relation("PatientPreferredLab")
+  agreements    LabAgreement[]
+  rateCard      LabRateCardEntry[]
+  zones         Zone[]
+  bookings      Booking[]
+  handoffs      CustodyHandoff[]
+  reports       Report[]
+
+  @@index([status])
+}
+
+model LabMember {
+  id     String @id @default(cuid())
+  labId  String
+  lab    Lab    @relation(fields: [labId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// LabMemberRole: OWNER | MANAGER | INTAKE_DESK
+  role   String @default("OWNER")
+  createdAt DateTime @default(now())
+
+  @@unique([labId, userId])
+}
+
+/// Structured accreditation evidence. NABL publishes no verification API, so
+/// this is deliberately evidence + human sign-off + automated expiry rather
+/// than a pretend API call.
+model LabAccreditation {
+  id            String   @id @default(cuid())
+  labId         String   @unique
+  lab           Lab      @relation(fields: [labId], references: [id], onDelete: Cascade)
+  /// Medical laboratories carry MC-XXXX. A TC-XXXX (testing/calibration)
+  /// number is rejected with an explanation, not silently accepted.
+  certificateNumber String @unique
+  /// Comma-separated disciplines from lib/enums.ts DISCIPLINES, e.g.
+  /// "CLINICAL_BIOCHEMISTRY,HAEMATOLOGY,CLINICAL_PATHOLOGY"
+  scope         String
+  validFrom     DateTime
+  validUntil    DateTime
+  certificateFileUrl String?
+  /// Payload decoded from the NABL QR printed on the certificate.
+  certificateQrPayload String?
+  /// ABDM Health Facility Registry id — an independent cross-check on identity.
+  hfrFacilityId String?
+  supervisingPathologistName String
+  /// NMC / state medical council registration number of the signing pathologist.
+  supervisingPathologistReg  String
+  /// VerificationState: NOT_STARTED | IN_PROGRESS | PASSED | FAILED
+  verificationState String @default("NOT_STARTED")
+  expiryNotified60  Boolean @default(false)
+  expiryNotified30  Boolean @default(false)
+  expiryNotified7   Boolean @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  checks AccreditationCheck[]
+
+  @@index([validUntil])
+}
+
+/// One row per item on the seven-point ops verification checklist. Every row
+/// is also mirrored into the immutable audit log.
+model AccreditationCheck {
+  id              String   @id @default(cuid())
+  accreditationId String
+  accreditation   LabAccreditation @relation(fields: [accreditationId], references: [id], onDelete: Cascade)
+  /// AccreditationCheckKey — see lib/enums.ts
+  checkKey        String
+  passed          Boolean
+  note            String   @default("")
+  evidenceUrl     String?
+  checkedByUserId String
+  checkedBy       User     @relation(fields: [checkedByUserId], references: [id])
+  checkedAt       DateTime @default(now())
+
+  @@unique([accreditationId, checkKey])
+}
+
+/// Blueprint section 11: the eight clauses that must be agreed in writing
+/// before the first sample moves.
+model LabAgreement {
+  id                   String   @id @default(cuid())
+  labId                String
+  lab                  Lab      @relation(fields: [labId], references: [id], onDelete: Cascade)
+  version              Int      @default(1)
+  rateCardNote         String
+  paymentTerms         String
+  turnaroundCommitment String
+  referralProtection   String
+  capacityCeilingNote  String
+  exclusivityNote      String
+  brandingNote         String
+  exitNote             String
+  /// AgreementStatus: DRAFT | SENT | SIGNED | SUPERSEDED
+  status               String   @default("DRAFT")
+  signedByLabName      String?
+  signedByPlatformName String?
+  signedAt             DateTime?
+  createdAt            DateTime @default(now())
+
+  @@unique([labId, version])
+}
+
+model LabRateCardEntry {
+  id        String   @id @default(cuid())
+  labId     String
+  lab       Lab      @relation(fields: [labId], references: [id], onDelete: Cascade)
+  testId    String
+  test      TestDefinition @relation(fields: [testId], references: [id])
+  /// What the lab charges us, in paise. Retail pricing lives on Panel/Plan.
+  costPaise Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([labId, testId])
+}
+
+// ---------------------------------------------------------------------------
+// Catalogue
+// ---------------------------------------------------------------------------
+
+model TestDefinition {
+  id            String  @id @default(cuid())
+  code          String  @unique // HBA1C, LIPID, TSH, CBC, CREAT, VITD, B12
+  name          String
+  /// Discipline from lib/enums.ts — matched against a lab's accredited scope.
+  /// This is the check most platforms skip.
+  discipline    String
+  /// SampleType: WHOLE_BLOOD | SERUM | PLASMA | URINE
+  sampleType    String
+  /// Vacutainer colour, shown on the field agent's labelling step.
+  tubeType      String
+  fastingHours  Int     @default(0)
+  /// Hours the specimen stays viable — feeds the sample clock.
+  stabilityHours Int    @default(6)
+  loincCode     String?
+  isActive      Boolean @default(true)
+
+  panelItems  PanelItem[]
+  rateEntries LabRateCardEntry[]
+  bookingItems BookingItem[]
+  parameters  ReportParameter[]
+
+  @@index([discipline])
+}
+
+model Panel {
+  id           String  @id @default(cuid())
+  code         String  @unique // ELDER_BASELINE, ELDER_COMPREHENSIVE
+  name         String
+  description  String
+  /// Retail price in paise. The blueprint's rule: bundle, don't itemise.
+  pricePaise   Int
+  fastingHours Int     @default(10)
+  isActive     Boolean @default(true)
+  sortOrder    Int     @default(0)
+
+  items        PanelItem[]
+  bookingItems BookingItem[]
+  planPanels   PlanPanel[]
+}
+
+model PanelItem {
+  id      String @id @default(cuid())
+  panelId String
+  panel   Panel  @relation(fields: [panelId], references: [id], onDelete: Cascade)
+  testId  String
+  test    TestDefinition @relation(fields: [testId], references: [id])
+
+  @@unique([panelId, testId])
+}
+
+// ---------------------------------------------------------------------------
+// Plans & money
+// ---------------------------------------------------------------------------
+
+model Plan {
+  id            String  @id @default(cuid())
+  code          String  @unique // SATHI | SURAKSHA | PARIVAAR
+  name          String
+  tagline       String
+  /// Monthly price in paise (79900 / 179900 / 299900).
+  pricePaise    Int
+  /// Annual prepay price — the blueprint's "two months free" lever.
+  annualPricePaise Int
+  visitsPerMonth Float  @default(1)
+  patientsCovered Int   @default(1)
+  /// Presentation only: Suraksha is the recommended middle option.
+  isRecommended Boolean @default(false)
+  includesPriority Boolean @default(false)
+  includesPhysicianReview Boolean @default(false)
+  freeCollection Boolean @default(true)
+  sortOrder     Int     @default(0)
+  isActive      Boolean @default(true)
+
+  panels        PlanPanel[]
+  subscriptions Subscription[]
+}
+
+model PlanPanel {
+  id        String @id @default(cuid())
+  planId    String
+  plan      Plan   @relation(fields: [planId], references: [id], onDelete: Cascade)
+  panelId   String
+  panel     Panel  @relation(fields: [panelId], references: [id])
+  /// How many times a year this panel is included.
+  perYear   Int    @default(2)
+
+  @@unique([planId, panelId])
+}
+
+model Subscription {
+  id            String   @id @default(cuid())
+  familyId      String
+  family        Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  patientId     String
+  patient       Patient  @relation(fields: [patientId], references: [id])
+  planId        String
+  plan          Plan     @relation(fields: [planId], references: [id])
+  /// SubscriptionStatus: PENDING | ACTIVE | PAUSED | CANCELLED | PAST_DUE
+  status        String   @default("PENDING")
+  /// BillingCycle: MONTHLY | ANNUAL
+  billingCycle  String   @default("MONTHLY")
+  /// The first 25 families get ~40% off locked for life in exchange for a
+  /// written testimonial. Modelled as a real pricing attribute, not a coupon.
+  isFoundingMember Boolean @default(false)
+  discountPercent  Int     @default(0)
+  /// The amount actually charged each cycle after founder pricing, in paise.
+  effectivePricePaise Int
+  /// The blueprint's continuity promise, enforced by lib/sop/continuityRule.
+  assignedTechnicianId String?
+  assignedTechnician   Technician? @relation(fields: [assignedTechnicianId], references: [id])
+  startedAt     DateTime?
+  currentPeriodEnd DateTime?
+  cancelledAt   DateTime?
+  cancelReason  String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  mandate  PaymentMandate?
+  payments Payment[]
+  bookings Booking[]
+
+  @@index([familyId])
+  @@index([status])
+}
+
+/// UPI Autopay / card mandate. A 1,799/month subscription sits comfortably
+/// under the 15,000 per-transaction ceiling for no additional factor auth.
+model PaymentMandate {
+  id             String   @id @default(cuid())
+  subscriptionId String   @unique
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  /// PaymentMethod: UPI_AUTOPAY | CARD | NETBANKING | CASH
+  method         String
+  /// Provider-side identifiers (Razorpay subscription / token ids).
+  providerRef    String?
+  providerCustomerRef String?
+  /// Masked instrument shown back to the user: "lakshmi@okhdfcbank", "•••• 4242"
+  instrumentHint String   @default("")
+  maxAmountPaise Int
+  /// MandateStatus: PENDING | AUTHENTICATED | ACTIVE | PAUSED | REVOKED | FAILED
+  status         String   @default("PENDING")
+  authenticatedAt DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Payment {
+  id             String   @id @default(cuid())
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  bookingId      String?
+  booking        Booking? @relation(fields: [bookingId], references: [id])
+  amountPaise    Int
+  currency       String   @default("INR")
+  /// PaymentMethod: UPI_AUTOPAY | UPI_INTENT | CARD | NETBANKING | CASH
+  method         String
+  /// PaymentStatus: CREATED | PENDING | CAPTURED | FAILED | REFUNDED
+  status         String   @default("CREATED")
+  providerOrderId   String?
+  providerPaymentId String? @unique
+  /// Guards against a webhook being delivered more than once.
+  idempotencyKey String   @unique
+  failureReason  String   @default("")
+  /// Cash collected at the doorstep is recorded by the technician, with a
+  /// digital receipt — a meaningful share of this demographic pays in cash.
+  collectedByTechnicianId String?
+  capturedAt     DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  ledgerEntries LedgerEntry[]
+
+  @@index([status])
+}
+
+model LedgerEntry {
+  id          String   @id @default(cuid())
+  paymentId   String?
+  payment     Payment? @relation(fields: [paymentId], references: [id])
+  bookingId   String?
+  /// LedgerAccount: REVENUE | LAB_COST | TECHNICIAN_COST | CONSUMABLES |
+  /// TRANSPORT | SUPPORT | REFUND
+  account     String
+  /// Positive = money in, negative = money out. Paise.
+  amountPaise Int
+  note        String   @default("")
+  occurredAt  DateTime @default(now())
+
+  @@index([account, occurredAt])
+}
+
+// ---------------------------------------------------------------------------
+// People in the field
+// ---------------------------------------------------------------------------
+
+model Technician {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  zoneId       String?
+  zone         Zone?    @relation(fields: [zoneId], references: [id])
+  /// Qualification, e.g. DMLT. Elderly venipuncture is a distinct skill.
+  qualification String
+  /// Healthcare Professional Registry id, where they have one.
+  hprId        String?
+  /// Comma-separated locale keys they can actually converse in.
+  languages    String   @default("en")
+  policeVerifiedOn DateTime?
+  hepatitisBVaccinatedOn DateTime?
+  photoUrl     String?
+  isActive     Boolean  @default(true)
+  /// Blueprint section 12: salary plus visit bonus, never a pure gig rate —
+  /// gig rates create speed incentives that produce mislabelled samples.
+  monthlySalaryPaise Int  @default(0)
+  perVisitBonusPaise Int  @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  subscriptions Subscription[]
+  bookings      Booking[]
+  routes        Route[]
+  handoffs      CustodyHandoff[]
+}
+
+// ---------------------------------------------------------------------------
+// The visit
+// ---------------------------------------------------------------------------
+
+model Route {
+  id            String    @id @default(cuid())
+  technicianId  String
+  technician    Technician @relation(fields: [technicianId], references: [id])
+  serviceDate   DateTime
+  /// RouteStatus: PLANNED | STARTED | COMPLETED | ABANDONED
+  status        String    @default("PLANNED")
+  /// Encoded polyline from the Directions API (or the simulator).
+  encodedPolyline String?
+  plannedDistanceKm Float?
+  /// GPS is only accepted between these two timestamps. Off-shift pings are
+  /// rejected server-side, not merely hidden.
+  startedAt     DateTime?
+  endedAt       DateTime?
+  createdAt     DateTime  @default(now())
+
+  bookings  Booking[]
+  pings     LocationPing[]
+  summaries VisitRouteSummary[]
+
+  @@unique([technicianId, serviceDate])
+}
+
+model Booking {
+  id             String   @id @default(cuid())
+  reference      String   @unique // SS-2K7F3A
+  familyId       String
+  family         Family   @relation(fields: [familyId], references: [id])
+  patientId      String
+  patient        Patient  @relation(fields: [patientId], references: [id])
+  addressId      String
+  address        PatientAddress @relation(fields: [addressId], references: [id])
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  zoneId         String?
+  zone           Zone?    @relation(fields: [zoneId], references: [id])
+  labId          String?
+  lab            Lab?     @relation(fields: [labId], references: [id])
+  technicianId   String?
+  technician     Technician? @relation(fields: [technicianId], references: [id])
+  routeId        String?
+  route          Route?   @relation(fields: [routeId], references: [id])
+
+  /// BookingStatus: REQUESTED | SCHEDULED | EN_ROUTE | ARRIVED | COLLECTED |
+  /// IN_TRANSIT | AT_LAB | PROCESSING | REPORTED | CLOSED | CANCELLED |
+  /// RECOLLECTION_REQUIRED
+  status         String   @default("REQUESTED")
+  /// IntakeChannel: APP | WHATSAPP | PHONE | VOICE_AGENT | FIELD_AGENT —
+  /// an elderly patient can be fully served without ever opening the app.
+  intakeChannel  String   @default("APP")
+
+  /// The promised 60-minute window. We measure on-time-within-window, never
+  /// a speed SLA.
+  windowStart    DateTime
+  windowEnd      DateTime
+  /// Set the moment the technician marks arrival; feeds the on-time metric.
+  arrivedAt      DateTime?
+  /// Set when the family is warned that the window will be missed. A call
+  /// before a delay is forgivable; silence is not.
+  delayNotifiedAt DateTime?
+
+  fastingRequired Boolean @default(false)
+  fastingHours    Int     @default(0)
+
+  collectionFeePaise Int  @default(0)
+  totalPaise         Int  @default(0)
+
+  /// True when ops deliberately accepted an out-of-radius booking. Requires a
+  /// typed reason, and it is counted against route density.
+  radiusOverride       Boolean @default(false)
+  radiusOverrideReason String  @default("")
+  /// Set when this booking is a free repeat after a rejected sample.
+  isFreeRecollection   Boolean @default(false)
+  recollectionOfId     String?
+
+  cancelledAt   DateTime?
+  cancelReason  String    @default("")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  items          BookingItem[]
+  checklistSteps VisitChecklistStep[]
+  specimens      Specimen[]
+  consents       ConsentRecord[]
+  trackingSessions TrackingSession[]
+  reports        Report[]
+  followUpCalls  FollowUpCall[]
+  payments       Payment[]
+  incidents      Incident[]
+  careContext    CareContext?
+  summaries      VisitRouteSummary[]
+
+  @@index([status])
+  @@index([windowStart])
+  @@index([technicianId])
+}
+
+model BookingItem {
+  id        String  @id @default(cuid())
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  panelId   String?
+  panel     Panel?  @relation(fields: [panelId], references: [id])
+  testId    String?
+  test      TestDefinition? @relation(fields: [testId], references: [id])
+  pricePaise Int    @default(0)
+
+  @@index([bookingId])
+}
+
+/// The blueprint's eleven-step SOP, as rows. A step that is skipped is
+/// visible; a step that blocks (labelling, cold-box sealing) prevents the
+/// handoff from being recorded at all.
+model VisitChecklistStep {
+  id         String    @id @default(cuid())
+  bookingId  String
+  booking    Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  /// ChecklistStepKey — see lib/enums.ts
+  stepKey    String
+  sequence   Int
+  isRequired Boolean   @default(true)
+  /// True when the visit cannot proceed until this step is complete.
+  isBlocking Boolean   @default(false)
+  completedAt DateTime?
+  note       String    @default("")
+
+  @@unique([bookingId, stepKey])
+}
+
+// ---------------------------------------------------------------------------
+// Specimen, cold chain and custody
+// ---------------------------------------------------------------------------
+
+model Specimen {
+  id          String   @id @default(cuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  barcode     String   @unique
+  tubeType    String
+  /// Two identifiers on every vial, recorded at the bedside — never afterwards.
+  identifier1 String
+  identifier2 String
+  labelledAtBedside Boolean @default(false)
+  collectedAt DateTime?
+  /// Starts the two-hour clock towards lab intake.
+  clockStartsAt DateTime?
+  intakeAt    DateTime?
+  /// SpecimenStatus: COLLECTED | IN_TRANSIT | RECEIVED | REJECTED | PROCESSED
+  status      String   @default("COLLECTED")
+  rejectionReason String @default("")
+  createdAt   DateTime @default(now())
+
+  coldChainLogs ColdChainLog[]
+  handoff       CustodyHandoff?
+
+  @@index([bookingId])
+}
+
+model ColdChainLog {
+  id          String   @id @default(cuid())
+  specimenId  String
+  specimen    Specimen @relation(fields: [specimenId], references: [id], onDelete: Cascade)
+  temperatureC Float
+  /// True when the reading is outside the acceptable band — blocks handoff.
+  isBreach    Boolean  @default(false)
+  boxSealed   Boolean  @default(true)
+  recordedAt  DateTime @default(now())
+
+  @@index([specimenId, recordedAt])
+}
+
+model CustodyHandoff {
+  id           String   @id @default(cuid())
+  specimenId   String   @unique
+  specimen     Specimen @relation(fields: [specimenId], references: [id], onDelete: Cascade)
+  technicianId String
+  technician   Technician @relation(fields: [technicianId], references: [id])
+  labId        String
+  lab          Lab      @relation(fields: [labId], references: [id])
+  receivedByName String
+  /// Signature captured as a data URL on the intake desk's screen.
+  signatureData  String?
+  /// Minutes from collection to intake. Breaching 120 is an incident.
+  elapsedMinutes Int
+  isBreach       Boolean @default(false)
+  handedOverAt   DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Live tracking — purpose-limited by construction
+// ---------------------------------------------------------------------------
+
+/// A tracking session exists only for the duration of one visit. The caregiver
+/// link is a signed, single-visit, expiring token — never a permanent URL.
+model TrackingSession {
+  id         String   @id @default(cuid())
+  bookingId  String
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  lastViewedAt DateTime?
+  viewCount  Int      @default(0)
+  revokedAt  DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([bookingId])
+}
+
+/// Raw pings are purged after PING_RETENTION_DAYS and collapsed into
+/// VisitRouteSummary, which keeps the audit trail without keeping a
+/// minute-by-minute movement history of a health worker.
+model LocationPing {
+  id        String   @id @default(cuid())
+  routeId   String
+  route     Route    @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  latitude  Float
+  longitude Float
+  accuracyM Float?
+  headingDeg Float?
+  speedKmh  Float?
+  recordedAt DateTime @default(now())
+
+  @@index([routeId, recordedAt])
+}
+
+model VisitRouteSummary {
+  id            String   @id @default(cuid())
+  routeId       String
+  route         Route    @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  bookingId     String?
+  booking       Booking? @relation(fields: [bookingId], references: [id])
+  distanceKm    Float
+  durationMin   Int
+  pingCount     Int
+  /// Set when the underlying pings have been purged.
+  pingsPurgedAt DateTime?
+  createdAt     DateTime @default(now())
+
+  @@index([routeId])
+}
+
+// ---------------------------------------------------------------------------
+// Consent (DPDP) — distinct from ABDM consent artefacts
+// ---------------------------------------------------------------------------
+
+model ConsentRecord {
+  id          String   @id @default(cuid())
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  bookingId   String?
+  booking     Booking? @relation(fields: [bookingId], references: [id])
+  /// ConsentPurpose: SAMPLE_COLLECTION | REPORT_SHARING | DATA_STORAGE |
+  /// MARKETING | ABHA_LINKING | VOICE_RECORDING
+  purpose     String
+  granted     Boolean
+  /// The exact wording shown, so we can prove what was consented to.
+  policyVersion String
+  /// ConsentMethod: WRITTEN | VERBAL_RECORDED | DIGITAL_TAP | PROXY_FAMILY
+  method      String
+  /// Present when the patient lacks capacity and a family member authorised.
+  proxyName   String?
+  proxyRelation String?
+  /// Comma-separated user ids permitted to receive the report.
+  authorisedRecipients String @default("")
+  grantedAt   DateTime @default(now())
+  withdrawnAt DateTime?
+
+  @@index([patientId, purpose])
+}
+
+// ---------------------------------------------------------------------------
+// Results
+// ---------------------------------------------------------------------------
+
+model Report {
+  id          String   @id @default(cuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id])
+  labId       String
+  lab         Lab      @relation(fields: [labId], references: [id])
+  /// ReportStatus: DRAFT | PATHOLOGIST_SIGNED | SUMMARY_PENDING_REVIEW |
+  /// RELEASED — a family never sees anything before PATHOLOGIST_SIGNED, and
+  /// never sees a generated summary before a human has verified it.
+  status      String   @default("DRAFT")
+  /// StoplightBand: GREEN | YELLOW | RED — the worst band across parameters.
+  overallBand String   @default("GREEN")
+  pathologistName String?
+  pathologistReg  String?
+  signedAt    DateTime?
+  /// Plain-language summary, grounded strictly against the reference ranges
+  /// stored on each parameter. Never released unverified.
+  summaryText String   @default("")
+  summaryVerifiedByUserId String?
+  summaryVerifiedAt DateTime?
+  releasedAt  DateTime?
+  pdfUrl      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parameters ReportParameter[]
+  criticals  CriticalValueAlert[]
+  followUps  FollowUpCall[]
+
+  @@index([patientId])
+  @@index([status])
+}
+
+model ReportParameter {
+  id          String   @id @default(cuid())
+  reportId    String
+  report      Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  testId      String
+  test        TestDefinition @relation(fields: [testId], references: [id])
+  /// Result values are encrypted at rest (AES-256-GCM) via lib/compliance/crypto.
+  valueEncrypted String
+  unit        String
+  refLow      Float?
+  refHigh     Float?
+  /// StoplightBand: GREEN | YELLOW | RED
+  band        String   @default("GREEN")
+  /// True when the lab flagged this as a critical value requiring an
+  /// immediate call, per its own protocol.
+  isCritical  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([reportId])
+}
+
+/// Our duty runs *parallel* to the pathologist's own communication process:
+/// phone the registered caregiver immediately, state plainly that a result
+/// needs urgent medical attention, never interpret the value, log the call.
+model CriticalValueAlert {
+  id           String   @id @default(cuid())
+  reportId     String
+  report       Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  parameterName String
+  /// AlertStatus: OPEN | CAREGIVER_CALLED | CLOSED
+  status       String   @default("OPEN")
+  raisedAt     DateTime @default(now())
+  calledAt     DateTime?
+  calledByUserId String?
+  /// Free text of what was said, using the scripted non-interpretive template.
+  callNote     String   @default("")
+  writtenFollowUpSentAt DateTime?
+  closedAt     DateTime?
+
+  @@index([status])
+}
+
+/// Every report creates one of these. The blueprint: "this single step drives
+/// most of your retention."
+model FollowUpCall {
+  id         String   @id @default(cuid())
+  reportId   String
+  report     Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  bookingId  String
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  dueBy      DateTime
+  /// FollowUpStatus: PENDING | COMPLETED | MISSED
+  status     String   @default("PENDING")
+  completedAt DateTime?
+  placedByUserId String?
+  placedBy   User?    @relation("FollowUpCallPlacedBy", fields: [placedByUserId], references: [id])
+  /// The two questions the blueprint says to ask every time.
+  whatWorriedYou String @default("")
+  whatWouldImprove String @default("")
+  createdAt  DateTime @default(now())
+
+  @@index([status, dueBy])
+}
+
+// ---------------------------------------------------------------------------
+// Support, incidents and the voice agent
+// ---------------------------------------------------------------------------
+
+/// Crisis tiering from the original specification, section 5.
+model Incident {
+  id         String   @id @default(cuid())
+  bookingId  String?
+  booking    Booking? @relation(fields: [bookingId], references: [id])
+  /// IncidentTier: TIER_1_CRITICAL | TIER_2_MAJOR | TIER_3_MINOR
+  tier       String
+  /// IncidentKind: WRONG_RESULT | SAMPLE_DEGRADED | DATA_BREACH |
+  /// TRANSIT_DELAY | VEHICLE_BREAKDOWN | PR_ESCALATION | RESCHEDULE | OTHER
+  kind       String
+  summary    String
+  /// IncidentStatus: OPEN | ESCALATED | RESOLVED
+  status     String   @default("OPEN")
+  /// Tier 1 requires named human escalation, not just a status change.
+  escalatedToName String?
+  escalatedAt DateTime?
+  /// Data-security incidents carry a 72-hour reporting mandate.
+  regulatorNotifiedAt DateTime?
+  resolvedAt DateTime?
+  resolution String   @default("")
+  createdAt  DateTime @default(now())
+
+  @@index([tier, status])
+}
+
+model SupportTicket {
+  id          String   @id @default(cuid())
+  familyId    String?
+  family      Family?  @relation(fields: [familyId], references: [id])
+  raisedByUserId String?
+  raisedBy    User?    @relation("SupportTicketRaisedBy", fields: [raisedByUserId], references: [id])
+  /// TicketSource: APP | PHONE | WHATSAPP | VOICE_AGENT
+  source      String   @default("APP")
+  /// TicketCategory: SCHEDULING | BILLING | REPORT_DELIVERY | COMPLAINT |
+  /// CLINICAL_HANDOFF — the last is raised automatically whenever the voice
+  /// agent is asked something clinical.
+  category    String
+  subject     String
+  body        String   @default("")
+  /// TicketPriority: LOW | NORMAL | HIGH | URGENT
+  priority    String   @default("NORMAL")
+  /// TicketStatus: OPEN | IN_PROGRESS | RESOLVED
+  status      String   @default("OPEN")
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status, priority])
+}
+
+model VoiceConversation {
+  id            String   @id @default(cuid())
+  providerConversationId String? @unique
+  userId        String?
+  familyId      String?
+  locale        String   @default("en")
+  /// True once the caller has been told the call may be recorded.
+  consentNoticeGiven Boolean @default(false)
+  /// Incremented whenever the output guard severed a clinical answer.
+  guardrailTrips Int     @default(0)
+  handedOffToHuman Boolean @default(false)
+  ticketId      String?
+  startedAt     DateTime @default(now())
+  endedAt       DateTime?
+  transcriptText String  @default("")
+  /// Transcripts are purged on this date under the stated retention policy.
+  purgeAfter    DateTime?
+
+  @@index([startedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Audit, metrics and growth gates
+// ---------------------------------------------------------------------------
+
+/// Append-only, hash-chained. Each row commits to the previous row's hash, so
+/// a deleted or edited entry breaks the chain verifiably.
+model AuditLog {
+  /// The sequence *is* the identity: a hash chain needs a total order, and an
+  /// autoincrementing integer gives one that a random cuid cannot.
+  sequence     Int      @id @default(autoincrement())
+  /// AuditAction — see lib/enums.ts. Covers GPS, temperature, custody,
+  /// consent, every report access and every accreditation check.
+  action       String
+  entityType   String
+  entityId     String
+  actorUserId  String?
+  actor        User?    @relation(fields: [actorUserId], references: [id])
+  actorRole    String   @default("SYSTEM")
+  /// Serialised detail; never contains a decrypted result value.
+  detailJson   String   @default("{}")
+  previousHash String
+  hash         String
+  occurredAt   DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([action, occurredAt])
+}
+
+/// The six numbers on one sheet, reviewed every Monday.
+model MetricSnapshot {
+  id        String   @id @default(cuid())
+  zoneId    String?
+  zone      Zone?    @relation(fields: [zoneId], references: [id])
+  weekStart DateTime
+  onTimeWithinWindowPct Float
+  sampleRejectionPct    Float
+  monthThreeRetentionPct Float
+  visitsPerTechnicianPerMorning Float
+  followUpCallCompletionPct Float
+  referralSharePct      Float
+  activeSubscribers     Int
+  contributionMarginPaise Int
+  createdAt DateTime @default(now())
+
+  @@unique([zoneId, weekStart])
+}
+
+/// Records each attempt to unlock zone 2 / marketplace routing and exactly
+/// which criteria were unmet. The app enforces the expansion discipline the
+/// blueprint prescribes.
+model GrowthGateEvaluation {
+  id         String   @id @default(cuid())
+  zoneId     String?
+  zone       Zone?    @relation(fields: [zoneId], references: [id])
+  /// GrowthGateKey: ZONE_TWO_UNLOCK | MARKETPLACE_UNLOCK | SECOND_TECHNICIAN
+  gateKey    String
+  passed     Boolean
+  /// Serialised array of {criterion, required, actual, met}.
+  criteriaJson String
+  evaluatedAt DateTime @default(now())
+
+  @@index([gateKey, evaluatedAt])
+}

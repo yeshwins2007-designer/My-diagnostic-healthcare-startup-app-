@@ -1,0 +1,31 @@
+# Never bake secrets into an image layer.
+.env
+.env.*
+
+node_modules
+.next
+out
+build
+dist
+
+.git
+.gitignore
+
+# Local database — the pilot keeps its own on a volume.
+*.db
+*.db-journal
+prisma/dev.db*
+
+# Test and tooling output.
+tests
+test-results
+playwright-report
+blob-report
+.playwright
+coverage
+screenshots
+playwright.config.ts
+vitest.config.ts
+*.tsbuildinfo
+
+.DS_Store

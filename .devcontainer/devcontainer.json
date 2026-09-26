@@ -1,0 +1,9 @@
+{
+  "name": "MEDWYN",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "postCreateCommand": "npm ci && cp -n .env.example .env.local && npx prisma generate && npx prisma db push --skip-generate && npm run seed",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "MEDWYN", "onAutoForward": "openPreview" }
+  }
+}
