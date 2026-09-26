@@ -9,6 +9,7 @@ import {
 import { db } from '@/lib/db';
 import { formatINR } from '@/lib/money';
 import { fastingInstruction } from '@/lib/sop/visitWindow';
+import { OverallBandChip, type Band } from '@/components/band-chip';
 import { urgency } from '@/lib/sop/followUp';
 import {
   Badge,
@@ -155,17 +156,7 @@ export default async function CaregiverHome() {
                 })}{' '}
                 · processed at {latestReport.lab.name}
               </p>
-              <Badge
-                tone={
-                  latestReport.overallBand === 'GREEN'
-                    ? 'green'
-                    : latestReport.overallBand === 'YELLOW'
-                      ? 'yellow'
-                      : 'red'
-                }
-              >
-                {latestReport.overallBand.toLowerCase()}
-              </Badge>
+              <OverallBandChip band={latestReport.overallBand as Band} />
               <Link href={`/caregiver/reports/${latestReport.id}`} className="font-semibold underline">
                 Open it
               </Link>

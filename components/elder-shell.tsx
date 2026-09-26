@@ -229,7 +229,7 @@ export function ElderShell({
                 </p>
                 <a
                   href={`tel:${emergencyNumber}`}
-                  className="mt-4 flex min-h-[var(--size-touch-lg)] items-center justify-center rounded-[var(--radius-card)] border-4 border-[var(--color-red)] bg-[var(--color-red)] text-h2 font-bold text-white"
+                  className="mt-4 flex min-h-[var(--size-touch-lg)] items-center justify-center rounded-[var(--radius-card)] border-4 border-[var(--color-red)] bg-[var(--color-red)] text-h2 font-bold text-[var(--color-red-ink)]"
                 >
                   {emergencyNumber}
                 </a>

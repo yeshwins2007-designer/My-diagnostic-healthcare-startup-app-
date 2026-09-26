@@ -8,6 +8,7 @@ import { tryDecryptField } from '@/lib/compliance/crypto';
 import { brand } from '@/lib/brand';
 import { DISCIPLINE_LABELS, type Discipline } from '@/lib/enums';
 import { Disclosure } from '@/components/disclosure';
+import { OverallBandChip } from '@/components/band-chip';
 import { RangeMeter, positionOf, type RangePosition } from '@/components/range-meter';
 import {
   Badge,
@@ -174,14 +175,7 @@ export default async function ReportDetailPage({
               </Lead>
             </Stack>
             <div className="flex flex-wrap items-center gap-4 border-t border-[var(--color-line)] pt-4">
-              <Badge tone={BAND_TONE[band]} variant="tonal">
-                <span aria-hidden>{band === 'GREEN' ? '✓' : band === 'RED' ? '!' : '↕'}</span>
-                {band === 'GREEN'
-                  ? 'All within range'
-                  : band === 'RED'
-                    ? 'Needs a doctor today'
-                    : 'Some values outside range'}
-              </Badge>
+              <OverallBandChip band={band} />
               <p className="text-[var(--color-ink-soft)]">
                 <strong className="font-semibold text-[var(--color-ink)]">
                   {outside} of {results.length}
@@ -197,7 +191,10 @@ export default async function ReportDetailPage({
             <Stack gap="sm">
               <H3>The laboratory flagged this as urgent</H3>
               <p>
-                {openCritical.map((c) => c.parameterName).join(', ')} needs medical attention.
+                {new Intl.ListFormat('en-IN', { type: 'conjunction' }).format(
+                  openCritical.map((c) => c.parameterName),
+                )}{' '}
+                {openCritical.length === 1 ? 'needs' : 'need'} medical attention.
                 Please contact {firstName}’s doctor today.
               </p>
               <p>

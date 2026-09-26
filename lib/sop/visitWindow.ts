@@ -122,19 +122,60 @@ function fmt(d: Date): string {
   });
 }
 
+/** Whole calendar days from `from` to `to`, in the same clock `fmt` uses. */
+function calendarDaysBetween(from: Date, to: Date): number {
+  const a = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  const b = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+  return Math.round((b.getTime() - a.getTime()) / 86_400_000);
+}
+
+function dayLabel(d: Date): string {
+  return d.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
 /**
  * Fasting instructions in plain language. Sent the evening before, never the
  * morning of — an 80-year-old who reads it at 6 AM has already had their tea.
+ *
+ * The wording is relative to `now`, because the same sentence is rendered on
+ * the home screen for a visit weeks away. It used to say "tomorrow" and
+ * "tonight" unconditionally, which told a diabetic patient on glucose-lowering
+ * medicine to skip dinner three weeks early. Anything beyond tomorrow names
+ * the date instead.
  */
-export function fastingInstruction(fastingHours: number, windowStart: Date): string {
+export function fastingInstruction(
+  fastingHours: number,
+  windowStart: Date,
+  now: Date = new Date(),
+): string {
+  const days = calendarDaysBetween(now, windowStart);
+  const which = days <= 0 ? 'today’s' : days === 1 ? 'tomorrow’s' : 'these';
+
   if (fastingHours <= 0) {
-    return 'No fasting is needed for tomorrow’s tests. Please eat and drink as usual.';
+    return `No fasting is needed for ${which} tests. Please eat and drink as usual.`;
   }
+
   const stopEating = new Date(windowStart.getTime() - fastingHours * 3_600_000);
+  const medicine = 'Do not stop any regular medicine unless your doctor has told you to.';
+
+  if (days <= 0) {
+    return [
+      `Today’s tests need ${fastingHours} hours of fasting, counted from ${fmt(stopEating)} last night.`,
+      'Plain water is fine.',
+      'If anything has been eaten since then, please tell the technician when they arrive.',
+      medicine,
+    ].join(' ');
+  }
+
+  const by =
+    calendarDaysBetween(now, stopEating) === 0
+      ? `${fmt(stopEating)} tonight`
+      : `${fmt(stopEating)} on ${dayLabel(stopEating)}`;
+
   return [
-    `Tomorrow’s tests need ${fastingHours} hours of fasting.`,
-    `Please finish dinner by ${fmt(stopEating)} tonight.`,
+    `${days === 1 ? 'Tomorrow’s' : 'These'} tests need ${fastingHours} hours of fasting.`,
+    `Please finish dinner by ${by}.`,
     'After that, plain water is fine — please keep drinking water.',
-    'Do not stop any regular medicine unless your doctor has told you to.',
+    medicine,
   ].join(' ');
 }

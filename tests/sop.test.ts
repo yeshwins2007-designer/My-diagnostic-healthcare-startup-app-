@@ -39,7 +39,13 @@ import {
 } from '@/lib/sop/labRouting';
 import { evaluateAlertClosure, escalationLevel, buildCriticalCallScript } from '@/lib/sop/criticalValue';
 import { evaluateCompletion, urgency, dueBy } from '@/lib/sop/followUp';
-import { classifyArrival, countsAsOnTime, projectArrival, morningSlots } from '@/lib/sop/visitWindow';
+import {
+  classifyArrival,
+  countsAsOnTime,
+  projectArrival,
+  morningSlots,
+  fastingInstruction,
+} from '@/lib/sop/visitWindow';
 import { computeMondaySheet, computeContribution, judge } from '@/lib/sop/metrics';
 import { evaluateZoneTwoUnlock, evaluateMarketplaceUnlock, evaluateSecondTechnician } from '@/lib/sop/growthGates';
 import { isRefusal } from '@/lib/sop/types';
@@ -601,6 +607,43 @@ describe('visitWindow', () => {
     for (const slot of slots) {
       expect(slot.start.getHours()).toBeGreaterThanOrEqual(6);
       expect(slot.end.getHours()).toBeLessThanOrEqual(10);
+    }
+  });
+});
+
+describe('fasting instructions', () => {
+  // Local-time constructors, matching the clock the function formats in.
+  const visit = new Date(2026, 9, 17, 7, 0); // Saturday 17 October, 7:00 am
+
+  it('names the date for a visit weeks away, never "tonight"', () => {
+    const text = fastingInstruction(10, visit, new Date(2026, 8, 26, 10, 0));
+    expect(text).not.toMatch(/tonight|tomorrow/i);
+    expect(text).toContain('These tests need 10 hours of fasting.');
+    expect(text).toMatch(/9:00 pm on Friday,? 16 October/);
+  });
+
+  it('says tonight only the evening before', () => {
+    const text = fastingInstruction(10, visit, new Date(2026, 9, 16, 18, 0));
+    expect(text).toContain('Tomorrow’s tests need 10 hours of fasting.');
+    expect(text).toContain('9:00 pm tonight');
+  });
+
+  it('counts back from last night on the morning of the visit', () => {
+    const text = fastingInstruction(10, visit, new Date(2026, 9, 17, 6, 0));
+    expect(text).toContain('counted from 9:00 pm last night');
+    expect(text).not.toMatch(/finish dinner/);
+  });
+
+  it('keeps the no-fasting message free of false timing', () => {
+    expect(fastingInstruction(0, visit, new Date(2026, 8, 26))).toBe(
+      'No fasting is needed for these tests. Please eat and drink as usual.',
+    );
+    expect(fastingInstruction(0, visit, new Date(2026, 9, 16, 18, 0))).toContain('tomorrow’s');
+  });
+
+  it('never tells anyone to stop their medicine', () => {
+    for (const now of [new Date(2026, 8, 26), new Date(2026, 9, 16, 18), new Date(2026, 9, 17, 6)]) {
+      expect(fastingInstruction(10, visit, now)).toContain('Do not stop any regular medicine');
     }
   });
 });

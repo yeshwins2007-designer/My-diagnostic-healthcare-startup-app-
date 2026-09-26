@@ -148,7 +148,7 @@ const buttonTones: Record<ButtonTone, string> = {
   quiet:
     'bg-transparent text-[var(--color-ink-soft)] border-transparent hover:bg-[var(--color-surface-sunken)]',
   danger:
-    'bg-[var(--color-red)] text-white border-[var(--color-red)] hover:opacity-90',
+    'bg-[var(--color-red)] text-[var(--color-red-ink)] border-[var(--color-red)] hover:opacity-90',
 };
 
 const buttonBase =
