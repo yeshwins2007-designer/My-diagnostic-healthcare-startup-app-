@@ -128,6 +128,11 @@ jobs:
             echo '| Ops console | `+919845000001` |'
             echo '| Field technician | `+919845000010` |'
             echo '| Partner lab | `+919845100200` |'
+            echo
+            echo "To try it as a new family instead, sign up with any other 10-digit"
+            echo "number and give the parent's pincode as **560011**. The pilot serves"
+            echo "5 km around Jayanagar 4th Block; any other address is put on the"
+            echo "waitlist, by design."
           } >> "$GITHUB_STEP_SUMMARY"
 
           echo "PREVIEW URL: $URL"
@@ -170,6 +175,9 @@ jobs:
               "Sign in with `+919845000101` (caregiver), `+919845000001` (ops), "
               "`+919845000010` (field) or `+919845100200` (lab). The code is shown "
               "on screen because SMS is not configured.\n\n"
+              "To try it as a new family instead, sign up with any other 10-digit number "
+              "and give the parent's pincode as **560011**. The pilot serves 5 km around "
+              "Jayanagar 4th Block; any other address is put on the waitlist, by design.\n\n"
               "Sign-in is rate limited to 10 codes per 10 minutes per IP, so if you "
               "switch roles repeatedly you will be asked to wait a few minutes — that "
               "is the limiter working, not a fault. The tunnel dies with the job."
