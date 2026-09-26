@@ -75,6 +75,23 @@ export async function loadUpcomingVisits(familyId: string) {
   });
 }
 
+/**
+ * The technician on the patient's last visit that actually took place, so the
+ * home screen only promises continuity when there is continuity to promise.
+ */
+export async function loadPreviousTechnicianId(patientId: string, before: Date) {
+  const last = await db.booking.findFirst({
+    where: {
+      patientId,
+      windowStart: { lt: before },
+      status: { in: ['COLLECTED', 'IN_TRANSIT', 'AT_LAB', 'PROCESSING', 'REPORTED', 'CLOSED'] },
+    },
+    orderBy: { windowStart: 'desc' },
+    select: { technicianId: true },
+  });
+  return last?.technicianId ?? null;
+}
+
 export async function loadReportTimeline(familyId: string) {
   return db.report.findMany({
     where: { status: 'RELEASED', booking: { familyId } },

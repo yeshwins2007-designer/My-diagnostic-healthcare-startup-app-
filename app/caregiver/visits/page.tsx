@@ -61,8 +61,8 @@ export default async function VisitsPage() {
           <H2>Coming up</H2>
           {upcoming.length === 0 ? (
             <EmptyState
-              title="Nothing scheduled"
-              body="Your plan schedules visits automatically. You can also book an extra one below."
+              title="Nothing booked"
+              body="Choose a morning below. Booking takes about a minute."
             />
           ) : (
             upcoming.map((booking) => (
@@ -156,7 +156,12 @@ export default async function VisitsPage() {
         )}
 
         <Stack gap="md">
-          <H2>Book an extra visit</H2>
+          {/* "Extra" only once there is a visit for it to be extra to. */}
+          <H2>
+            {upcoming.length + inProgress.length + past.length === 0
+              ? 'Book the first visit'
+              : 'Book an extra visit'}
+          </H2>
           <Muted>
             Included in your plan at no extra charge. We will only offer slots inside the
             morning window, because that is when fasting samples work and when our routes run.

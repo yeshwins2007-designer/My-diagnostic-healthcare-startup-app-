@@ -5,6 +5,8 @@
  * exist to prove the claims the README makes are true of the running product,
  * not just of the pure functions the unit tests cover:
  *
+ *   - a new family can sign up, pay and book the first visit, and is not
+ *     promised anything the product does not do
  *   - an out-of-zone address is refused into a waitlist
  *   - a signed report does not reach a family until a human releases it
  *   - the critical-value alert will not close without the whole protocol
@@ -78,6 +80,56 @@ test.describe('public surfaces', () => {
     await page.getByRole('button', { name: /সাহায্যের জন্য ফোন করুন/ }).click();
     // Bengali prose, Latin digits — because it has to be dialled.
     await expect(page.getByRole('link', { name: '108' })).toBeVisible();
+  });
+});
+
+test.describe('a new family', () => {
+  test('signs up, pays, and books the first visit without false promises', async ({ page }) => {
+    test.setTimeout(90_000);
+    // A number that has never been seen, so this is the real first-run path.
+    const phone = '97' + String(Date.now()).slice(-8);
+
+    await page.goto('/login');
+    await page.getByLabel(/mobile number/i).fill(phone);
+    await page.getByRole('button', { name: /send me a code/i }).click();
+    const code = page.locator('strong.font-mono').first();
+    await expect(code).toBeVisible();
+    await page.getByLabel(/six-digit code/i).fill((await code.innerText()).trim());
+    await page.getByRole('button', { name: /verify and continue/i }).click();
+    await page.getByLabel(/your name/i).fill('Meera Krishnan');
+    await page.getByRole('button', { name: /create my account/i }).click();
+
+    await page.waitForURL(/\/caregiver\/onboarding/);
+    await page.getByLabel(/their full name/i).fill('Saraswathi Krishnan');
+    await page.getByLabel(/^Age/).fill('76');
+    await page.getByLabel(/house number/i).fill('14, 11th Main, 4th Block');
+    await page.getByLabel(/landmark/i).fill('Near Jayanagar Shopping Complex');
+    await page.getByLabel(/pincode/i).fill('560011'); // the zone's own centre
+    await page.getByRole('button', { name: /add and choose a plan/i }).click();
+
+    await page.waitForURL(/\/caregiver\/plan\?patient=/);
+    await page.getByRole('button', { name: /continue to approve/i }).click();
+    await page.getByRole('link', { name: /approve the upi mandate/i }).click();
+    await page.waitForURL(/\/checkout\//);
+    await page.getByRole('button', { name: /^approve/i }).click();
+    await page.waitForURL(/\/caregiver\?mandate=approved/);
+
+    // Nothing books visits on a family's behalf, so the screen must not say it does.
+    const main = page.locator('main');
+    await expect(main).not.toContainText(/visits automatically/i);
+    await expect(page.getByText('No visit booked')).toBeVisible();
+
+    await page.goto('/caregiver/visits');
+    await expect(main).not.toContainText(/visits automatically/i);
+    await expect(page.getByRole('heading', { name: 'Book the first visit' })).toBeVisible();
+    await page.getByRole('button', { name: /book this visit/i }).click();
+    await expect(page.getByRole('heading', { name: 'Book an extra visit' })).toBeVisible();
+
+    // A first visit has no "last time" to be the same as.
+    await page.goto('/caregiver');
+    await expect(page.getByText('Next visit')).toBeVisible();
+    await expect(main).toContainText(/is coming\./);
+    await expect(main).not.toContainText(/same technician as last time/i);
   });
 });
 

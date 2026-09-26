@@ -5,6 +5,7 @@ import {
   loadFamilyContext,
   loadUpcomingVisits,
   loadReportTimeline,
+  loadPreviousTechnicianId,
 } from '@/lib/queries/caregiver';
 import { db } from '@/lib/db';
 import { formatINR } from '@/lib/money';
@@ -50,6 +51,9 @@ export default async function CaregiverHome() {
   ]);
 
   const next = visits[0];
+  const sameTechnicianAsLastTime =
+    !!next?.technicianId &&
+    (await loadPreviousTechnicianId(next.patientId, next.windowStart)) === next.technicianId;
   const latestReport = reports[0];
   const openCritical = reports.find((r) => r.criticals.some((c) => c.status !== 'CLOSED'));
 
@@ -99,8 +103,8 @@ export default async function CaregiverHome() {
               </p>
               {next.technician && (
                 <p>
-                  <strong>{next.technician.user.name}</strong> is coming — the same technician
-                  as last time.
+                  <strong>{next.technician.user.name}</strong> is coming
+                  {sameTechnicianAsLastTime ? ' — the same technician as last time.' : '.'}
                 </p>
               )}
               {next.fastingRequired && (
@@ -122,8 +126,8 @@ export default async function CaregiverHome() {
           </Card>
         ) : (
           <EmptyState
-            title="No visit scheduled"
-            body="Your plan schedules visits automatically. If you need one sooner, book it here."
+            title="No visit booked"
+            body="Choose a morning that suits them. Booking takes about a minute."
             action={<ButtonLink href="/caregiver/visits">Book a visit</ButtonLink>}
           />
         )}

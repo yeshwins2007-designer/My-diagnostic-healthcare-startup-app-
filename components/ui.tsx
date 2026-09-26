@@ -293,7 +293,8 @@ export function Badge({
   return (
     <span
       className={cx(
-        'inline-flex items-center gap-2 rounded-full px-3 py-1 text-small font-semibold',
+        // w-fit: in a flex column the default stretch pulled chips to full width.
+        'inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-small font-semibold',
         tones[tone],
         tonal
           ? 'border [border-color:color-mix(in_oklab,currentColor_35%,transparent)]'
