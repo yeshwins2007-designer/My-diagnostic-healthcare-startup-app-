@@ -107,12 +107,17 @@ jobs:
           done
           [ -n "$URL" ] || { echo "::error::no tunnel URL appeared"; cat tunnel.log; exit 1; }
 
+          # Testers are told when the link stops working, in the time zone
+          # they are in, so a dead link reads as expected rather than broken.
+          EXPIRES="$(TZ=Asia/Kolkata date -d "+${MINUTES} minutes" '+%-d %B, %-I:%M %p IST')"
+          echo "$EXPIRES" > preview-expires.txt
+
           {
             echo "## The app is live"
             echo
             echo "### $URL"
             echo
-            echo "Open it on any browser or phone. It stays up for ${MINUTES} minutes."
+            echo "Open it on any browser or phone. It stays up until ${EXPIRES}."
             echo
             echo "Sign in with a seeded number — the code is shown on screen,"
             echo "because SMS is not configured:"
@@ -156,11 +161,12 @@ jobs:
                 2>/dev/null || true)
           [ -n "$PR" ] || { echo "no PR for this commit; skipping"; exit 0; }
 
-          python3 - "$PR" "$(cat preview-url.txt)" <<'PY'
+          python3 - "$PR" "$(cat preview-url.txt)" "$(cat preview-expires.txt)" <<'PY'
           import json, os, sys, urllib.request
-          pr, url = sys.argv[1], sys.argv[2]
+          pr, url, expires = sys.argv[1], sys.argv[2], sys.argv[3]
           body = (
               f"Live preview is up: {url}\n\n"
+              f"It stays up until {expires}.\n\n"
               "Sign in with `+919845000101` (caregiver), `+919845000001` (ops), "
               "`+919845000010` (field) or `+919845100200` (lab). The code is shown "
               "on screen because SMS is not configured.\n\n"
