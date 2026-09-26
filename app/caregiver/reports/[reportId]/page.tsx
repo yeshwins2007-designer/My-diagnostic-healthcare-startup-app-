@@ -6,9 +6,14 @@ import { requireRole } from '@/lib/auth/session';
 import { audit } from '@/lib/compliance/audit';
 import { tryDecryptField } from '@/lib/compliance/crypto';
 import { brand } from '@/lib/brand';
+import { DISCIPLINE_LABELS, type Discipline } from '@/lib/enums';
+import { Disclosure } from '@/components/disclosure';
+import { RangeMeter, positionOf, type RangePosition } from '@/components/range-meter';
 import {
   Badge,
+  ButtonLink,
   Card,
+  DataRow,
   Disclaimer,
   H1,
   H2,
@@ -23,6 +28,49 @@ export const metadata: Metadata = { title: 'Report' };
 export const dynamic = 'force-dynamic';
 
 const BAND_TONE = { GREEN: 'green', YELLOW: 'yellow', RED: 'red' } as const;
+
+/**
+ * Most urgent first. The query used to order by `band desc`, but band is a
+ * string, so that sorted YELLOW > RED > GREEN and put an urgent result below
+ * a borderline one.
+ */
+const BAND_ORDER = { RED: 0, YELLOW: 1, GREEN: 2 } as const;
+
+/** Status always carries a glyph and words, never colour alone. */
+function StatusChip({
+  band,
+  position,
+  critical,
+}: {
+  band: keyof typeof BAND_TONE;
+  position: RangePosition | null;
+  critical: boolean;
+}) {
+  if (critical) {
+    return (
+      <Badge tone="red">
+        <span aria-hidden>!</span> Urgent
+      </Badge>
+    );
+  }
+  if (band === 'GREEN' || position === 'within') {
+    return (
+      <Badge tone="green" variant="tonal">
+        <span aria-hidden>✓</span> Within range
+      </Badge>
+    );
+  }
+  return (
+    <Badge tone="yellow" variant="tonal">
+      <span aria-hidden>{position === 'below' ? '↓' : '↑'}</span>{' '}
+      {position === 'below' ? 'Below range' : 'Above range'}
+    </Badge>
+  );
+}
+
+function humanise(code: string): string {
+  return code.charAt(0) + code.slice(1).toLowerCase().replace(/_/g, ' ');
+}
 
 /**
  * The full report, for the family.
@@ -55,7 +103,7 @@ export default async function ReportDetailPage({
       patient: true,
       lab: { include: { accreditation: true } },
       booking: { include: { technician: { include: { user: true } } } },
-      parameters: { include: { test: true }, orderBy: { band: 'desc' } },
+      parameters: { include: { test: true } },
       criticals: true,
       followUps: { include: { placedBy: true } },
     },
@@ -76,24 +124,73 @@ export default async function ReportDetailPage({
   const openCritical = report.criticals.filter((c) => c.status !== 'CLOSED');
   const call = report.followUps[0];
 
+  const results = report.parameters
+    .map((param) => {
+      // Values are encrypted at rest; one unreadable row must not blank out
+      // the whole report.
+      const value = tryDecryptField(param.valueEncrypted);
+      const numeric = value !== null ? Number.parseFloat(value) : Number.NaN;
+      const hasRange = param.refLow !== null && param.refHigh !== null;
+      return {
+        param,
+        value,
+        numeric,
+        band: param.band as keyof typeof BAND_TONE,
+        position:
+          hasRange && Number.isFinite(numeric)
+            ? positionOf(numeric, param.refLow as number, param.refHigh as number)
+            : null,
+      };
+    })
+    .sort((a, b) => BAND_ORDER[a.band] - BAND_ORDER[b.band]);
+
+  const outside = results.filter((r) => r.band !== 'GREEN').length;
+  const firstName = report.patient.name.split(' ')[0];
+
   return (
     <Page>
       <Stack gap="lg">
-        <Stack gap="sm">
-          <Link href="/caregiver/reports" className="font-semibold underline">
-            ← All reports
-          </Link>
-          <H1>{report.patient.name}</H1>
-          <Lead>
-            {report.releasedAt?.toLocaleDateString('en-IN', {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            })}
-          </Lead>
-          <Badge tone={BAND_TONE[band]}>{band.toLowerCase()}</Badge>
-        </Stack>
+        <Link
+          href="/caregiver/reports"
+          className="inline-flex min-h-12 items-center gap-2 self-start font-semibold text-[var(--color-primary)]"
+        >
+          <span aria-hidden>←</span> All reports
+        </Link>
+
+        <Card elevated className="rise-in">
+          <Stack gap="md">
+            <Stack gap="sm">
+              <span className="text-small font-semibold tracking-wide text-[var(--color-ink-soft)] uppercase">
+                Laboratory report
+              </span>
+              <H1>{report.patient.name}</H1>
+              <Lead>
+                {report.releasedAt?.toLocaleDateString('en-IN', {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })}
+              </Lead>
+            </Stack>
+            <div className="flex flex-wrap items-center gap-4 border-t border-[var(--color-line)] pt-4">
+              <Badge tone={BAND_TONE[band]} variant="tonal">
+                <span aria-hidden>{band === 'GREEN' ? '✓' : band === 'RED' ? '!' : '↕'}</span>
+                {band === 'GREEN'
+                  ? 'All within range'
+                  : band === 'RED'
+                    ? 'Needs a doctor today'
+                    : 'Some values outside range'}
+              </Badge>
+              <p className="text-[var(--color-ink-soft)]">
+                <strong className="font-semibold text-[var(--color-ink)]">
+                  {outside} of {results.length}
+                </strong>{' '}
+                outside the laboratory’s range
+              </p>
+            </div>
+          </Stack>
+        </Card>
 
         {openCritical.length > 0 && (
           <Card tone="red">
@@ -101,7 +198,7 @@ export default async function ReportDetailPage({
               <H3>The laboratory flagged this as urgent</H3>
               <p>
                 {openCritical.map((c) => c.parameterName).join(', ')} needs medical attention.
-                Please contact {report.patient.name.split(' ')[0]}’s doctor today.
+                Please contact {firstName}’s doctor today.
               </p>
               <p>
                 If they are unwell right now — chest pain, breathlessness, confusion, or you
@@ -117,46 +214,98 @@ export default async function ReportDetailPage({
 
         <Stack gap="md">
           <H2>Results</H2>
-          <Card>
-            <div className="scroll-x">
-              <table className="w-full min-w-[36rem] border-collapse">
-                <thead>
-                  <tr className="border-b-2 border-[var(--color-line-strong)] text-left">
-                    <th className="py-3 pr-4">Test</th>
-                    <th className="py-3 pr-4">Result</th>
-                    <th className="py-3 pr-4">Normal range</th>
-                    <th className="py-3">Band</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {report.parameters.map((param) => {
-                    // Values are encrypted at rest; one unreadable row must not
-                    // blank out the whole report.
-                    const value = tryDecryptField(param.valueEncrypted);
-                    const paramBand = param.band as keyof typeof BAND_TONE;
-                    return (
-                      <tr key={param.id} className="border-b border-[var(--color-line)]">
-                        <td className="py-4 pr-4 font-medium">{param.test.name}</td>
-                        <td className="py-4 pr-4 font-mono text-lead font-semibold">
-                          {value ?? '—'} {param.unit}
-                        </td>
-                        <td className="py-4 pr-4 font-mono text-[var(--color-ink-faint)]">
-                          {param.refLow !== null && param.refHigh !== null
-                            ? `${param.refLow} – ${param.refHigh} ${param.unit}`
-                            : '—'}
-                        </td>
-                        <td className="py-4">
-                          <Badge tone={BAND_TONE[paramBand]}>
-                            {param.isCritical ? 'urgent' : paramBand.toLowerCase()}
-                          </Badge>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+          <Muted>Tap any result for the details your doctor may ask about.</Muted>
+
+          <ul className="flex flex-col gap-4">
+            {results.map(({ param, value, numeric, band: paramBand, position }, i) => {
+              const hasRange = param.refLow !== null && param.refHigh !== null;
+              const discipline =
+                DISCIPLINE_LABELS[param.test.discipline as Discipline] ?? param.test.discipline;
+              return (
+                <Card
+                  key={param.id}
+                  as="li"
+                  elevated
+                  className={`rise-in ${param.isCritical ? 'border-[var(--color-red)]' : ''}`}
+                  // Cards arrive in sequence rather than all at once; capped so a
+                  // long panel never makes the last result wait.
+                  style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
+                >
+                  <div>
+                    <Disclosure
+                      summary={
+                        <span className="flex flex-col gap-3">
+                          <span className="flex flex-wrap items-start justify-between gap-3">
+                            <span className="font-semibold">{param.test.name}</span>
+                            <StatusChip
+                              band={paramBand}
+                              position={position}
+                              critical={param.isCritical}
+                            />
+                          </span>
+                          <span className="flex items-baseline gap-2">
+                            {/* The result is the heaviest thing on the card. Sans
+                                and proportional: tabular or mono figures make a
+                                standalone number look broken. */}
+                            <span className="text-h2 leading-none font-bold tracking-tight text-[var(--color-ink)]">
+                              {value ?? '—'}
+                            </span>
+                            {param.unit && (
+                              <span className="text-small font-normal text-[var(--color-ink-soft)]">
+                                {param.unit}
+                              </span>
+                            )}
+                          </span>
+                          {hasRange && Number.isFinite(numeric) && (
+                            <RangeMeter
+                              value={numeric}
+                              low={param.refLow as number}
+                              high={param.refHigh as number}
+                              band={paramBand}
+                            />
+                          )}
+                          {hasRange && (
+                            <span className="text-small font-normal text-[var(--color-ink-soft)]">
+                              Laboratory range{' '}
+                              <span className="font-semibold text-[var(--color-ink)]">
+                                {param.refLow} – {param.refHigh}
+                              </span>{' '}
+                              {param.unit}
+                            </span>
+                          )}
+                        </span>
+                      }
+                    >
+                      <div className="rounded-[var(--radius-control)] bg-[var(--color-surface-sunken)] px-4">
+                        {param.isCritical && (
+                          <p className="border-b border-[var(--color-line)] py-3 font-semibold text-[var(--color-red)]">
+                            The laboratory flagged this value. Please speak to {firstName}’s
+                            doctor today.
+                          </p>
+                        )}
+                        <DataRow label="Area of testing" value={discipline} />
+                        <DataRow label="Sample" value={humanise(param.test.sampleType)} />
+                        <DataRow
+                          label="Fasting"
+                          value={
+                            param.test.fastingHours > 0
+                              ? `${param.test.fastingHours} hours`
+                              : 'Not required'
+                          }
+                        />
+                        {param.test.loincCode && (
+                          <DataRow
+                            label="Standard code, for your doctor"
+                            value={<span className="font-mono">{param.test.loincCode}</span>}
+                          />
+                        )}
+                      </div>
+                    </Disclosure>
+                  </div>
+                </Card>
+              );
+            })}
+          </ul>
 
           <Card tone="info">
             <Stack gap="sm">
@@ -167,7 +316,7 @@ export default async function ReportDetailPage({
                 inside one is not a clean bill of health.
               </p>
               <Muted>
-                Take this to {report.patient.name.split(' ')[0]}’s doctor. They have the history
+                Take this to {firstName}’s doctor. They have the history
                 and the examination; we have a number and a range.
               </Muted>
             </Stack>
@@ -228,12 +377,9 @@ export default async function ReportDetailPage({
           </Card>
         )}
 
-        <Link
-          href={`/report/${report.id}/card`}
-          className="inline-flex min-h-[var(--size-touch)] items-center justify-center rounded-[var(--radius-control)] border-2 border-[var(--color-line-strong)] px-6 font-semibold"
-        >
-          Printable card for {report.patient.name.split(' ')[0]}
-        </Link>
+        <ButtonLink href={`/report/${report.id}/card`} tone="secondary" full>
+          Printable card for {firstName}
+        </ButtonLink>
 
         <Disclaimer text={brand.disclaimer} />
       </Stack>

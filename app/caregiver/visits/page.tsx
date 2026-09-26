@@ -2,7 +2,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { db } from '@/lib/db';
-import { loadFamilyContext, loadUpcomingVisits } from '@/lib/queries/caregiver';
+import {
+  loadFamilyContext,
+  loadInProgressVisits,
+  loadUpcomingVisits,
+} from '@/lib/queries/caregiver';
+import { SampleJourney } from '@/components/sample-journey';
 import { classifyArrival, fastingInstruction } from '@/lib/sop/visitWindow';
 import { BookVisitForm } from '@/components/book-visit-form';
 import {
@@ -29,8 +34,9 @@ export default async function VisitsPage() {
   const { family } = await loadFamilyContext();
   if (!family) redirect('/caregiver/onboarding');
 
-  const [upcoming, past, panels] = await Promise.all([
+  const [upcoming, inProgress, past, panels] = await Promise.all([
     loadUpcomingVisits(family.id),
+    loadInProgressVisits(family.id),
     db.booking.findMany({
       where: { familyId: family.id, status: { in: ['CLOSED', 'REPORTED', 'CANCELLED'] } },
       orderBy: { windowStart: 'desc' },
@@ -80,6 +86,11 @@ export default async function VisitsPage() {
                   {booking.technician && (
                     <p>{booking.technician.user.name} is coming.</p>
                   )}
+                  {/* Only once something is moving; for a visit that is merely
+                      booked, five mostly-empty steps are noise. */}
+                  {(booking.status === 'EN_ROUTE' || booking.status === 'ARRIVED') && (
+                    <SampleJourney status={booking.status} />
+                  )}
                   {booking.fastingRequired && (
                     <Card tone="yellow" className="p-4">
                       <p>{fastingInstruction(booking.fastingHours, booking.windowStart)}</p>
@@ -98,6 +109,51 @@ export default async function VisitsPage() {
             ))
           )}
         </Stack>
+
+        {inProgress.length > 0 && (
+          <Stack gap="md">
+            <H2>Sample in progress</H2>
+            {inProgress.map((booking) =>
+              booking.status === 'RECOLLECTION_REQUIRED' ? (
+                // Not progress, so not drawn as progress: the lab could not use
+                // the sample and a second draw is needed. Saying so plainly is
+                // kinder than a stepper that has quietly stopped moving.
+                <Card key={booking.id} tone="yellow">
+                  <Stack gap="sm">
+                    <H3>{booking.patient.name}</H3>
+                    <p>
+                      The laboratory could not process this sample as it was drawn, so a
+                      second one is needed. We will call you to arrange the visit.
+                    </p>
+                    <Muted>Reference {booking.reference}</Muted>
+                  </Stack>
+                </Card>
+              ) : (
+                <Card key={booking.id} elevated>
+                  <Stack gap="md">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <H3>{booking.patient.name}</H3>
+                      <Badge tone="neutral" variant="tonal">
+                        {booking.reference}
+                      </Badge>
+                    </div>
+                    <Muted>
+                      Collected{' '}
+                      {booking.windowStart.toLocaleDateString('en-IN', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                      })}
+                      {booking.technician && ` by ${booking.technician.user.name}`}
+                      {booking.lab && `, tested at ${booking.lab.name}`}.
+                    </Muted>
+                    <SampleJourney status={booking.status} />
+                  </Stack>
+                </Card>
+              ),
+            )}
+          </Stack>
+        )}
 
         <Stack gap="md">
           <H2>Book an extra visit</H2>

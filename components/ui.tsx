@@ -55,11 +55,23 @@ export function Card({
   className,
   tone = 'surface',
   as: Tag = 'section',
+  elevated,
+  style,
 }: {
   children: ReactNode;
   className?: string;
+  /** For per-instance values that cannot be classes, e.g. a stagger delay. */
+  style?: React.CSSProperties;
   tone?: 'surface' | 'sunken' | 'primary' | 'green' | 'yellow' | 'red' | 'info';
   as?: 'section' | 'article' | 'div' | 'li';
+  /**
+   * The premium container: larger radius, a soft two-layer shadow, and a
+   * border softened toward the surface. Reserved for the object a page is
+   * about — a result, a summary — so it stands out against plain cards.
+   * The border stays 2px: a 1px hairline disappears for low-vision readers,
+   * who are this app's core audience.
+   */
+  elevated?: boolean;
 }) {
   const tones: Record<string, string> = {
     surface: 'bg-[var(--color-surface)] border-[var(--color-line)]',
@@ -73,10 +85,17 @@ export function Card({
   return (
     <Tag
       className={cx(
-        'rounded-[var(--radius-card)] border-2 p-5 sm:p-6',
+        'border-2 p-5 sm:p-6',
+        elevated
+          ? 'rounded-[var(--radius-card-lg)] [box-shadow:var(--shadow-card)]'
+          : 'rounded-[var(--radius-card)]',
         tones[tone],
+        elevated &&
+          tone === 'surface' &&
+          'border-[color-mix(in_oklab,var(--color-line-strong)_55%,var(--color-surface))]',
         className,
       )}
+      style={style}
     >
       {children}
     </Tag>
@@ -185,7 +204,7 @@ export function ButtonLink({
  */
 export function PrimaryActionBar({ children }: { children: ReactNode }) {
   return (
-    <div className="sticky bottom-0 -mx-5 mt-8 border-t-2 border-[var(--color-line)] bg-[var(--color-canvas)] px-5 py-4 sm:-mx-8 sm:px-8">
+    <div className="stick-above-nav sticky -mx-5 mt-8 border-t-2 border-[var(--color-line)] bg-[var(--color-canvas)] px-5 py-4 sm:-mx-8 sm:px-8">
       {children}
     </div>
   );
@@ -222,17 +241,19 @@ export function Field({
 }
 
 const inputBase =
-  'w-full rounded-[var(--radius-control)] border-2 border-[var(--color-line-strong)] bg-[var(--color-surface)] px-4 py-3 min-h-[var(--size-touch)] text-base text-[var(--color-ink)] placeholder:text-[var(--color-ink-faint)]';
+  'w-full rounded-[var(--radius-control)] border-2 border-[var(--color-line-strong)] bg-[var(--color-surface)] px-4 py-3 min-h-[var(--size-touch)] text-base text-[var(--color-ink)] placeholder:text-[var(--color-ink-faint)] hover:border-[var(--color-ink-faint)] focus:border-[var(--color-primary)]';
 
-export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
+// ComponentProps rather than *HTMLAttributes: in React 19 ref is an ordinary
+// prop, and the attribute types omit it, which blocks forwarding a ref.
+export function Input(props: React.ComponentProps<'input'>) {
   return <input {...props} className={cx(inputBase, props.className)} />;
 }
 
-export function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+export function Textarea(props: React.ComponentProps<'textarea'>) {
   return <textarea {...props} className={cx(inputBase, 'min-h-32', props.className)} />;
 }
 
-export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
+export function Select(props: React.ComponentProps<'select'>) {
   return <select {...props} className={cx(inputBase, props.className)} />;
 }
 
@@ -241,9 +262,21 @@ export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
 export function Badge({
   children,
   tone = 'neutral',
+  variant = 'solid',
 }: {
   children: ReactNode;
   tone?: 'neutral' | 'green' | 'yellow' | 'red' | 'info' | 'primary';
+  /**
+   * 'tonal' keeps the same wash background and full-strength text — so the
+   * contrast is identical to 'solid' — but swaps the 2px border for a 1px
+   * border at reduced strength. The border carries no meaning here; the
+   * words and colour do, so thinning it costs no legibility.
+   *
+   * Red ignores 'tonal'. A critical value is the one state that must never
+   * read as subtle, and making that a property of the component rather than
+   * a rule in a style guide means no page can accidentally mute it.
+   */
+  variant?: 'solid' | 'tonal';
 }) {
   const tones: Record<string, string> = {
     neutral:
@@ -256,16 +289,30 @@ export function Badge({
     primary:
       'bg-[var(--color-primary-wash)] text-[var(--color-primary)] border-[var(--color-primary)]',
   };
+  const tonal = variant === 'tonal' && tone !== 'red';
   return (
     <span
       className={cx(
-        'inline-flex items-center gap-2 rounded-full border-2 px-3 py-1 text-small font-semibold',
+        'inline-flex items-center gap-2 rounded-full px-3 py-1 text-small font-semibold',
         tones[tone],
+        tonal
+          ? 'border [border-color:color-mix(in_oklab,currentColor_35%,transparent)]'
+          : 'border-2',
       )}
     >
       {children}
     </span>
   );
+}
+
+/**
+ * A placeholder in the shape of the content that is coming.
+ *
+ * Decorative: hidden from assistive tech, which is told about the loading
+ * state once by the page's loading boundary rather than once per bar.
+ */
+export function Skeleton({ className }: { className?: string }) {
+  return <span aria-hidden className={cx('skeleton block', className)} />;
 }
 
 /**

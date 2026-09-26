@@ -117,7 +117,7 @@ export function VoiceLauncher() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-5 right-5 z-40 flex min-h-[var(--size-touch)] items-center gap-3 rounded-full border-2 border-[var(--color-primary)] bg-[var(--color-primary)] px-6 font-semibold text-[var(--color-primary-ink)] shadow-lg"
+        className="float-above-nav fixed right-5 z-40 flex min-h-[var(--size-touch)] items-center gap-3 rounded-full border-2 border-[var(--color-primary)] bg-[var(--color-primary)] px-6 font-semibold text-[var(--color-primary-ink)] shadow-lg"
       >
         <span aria-hidden>🎙</span>
         Talk to us

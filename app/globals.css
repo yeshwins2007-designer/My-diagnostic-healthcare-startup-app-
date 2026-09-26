@@ -81,6 +81,13 @@
   /* --- geometry ---------------------------------------------------------- */
   --radius-card: 1rem;
   --radius-control: 0.75rem;
+  /* Reserved for a small number of flagship containers — the diagnostic
+     result card, the stoplight summary — that should read as the premium
+     object on a page of otherwise-plain cards. Not a replacement for
+     --radius-card: using it everywhere would erase the distinction. */
+  --radius-card-lg: 1.375rem; /* 22px */
+  --shadow-card: 0 1px 2px color-mix(in oklab, var(--color-ink) 6%, transparent),
+    0 8px 24px -12px color-mix(in oklab, var(--color-ink) 18%, transparent);
   --size-touch: 4rem; /* 64px minimum */
   --size-touch-lg: 5.5rem;
 }
@@ -224,12 +231,46 @@
     background-color var(--dur-tap) var(--ease-out-soft),
     border-color var(--dur-tap) var(--ease-out-soft),
     color var(--dur-tap) var(--ease-out-soft),
-    transform var(--dur-tap) var(--ease-out-soft);
+    transform var(--dur-tap) var(--ease-out-soft),
+    box-shadow var(--dur-tap) var(--ease-out-soft),
+    outline-color var(--dur-tap) var(--ease-out-soft),
+    outline-offset var(--dur-tap) var(--ease-out-soft);
   /* The grey iOS flash reads as a glitch; a real :active state reads as a press. */
   -webkit-tap-highlight-color: transparent;
 }
 :where(a, button, [role='button']):active {
   transform: scale(0.985);
+}
+
+/*
+  Tappable surfaces that are not themselves a button or link — a Card used as
+  a disclosure trigger, a chooser row. Opt-in via class rather than folded
+  into the selector above, because most cards are static containers and
+  should never depress under a tap that was not meant for them.
+*/
+.tap-surface {
+  transition:
+    transform var(--dur-tap) var(--ease-out-soft),
+    box-shadow var(--dur-tap) var(--ease-out-soft),
+    border-color var(--dur-tap) var(--ease-out-soft);
+}
+.tap-surface:active {
+  transform: scale(0.98);
+}
+
+/*
+  Focus rings on fields get the same easing as taps, so keyboard and switch
+  navigation feels like part of one system. Links and buttons already carry
+  outline transitions in the rule above; listing them here too would replace
+  that whole transition list, since both selectors have zero specificity and
+  the later shorthand wins — silently dropping the press animation.
+*/
+:where(input, select, textarea) {
+  transition:
+    border-color var(--dur-tap) var(--ease-out-soft),
+    box-shadow var(--dur-tap) var(--ease-out-soft),
+    outline-color var(--dur-tap) var(--ease-out-soft),
+    outline-offset var(--dur-tap) var(--ease-out-soft);
 }
 
 /* Content arriving after a skeleton, so it resolves rather than snapping in. */
@@ -245,6 +286,61 @@
 }
 .rise-in {
   animation: rise-in var(--dur-settle) var(--ease-out-soft) both;
+}
+
+/*
+  Expand/collapse via grid-template-rows 0fr -> 1fr rather than max-height.
+  max-height needs a guessed ceiling (wrong for a report with many parameters,
+  or for the reader-size scale making text taller) and animates a property the
+  compositor cannot promote, so it drops frames on the exact low-end phones
+  this app has to run well on. grid-template-rows animates on the same thread
+  as transform and needs no measured height.
+*/
+.disclosure {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-settle) var(--ease-out-soft);
+}
+.disclosure[data-open='true'] {
+  grid-template-rows: 1fr;
+}
+.disclosure > * {
+  overflow: hidden;
+}
+
+/*
+  Skeleton loading. A named animation rather than a spinner: the shape of the
+  content that is coming reduces the "did this break" uncertainty a bare
+  spinner leaves, which matters more for a family checking a parent's results
+  than it does for most apps. Sizing is the caller's job via width/height —
+  this only supplies the shimmer and the shape.
+*/
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+.skeleton {
+  border-radius: var(--radius-control);
+  background: linear-gradient(
+    100deg,
+    var(--color-surface-sunken) 30%,
+    var(--color-line) 50%,
+    var(--color-surface-sunken) 70%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+/* prefers-reduced-motion already zeroes animation-duration globally; a
+   static sunken block is the correct fallback rather than a frozen mid-shimmer
+   frame, which would look like a rendering glitch. */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    background: var(--color-surface-sunken);
+  }
 }
 
 /*
@@ -266,6 +362,36 @@
 body {
   /* No rubber-banding the whole page behind the app shell. */
   overscroll-behavior-y: contain;
+}
+
+/*
+  Bottom navigation. A shell that renders one sets .has-bottom-nav, and every
+  element that pins itself to the bottom of the viewport reads
+  --bottom-nav-offset instead of assuming 0. Without it the onboarding form's
+  sticky "Add and choose a plan" button sits underneath the nav, and the
+  assistant launcher lands on top of it.
+
+  Outside such a shell the variable is unset and every consumer falls back to
+  0, so the lab application form — which shares PrimaryActionBar — is
+  unaffected. From 640px up the nav is hidden and the offset returns to 0.
+*/
+.has-bottom-nav {
+  --bottom-nav-offset: calc(4.5rem + env(safe-area-inset-bottom));
+}
+@media (min-width: 640px) {
+  .has-bottom-nav {
+    --bottom-nav-offset: 0px;
+  }
+}
+.stick-above-nav {
+  bottom: var(--bottom-nav-offset, 0px);
+}
+.float-above-nav {
+  bottom: calc(1.25rem + var(--bottom-nav-offset, 0px));
+}
+/* Content clears both the nav and the floating assistant button. */
+.clear-bottom-chrome {
+  padding-bottom: calc(7rem + var(--bottom-nav-offset, 0px));
 }
 
 /*

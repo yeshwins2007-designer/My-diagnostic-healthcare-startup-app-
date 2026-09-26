@@ -39,6 +39,24 @@ export async function loadFamilyContext(user?: SessionUser) {
   return { session, membership, family: membership?.family ?? null };
 }
 
+/**
+ * Visits whose sample has been taken but whose report is not yet released.
+ *
+ * These fall between "coming up" (pre-collection) and "past" (reported), and
+ * used to appear in neither — so the anxious window between the blood draw
+ * and the result was the one time the visits page showed nothing at all.
+ */
+export async function loadInProgressVisits(familyId: string) {
+  return db.booking.findMany({
+    where: {
+      familyId,
+      status: { in: ['COLLECTED', 'IN_TRANSIT', 'AT_LAB', 'PROCESSING', 'RECOLLECTION_REQUIRED'] },
+    },
+    orderBy: { windowStart: 'desc' },
+    include: { patient: true, lab: true, technician: { include: { user: true } } },
+  });
+}
+
 export async function loadUpcomingVisits(familyId: string) {
   return db.booking.findMany({
     where: {
