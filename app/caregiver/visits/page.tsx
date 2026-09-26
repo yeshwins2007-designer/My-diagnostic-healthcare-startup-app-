@@ -69,7 +69,7 @@ export default async function VisitsPage() {
                       {booking.delayNotifiedAt && <Badge tone="yellow">running late</Badge>}
                     </div>
                   </div>
-                  <p className="text-[var(--text-lead)]">
+                  <p className="text-lead">
                     {booking.windowStart.toLocaleDateString('en-IN', {
                       weekday: 'long',
                       day: 'numeric',

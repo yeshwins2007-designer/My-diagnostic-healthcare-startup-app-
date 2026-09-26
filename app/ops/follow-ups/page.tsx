@@ -130,7 +130,7 @@ export default async function FollowUpsPage() {
             {recent.map((call) => (
               <Card key={call.id} tone="sunken">
                 <Stack gap="sm">
-                  <H3 className="text-[var(--text-lead)]">{call.report.patient.name}</H3>
+                  <H3 className="text-lead">{call.report.patient.name}</H3>
                   <p>
                     <strong>What worried you?</strong> {call.whatWorriedYou || '—'}
                   </p>

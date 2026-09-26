@@ -107,7 +107,7 @@ export function TrackingMap({
           <p className="font-semibold">{ended}</p>
         ) : update ? (
           <div className="flex flex-col gap-2">
-            <p className="text-[var(--text-lead)] font-semibold">
+            <p className="text-lead font-semibold">
               {update.etaMinutes !== null
                 ? `${technicianName ?? update.technicianName ?? 'Your technician'} is about ${update.etaMinutes} minute${update.etaMinutes === 1 ? '' : 's'} away`
                 : `${technicianName ?? 'Your technician'} has not started the route yet`}
@@ -117,7 +117,7 @@ export function TrackingMap({
                 {update.distanceKm.toFixed(1)} km from the door
               </p>
             )}
-            <p className="text-[var(--text-small)] text-[var(--color-ink-faint)]">
+            <p className="text-small text-[var(--color-ink-faint)]">
               {connected ? 'Updating live' : 'Reconnecting…'} · This link stops working shortly
               after the visit.
             </p>

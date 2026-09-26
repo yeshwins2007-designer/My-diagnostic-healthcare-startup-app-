@@ -76,7 +76,7 @@ export default async function AuditPage() {
               Showing the most recent {entries.length} of {total} entries.
             </Muted>
             <div className="scroll-x">
-              <table className="w-full min-w-[52rem] border-collapse text-[var(--text-small)]">
+              <table className="w-full min-w-[52rem] border-collapse text-small">
                 <thead>
                   <tr className="border-b-2 border-[var(--color-line-strong)] text-left">
                     <th className="py-3 pr-4">#</th>

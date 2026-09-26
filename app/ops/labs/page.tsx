@@ -96,7 +96,7 @@ export default async function OpsLabsPage() {
                   <Stack gap="md">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <Stack gap="sm">
-                        <H2 className="text-[var(--text-h3)]">{lab.name}</H2>
+                        <H2 className="text-h3">{lab.name}</H2>
                         <Muted>
                           {lab.addressLine}, {lab.city} {lab.pincode} · {lab.contactName} ·{' '}
                           {lab.contactPhone}
@@ -122,7 +122,7 @@ export default async function OpsLabsPage() {
                       <>
                         <div className="grid gap-4 lg:grid-cols-2">
                           <Stack gap="sm">
-                            <H3 className="text-[var(--text-lead)]">Accreditation</H3>
+                            <H3 className="text-lead">Accreditation</H3>
                             <DataRow
                               label="Certificate number"
                               value={
@@ -157,7 +157,7 @@ export default async function OpsLabsPage() {
                           </Stack>
 
                           <Stack gap="sm">
-                            <H3 className="text-[var(--text-lead)]">Accredited scope</H3>
+                            <H3 className="text-lead">Accredited scope</H3>
                             <div className="flex flex-wrap gap-2">
                               {scope.map((d) => (
                                 <Badge key={d} tone="primary">
@@ -176,7 +176,7 @@ export default async function OpsLabsPage() {
                         {certificate && isRefusal(certificate) && (
                           <div className="rounded-[var(--radius-control)] border-2 border-[var(--color-red)] bg-[var(--color-red-wash)] p-4">
                             <p className="font-semibold">{certificate.reason}</p>
-                            <p className="text-[var(--text-small)]">{certificate.remedy}</p>
+                            <p className="text-small">{certificate.remedy}</p>
                           </div>
                         )}
 

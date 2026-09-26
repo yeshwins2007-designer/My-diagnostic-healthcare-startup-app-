@@ -38,7 +38,7 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
             <div className="flex flex-wrap items-center gap-4">
               <Link
                 href="/ops"
-                className="inline-flex min-h-12 items-center text-[var(--text-lead)] font-bold"
+                className="inline-flex min-h-12 items-center text-lead font-bold"
               >
                 Ops console
               </Link>
@@ -64,7 +64,7 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
               <Link
                 key={item.href}
                 href={item.href}
-                className="whitespace-nowrap rounded-[var(--radius-control)] border-2 border-[var(--color-line)] px-4 py-2 text-[var(--text-small)] font-semibold hover:bg-[var(--color-surface-sunken)]"
+                className="whitespace-nowrap rounded-[var(--radius-control)] border-2 border-[var(--color-line)] px-4 py-2 text-small font-semibold hover:bg-[var(--color-surface-sunken)]"
               >
                 {item.label}
               </Link>

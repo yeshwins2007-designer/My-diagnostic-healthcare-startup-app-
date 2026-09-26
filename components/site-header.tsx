@@ -20,8 +20,8 @@ export async function SiteHeader() {
         <Link href="/" className="flex items-center gap-3">
           <BrandMark size={48} className="shrink-0 rounded-xl" />
           <span className="flex flex-col leading-tight">
-            <span className="text-[var(--text-lead)] font-bold">{brand.name}</span>
-            <span className="text-[var(--text-tiny)] text-[var(--color-ink-faint)]">
+            <span className="text-lead font-bold">{brand.name}</span>
+            <span className="text-tiny text-[var(--color-ink-faint)]">
               {brand.city}
             </span>
           </span>

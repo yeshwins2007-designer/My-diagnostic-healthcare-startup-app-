@@ -98,7 +98,7 @@ export function AddPatientForm() {
               />
               <span>
                 They cannot give consent themselves and I am authorised to give it for them.
-                <span className="block text-[var(--text-small)] text-[var(--color-ink-faint)]">
+                <span className="block text-small text-[var(--color-ink-faint)]">
                   Tick this only if it is genuinely true — the technician will record family
                   authorisation at every visit instead of asking them directly.
                 </span>

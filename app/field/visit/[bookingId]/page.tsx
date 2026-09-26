@@ -86,7 +86,7 @@ export default async function VisitPage({
         <Card>
           <Stack gap="sm">
             <H3>At the door</H3>
-            <p className="text-[var(--text-lead)]">
+            <p className="text-lead">
               {booking.address.line1}
               {booking.address.line2 && `, ${booking.address.line2}`}
             </p>
@@ -147,7 +147,7 @@ export default async function VisitPage({
         <Card tone="primary">
           <Stack gap="sm">
             <H3>Say this, in their language</H3>
-            <p className="text-[var(--text-lead)]" lang={patientLocale}>
+            <p className="text-lead" lang={patientLocale}>
               {t(patientLocale, 'consent.title')}
             </p>
             <p lang={patientLocale}>{t(patientLocale, 'consent.body')}</p>

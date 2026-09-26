@@ -137,7 +137,7 @@ export default async function ReportDetailPage({
                     return (
                       <tr key={param.id} className="border-b border-[var(--color-line)]">
                         <td className="py-4 pr-4 font-medium">{param.test.name}</td>
-                        <td className="py-4 pr-4 font-mono text-[var(--text-lead)] font-semibold">
+                        <td className="py-4 pr-4 font-mono text-lead font-semibold">
                           {value ?? '—'} {param.unit}
                         </td>
                         <td className="py-4 pr-4 font-mono text-[var(--color-ink-faint)]">

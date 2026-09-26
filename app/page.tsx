@@ -42,7 +42,7 @@ export default async function LandingPage() {
           <section className="brand-surface rise-in -mx-5 grid gap-8 px-5 py-10 sm:-mx-8 sm:px-8 sm:py-12 lg:grid-cols-[1.2fr_1fr] lg:items-center lg:rounded-[var(--radius-card)] lg:px-12">
             <BrandWaves />
             <Stack gap="md" className="brand-content">
-              <span className="brand-accent text-[var(--text-small)] font-semibold tracking-wide uppercase">
+              <span className="brand-accent text-small font-semibold tracking-wide uppercase">
                 For families with parents at home
               </span>
               <H1>
@@ -55,7 +55,7 @@ export default async function LandingPage() {
                 <ButtonLink href="/join?as=individual">Set up care for a parent</ButtonLink>
                 <a
                   href="/join?as=business"
-                  className="inline-flex min-h-[var(--size-touch)] items-center justify-center rounded-[var(--radius-control)] border-2 border-[color-mix(in_oklab,var(--brand-glow)_55%,transparent)] px-6 text-[var(--text-lead)] font-semibold text-[var(--brand-ink)]"
+                  className="inline-flex min-h-[var(--size-touch)] items-center justify-center rounded-[var(--radius-control)] border-2 border-[color-mix(in_oklab,var(--brand-glow)_55%,transparent)] px-6 text-lead font-semibold text-[var(--brand-ink)]"
                 >
                   Register a diagnostic lab
                 </a>
@@ -159,9 +159,9 @@ export default async function LandingPage() {
                       {plan.isRecommended && <Badge tone="primary">Most families choose this</Badge>}
                       <H3>{plan.name}</H3>
                       <p className="text-[var(--color-ink-soft)]">{plan.tagline}</p>
-                      <p className="text-[var(--text-h2)] font-bold">
+                      <p className="text-h2 font-bold">
                         {formatINR(plan.pricePaise)}
-                        <span className="text-[var(--text-small)] font-normal text-[var(--color-ink-faint)]">
+                        <span className="text-small font-normal text-[var(--color-ink-faint)]">
                           {' '}
                           / month
                         </span>

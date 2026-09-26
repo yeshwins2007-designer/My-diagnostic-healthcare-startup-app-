@@ -86,7 +86,7 @@ export default async function AbhaPage({
                 <DataRow
                   label="ABHA number"
                   value={
-                    <span className="font-mono text-[var(--text-small)]">
+                    <span className="font-mono text-small">
                       {patient.abhaAccount.abhaNumber}
                     </span>
                   }

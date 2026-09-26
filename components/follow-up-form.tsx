@@ -45,7 +45,7 @@ export function FollowUpForm({
         {state.reason && (
           <div className="rounded-[var(--radius-control)] border-2 border-[var(--color-red)] bg-[var(--color-red-wash)] p-4">
             <p className="font-semibold">{state.reason}</p>
-            <p className="text-[var(--text-small)]">{state.remedy}</p>
+            <p className="text-small">{state.remedy}</p>
           </div>
         )}
         {state.ok && state.message && (

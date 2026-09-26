@@ -27,7 +27,7 @@ export default async function CaregiverLayout({
       <header className="border-b-2 border-[var(--color-line)] bg-[var(--color-surface)]">
         <div className="mx-auto max-w-5xl px-5 py-4 sm:px-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <Link href="/caregiver" className="text-[var(--text-lead)] font-bold">
+            <Link href="/caregiver" className="text-lead font-bold">
               {brand.name}
             </Link>
             <div className="flex items-center gap-4">

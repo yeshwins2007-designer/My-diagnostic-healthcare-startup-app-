@@ -41,7 +41,7 @@ export function CriticalCallForm({ alertId }: { alertId: string }) {
             />
             <span>
               I have also sent the written follow-up.
-              <span className="block text-[var(--text-small)] text-[var(--color-ink-faint)]">
+              <span className="block text-small text-[var(--color-ink-faint)]">
                 A phone call alone leaves the family with nothing to show their doctor. The
                 alert stays open until this is done.
               </span>
@@ -51,7 +51,7 @@ export function CriticalCallForm({ alertId }: { alertId: string }) {
           {state.reason && (
             <div className="rounded-[var(--radius-control)] border-2 border-[var(--color-yellow)] bg-[var(--color-yellow-wash)] p-4">
               <p className="font-semibold">{state.reason}</p>
-              <p className="text-[var(--text-small)]">{state.remedy}</p>
+              <p className="text-small">{state.remedy}</p>
             </div>
           )}
           {state.message && !state.reason && (

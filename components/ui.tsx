@@ -87,23 +87,23 @@ export function Card({
 
 export function H1({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <h1 className={cx('text-[var(--text-h1)] font-bold tracking-tight', className)}>
+    <h1 className={cx('text-h1 font-bold tracking-tight', className)}>
       {children}
     </h1>
   );
 }
 
 export function H2({ children, className }: { children: ReactNode; className?: string }) {
-  return <h2 className={cx('text-[var(--text-h2)] font-bold', className)}>{children}</h2>;
+  return <h2 className={cx('text-h2 font-bold', className)}>{children}</h2>;
 }
 
 export function H3({ children, className }: { children: ReactNode; className?: string }) {
-  return <h3 className={cx('text-[var(--text-h3)] font-semibold', className)}>{children}</h3>;
+  return <h3 className={cx('text-h3 font-semibold', className)}>{children}</h3>;
 }
 
 export function Lead({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <p className={cx('text-[var(--text-lead)] text-[var(--color-ink-soft)]', className)}>
+    <p className={cx('text-lead text-[var(--color-ink-soft)]', className)}>
       {children}
     </p>
   );
@@ -111,7 +111,7 @@ export function Lead({ children, className }: { children: ReactNode; className?:
 
 export function Muted({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <p className={cx('text-[var(--text-small)] text-[var(--color-ink-faint)]', className)}>
+    <p className={cx('text-small text-[var(--color-ink-faint)]', className)}>
       {children}
     </p>
   );
@@ -133,7 +133,7 @@ const buttonTones: Record<ButtonTone, string> = {
 };
 
 const buttonBase =
-  'inline-flex items-center justify-center gap-3 rounded-[var(--radius-control)] border-2 px-6 font-semibold min-h-[var(--size-touch)] text-[var(--text-base)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+  'inline-flex items-center justify-center gap-3 rounded-[var(--radius-control)] border-2 px-6 font-semibold min-h-[var(--size-touch)] text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
 
 export function Button({
   children,
@@ -210,10 +210,10 @@ export function Field({
         {label}
         {required && <span className="text-[var(--color-red)]"> *</span>}
       </span>
-      {hint && <span className="text-[var(--text-small)] text-[var(--color-ink-faint)]">{hint}</span>}
+      {hint && <span className="text-small text-[var(--color-ink-faint)]">{hint}</span>}
       {children}
       {error && (
-        <span className="text-[var(--text-small)] font-medium text-[var(--color-red)]">
+        <span className="text-small font-medium text-[var(--color-red)]">
           {error}
         </span>
       )}
@@ -222,7 +222,7 @@ export function Field({
 }
 
 const inputBase =
-  'w-full rounded-[var(--radius-control)] border-2 border-[var(--color-line-strong)] bg-[var(--color-surface)] px-4 py-3 min-h-[var(--size-touch)] text-[var(--text-base)] text-[var(--color-ink)] placeholder:text-[var(--color-ink-faint)]';
+  'w-full rounded-[var(--radius-control)] border-2 border-[var(--color-line-strong)] bg-[var(--color-surface)] px-4 py-3 min-h-[var(--size-touch)] text-base text-[var(--color-ink)] placeholder:text-[var(--color-ink-faint)]';
 
 export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={cx(inputBase, props.className)} />;
@@ -259,7 +259,7 @@ export function Badge({
   return (
     <span
       className={cx(
-        'inline-flex items-center gap-2 rounded-full border-2 px-3 py-1 text-[var(--text-small)] font-semibold',
+        'inline-flex items-center gap-2 rounded-full border-2 px-3 py-1 text-small font-semibold',
         tones[tone],
       )}
     >
@@ -274,7 +274,7 @@ export function Badge({
  */
 export function SimulatedChip({ what }: { what: string }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border-2 border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-sunken)] px-3 py-1 text-[var(--text-tiny)] font-semibold text-[var(--color-ink-faint)]">
+    <span className="inline-flex items-center gap-2 rounded-full border-2 border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-sunken)] px-3 py-1 text-tiny font-semibold text-[var(--color-ink-faint)]">
       simulated {what}
     </span>
   );
@@ -324,7 +324,7 @@ export function EmptyState({
 /** The disclaimer that must appear on every summary, digital or printed. */
 export function Disclaimer({ text }: { text: string }) {
   return (
-    <p className="rounded-[var(--radius-control)] border-2 border-[var(--color-line)] bg-[var(--color-surface-sunken)] p-4 text-[var(--text-small)] leading-relaxed text-[var(--color-ink-soft)]">
+    <p className="rounded-[var(--radius-control)] border-2 border-[var(--color-line)] bg-[var(--color-surface-sunken)] p-4 text-small leading-relaxed text-[var(--color-ink-soft)]">
       {text}
     </p>
   );

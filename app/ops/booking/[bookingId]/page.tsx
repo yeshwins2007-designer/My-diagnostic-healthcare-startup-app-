@@ -225,7 +225,7 @@ export default async function OpsBookingPage({
           >
             <Stack gap="sm">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <H2 className="text-[var(--text-h3)]">Chain of custody</H2>
+                <H2 className="text-h3">Chain of custody</H2>
                 <Badge
                   tone={
                     clock.state === 'BREACHED'
@@ -270,7 +270,7 @@ export default async function OpsBookingPage({
                 />
               )}
 
-              <H3 className="mt-3 text-[var(--text-lead)]">Cold box</H3>
+              <H3 className="mt-3 text-lead">Cold box</H3>
               {specimen.coldChainLogs.length === 0 ? (
                 <Muted>No temperature was ever logged.</Muted>
               ) : (
@@ -298,7 +298,7 @@ export default async function OpsBookingPage({
 
         <Card>
           <Stack gap="sm">
-            <H2 className="text-[var(--text-h3)]">The eleven steps</H2>
+            <H2 className="text-h3">The eleven steps</H2>
             <ol className="flex flex-col gap-2">
               {CHECKLIST_STEPS.map((step) => {
                 const row = booking.checklistSteps.find((s) => s.stepKey === step.key);
@@ -317,7 +317,7 @@ export default async function OpsBookingPage({
                     <span className={row?.completedAt ? 'text-[var(--color-ink-faint)]' : ''}>
                       {step.sequence}. {step.label}
                       {row?.completedAt && (
-                        <span className="ml-2 text-[var(--text-tiny)]">
+                        <span className="ml-2 text-tiny">
                           {row.completedAt.toLocaleTimeString('en-IN', {
                             hour: 'numeric',
                             minute: '2-digit',
@@ -335,7 +335,7 @@ export default async function OpsBookingPage({
         {pendingRelease.length > 0 && (
           <Card tone="yellow">
             <Stack gap="md">
-              <H2 className="text-[var(--text-h3)]">Awaiting human verification</H2>
+              <H2 className="text-h3">Awaiting human verification</H2>
               <p>
                 The pathologist has signed. Before this reaches the family, check that the
                 identifiers on the report match the physical sample: two identifiers on the vial,
@@ -386,7 +386,7 @@ export default async function OpsBookingPage({
 
         <Card tone="sunken">
           <Stack gap="sm">
-            <H2 className="text-[var(--text-h3)]">Audit trail</H2>
+            <H2 className="text-h3">Audit trail</H2>
             <Muted>
               Every entry below is hash-chained to the one before it. {trail.length} recorded for
               this visit.
@@ -398,7 +398,7 @@ export default async function OpsBookingPage({
                 {trail.map((entry) => (
                   <li
                     key={entry.sequence}
-                    className="flex flex-wrap justify-between gap-3 border-b border-[var(--color-line)] pb-2 text-[var(--text-small)] last:border-b-0"
+                    className="flex flex-wrap justify-between gap-3 border-b border-[var(--color-line)] pb-2 text-small last:border-b-0"
                   >
                     <span className="font-medium">
                       {entry.action.replace(/_/g, ' ').toLowerCase()}

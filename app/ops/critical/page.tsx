@@ -108,7 +108,7 @@ export default async function CriticalValuesPage() {
 
                     <Card tone="surface">
                       <Stack gap="sm">
-                        <H3 className="text-[var(--text-lead)]">Read this, in this order</H3>
+                        <H3 className="text-lead">Read this, in this order</H3>
                         <ol className="flex list-decimal flex-col gap-2 pl-6">
                           {script.lines.map((line) => (
                             <li key={line} className="leading-relaxed">
@@ -121,7 +121,7 @@ export default async function CriticalValuesPage() {
 
                     <Card tone="yellow">
                       <Stack gap="sm">
-                        <H3 className="text-[var(--text-lead)]">Never say</H3>
+                        <H3 className="text-lead">Never say</H3>
                         <ul className="flex list-disc flex-col gap-1 pl-6">
                           {script.neverSay.map((line) => (
                             <li key={line}>{line}</li>

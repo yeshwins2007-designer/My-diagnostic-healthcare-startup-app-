@@ -58,7 +58,7 @@ export function LabIntakePanel({
     <Stack gap="lg">
       <Card>
         <Stack gap="md">
-          <H2 className="text-[var(--text-h3)]">Intake desk</H2>
+          <H2 className="text-h3">Intake desk</H2>
           <Muted>
             Scan or type the barcode as it arrives. Two identifiers are printed on every vial;
             check both against the manifest before accepting.
@@ -154,7 +154,7 @@ export function LabIntakePanel({
               {resultState.reason && (
                 <div className="rounded-[var(--radius-control)] border-2 border-[var(--color-red)] bg-[var(--color-red-wash)] p-4">
                   <p className="font-semibold">{resultState.reason}</p>
-                  <p className="text-[var(--text-small)]">{resultState.remedy}</p>
+                  <p className="text-small">{resultState.remedy}</p>
                 </div>
               )}
               {resultState.message && (

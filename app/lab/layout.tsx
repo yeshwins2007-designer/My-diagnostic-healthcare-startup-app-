@@ -14,7 +14,7 @@ export default async function LabLayout({ children }: { children: React.ReactNod
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-8">
           <Link
             href="/lab"
-            className="inline-flex min-h-12 items-center text-[var(--text-lead)] font-bold"
+            className="inline-flex min-h-12 items-center text-lead font-bold"
           >
             Partner laboratory
           </Link>

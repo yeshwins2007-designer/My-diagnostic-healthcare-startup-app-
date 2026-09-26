@@ -187,7 +187,7 @@ export function LabApplicationForm() {
               />
               <span>
                 We permit MEDWYN to name us in its materials.
-                <span className="block text-[var(--text-small)] text-[var(--color-ink-faint)]">
+                <span className="block text-small text-[var(--color-ink-faint)]">
                   For example: “Processed at Ananya Diagnostics, NABL-accredited MC-2417.” We
                   will not use your name anywhere without this.
                 </span>

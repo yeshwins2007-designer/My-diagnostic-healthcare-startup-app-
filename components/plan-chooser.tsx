@@ -81,13 +81,13 @@ export function PlanChooser({
                 {p.isRecommended && <Badge tone="primary">Most families choose this</Badge>}
                 <H3>{p.name}</H3>
                 <p className="text-[var(--color-ink-soft)]">{p.tagline}</p>
-                <p className="text-[var(--text-h2)] font-bold">
+                <p className="text-h2 font-bold">
                   {rupees(p.pricePaise)}
-                  <span className="text-[var(--text-small)] font-normal"> / month</span>
+                  <span className="text-small font-normal"> / month</span>
                 </p>
                 {/* Digits and words. A comma is not obvious to everyone. */}
                 <Muted>{p.priceInWords}</Muted>
-                <ul className="mt-2 flex flex-col gap-2 text-[var(--text-small)]">
+                <ul className="mt-2 flex flex-col gap-2 text-small">
                   {p.includes.map((line) => (
                     <li key={line} className="flex gap-2">
                       <span aria-hidden className="text-[var(--color-primary)]">✓</span>
@@ -159,7 +159,7 @@ export function PlanChooser({
             {plan && (
               <Card tone="sunken">
                 <Stack gap="sm">
-                  <H3 className="text-[var(--text-lead)]">Just to be clear</H3>
+                  <H3 className="text-lead">Just to be clear</H3>
                   <p>
                     {patientName} will be on <strong>{plan.name}</strong>. You will pay{' '}
                     <strong>{rupees(effective)}</strong>{' '}
@@ -182,7 +182,7 @@ export function PlanChooser({
             {state.reason && (
               <div className="rounded-[var(--radius-control)] border-2 border-[var(--color-red)] bg-[var(--color-red-wash)] p-4">
                 <p className="font-semibold">{state.reason}</p>
-                <p className="text-[var(--text-small)]">{state.remedy}</p>
+                <p className="text-small">{state.remedy}</p>
               </div>
             )}
 
@@ -241,7 +241,7 @@ function ChoiceTile({
       }`}
     >
       <span className="block font-semibold">{title}</span>
-      <span className="block text-[var(--text-small)] text-[var(--color-ink-soft)]">
+      <span className="block text-small text-[var(--color-ink-soft)]">
         {detail}
       </span>
     </button>

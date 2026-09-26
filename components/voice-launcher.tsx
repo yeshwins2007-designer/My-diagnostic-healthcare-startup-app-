@@ -130,14 +130,14 @@ export function VoiceLauncher() {
       <div className="flex items-center justify-between gap-3 border-b-2 border-[var(--color-line)] p-4">
         <div>
           <p className="font-bold">MEDWYN Sahayak</p>
-          <p className="text-[var(--text-tiny)] text-[var(--color-ink-faint)]">
+          <p className="text-tiny text-[var(--color-ink-faint)]">
             Visits, reports and billing. This chat may be kept so a coordinator can follow up.
           </p>
         </div>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="min-h-12 min-w-12 rounded-full text-[var(--text-lead)]"
+          className="min-h-12 min-w-12 rounded-full text-lead"
           aria-label="Close the assistant"
         >
           ✕
@@ -145,7 +145,7 @@ export function VoiceLauncher() {
       </div>
 
       <div className="border-b-2 border-[var(--color-line)] p-3">
-        <label className="flex items-center gap-3 text-[var(--text-small)]">
+        <label className="flex items-center gap-3 text-small">
           <span className="shrink-0">Language</span>
           <select
             value={locale}
@@ -163,7 +163,7 @@ export function VoiceLauncher() {
 
       <div ref={scrollRef} className="max-h-80 overflow-y-auto p-4">
         {turns.length === 0 ? (
-          <div className="text-[var(--text-small)] text-[var(--color-ink-soft)]">
+          <div className="text-small text-[var(--color-ink-soft)]">
             <p className="mb-3">
               Ask about the next visit, where the technician is, fasting instructions, moving a
               visit, or your plan.
@@ -180,12 +180,12 @@ export function VoiceLauncher() {
                 key={i}
                 className={
                   turn.role === 'caller'
-                    ? 'self-end rounded-[var(--radius-control)] bg-[var(--color-primary-wash)] p-3 text-[var(--text-small)]'
+                    ? 'self-end rounded-[var(--radius-control)] bg-[var(--color-primary-wash)] p-3 text-small'
                     : turn.emergency
-                      ? 'rounded-[var(--radius-control)] border-2 border-[var(--color-red)] bg-[var(--color-red-wash)] p-3 text-[var(--text-small)] font-semibold'
+                      ? 'rounded-[var(--radius-control)] border-2 border-[var(--color-red)] bg-[var(--color-red-wash)] p-3 text-small font-semibold'
                       : turn.blocked
-                        ? 'rounded-[var(--radius-control)] border-2 border-[var(--color-yellow)] bg-[var(--color-yellow-wash)] p-3 text-[var(--text-small)]'
-                        : 'rounded-[var(--radius-control)] bg-[var(--color-surface-sunken)] p-3 text-[var(--text-small)]'
+                        ? 'rounded-[var(--radius-control)] border-2 border-[var(--color-yellow)] bg-[var(--color-yellow-wash)] p-3 text-small'
+                        : 'rounded-[var(--radius-control)] bg-[var(--color-surface-sunken)] p-3 text-small'
                 }
               >
                 {turn.text}
@@ -197,7 +197,7 @@ export function VoiceLauncher() {
               </div>
             ))}
             {busy && (
-              <p className="text-[var(--text-small)] text-[var(--color-ink-faint)]">Thinking…</p>
+              <p className="text-small text-[var(--color-ink-faint)]">Thinking…</p>
             )}
           </div>
         )}
@@ -214,7 +214,7 @@ export function VoiceLauncher() {
           type="button"
           onClick={startListening}
           aria-label="Speak instead of typing"
-          className={`min-h-[var(--size-touch)] min-w-[var(--size-touch)] shrink-0 rounded-[var(--radius-control)] border-2 text-[var(--text-lead)] ${
+          className={`min-h-[var(--size-touch)] min-w-[var(--size-touch)] shrink-0 rounded-[var(--radius-control)] border-2 text-lead ${
             listening
               ? 'border-[var(--color-red)] bg-[var(--color-red-wash)]'
               : 'border-[var(--color-line-strong)]'

@@ -67,7 +67,7 @@ export default async function CaregiverHome() {
           <Card tone="red">
             <Stack gap="sm">
               <Badge tone="red">Needs urgent medical attention</Badge>
-              <H2 className="text-[var(--text-h3)]">
+              <H2 className="text-h3">
                 {openCritical.patient.name}’s laboratory flagged a result
               </H2>
               <p>
@@ -89,10 +89,10 @@ export default async function CaregiverHome() {
           <Card tone="primary">
             <Stack gap="md">
               <Badge tone="primary">Next visit</Badge>
-              <H2 className="text-[var(--text-h3)]">
+              <H2 className="text-h3">
                 {next.patient.name} · {dateLabel(next.windowStart)}
               </H2>
-              <p className="text-[var(--text-lead)]">
+              <p className="text-lead">
                 Between <strong>{timeLabel(next.windowStart)}</strong> and{' '}
                 <strong>{timeLabel(next.windowEnd)}</strong>
               </p>

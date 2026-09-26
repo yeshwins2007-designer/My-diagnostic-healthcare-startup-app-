@@ -35,7 +35,7 @@ export default async function GrowthGatesPage() {
             <Card key={gate.key} tone={gate.passed ? 'green' : 'sunken'}>
               <Stack gap="md">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <H2 className="text-[var(--text-h3)]">{gate.label}</H2>
+                  <H2 className="text-h3">{gate.label}</H2>
                   <Badge tone={gate.passed ? 'green' : 'neutral'}>
                     {gate.passed ? 'Unlocked' : 'Locked'}
                   </Badge>
@@ -60,7 +60,7 @@ export default async function GrowthGatesPage() {
                         </span>
                         <span>{c.label}</span>
                       </span>
-                      <span className="font-mono text-[var(--text-small)]">
+                      <span className="font-mono text-small">
                         <span className={c.met ? '' : 'font-bold text-[var(--color-red)]'}>
                           {c.actual}
                         </span>

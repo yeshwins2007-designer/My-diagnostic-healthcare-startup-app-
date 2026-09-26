@@ -159,7 +159,7 @@ export default async function FieldHome() {
                         </div>
                       </div>
 
-                      <p className="text-[var(--text-lead)]">
+                      <p className="text-lead">
                         {timeLabel(booking.windowStart)} – {timeLabel(booking.windowEnd)}
                       </p>
 

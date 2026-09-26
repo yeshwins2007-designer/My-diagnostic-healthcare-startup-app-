@@ -63,10 +63,10 @@ export default async function PlansPage() {
               >
                 <Stack gap="sm">
                   {plan.isRecommended && <Badge tone="primary">Most families choose this</Badge>}
-                  <H2 className="text-[var(--text-h3)]">{plan.name}</H2>
+                  <H2 className="text-h3">{plan.name}</H2>
                   <p className="text-[var(--color-ink-soft)]">{plan.tagline}</p>
 
-                  <p className="text-[var(--text-h1)] font-bold leading-none">
+                  <p className="text-h1 font-bold leading-none">
                     {formatINR(plan.pricePaise)}
                   </p>
                   <Muted>per month · {formatINRWithWords(plan.pricePaise)}</Muted>

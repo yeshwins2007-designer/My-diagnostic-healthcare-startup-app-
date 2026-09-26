@@ -73,11 +73,11 @@ export function ThemeToggle() {
               : 'border-[var(--color-line-strong)]'
           }`}
         >
-          <span aria-hidden className="text-[var(--text-small)]">
+          <span aria-hidden className="text-small">
             {option.icon}
           </span>
           {/* Every icon carries a text label — nobody should have to guess. */}
-          <span className="mt-0.5 text-[var(--text-tiny)] font-semibold">
+          <span className="mt-0.5 text-tiny font-semibold">
             {option.label}
           </span>
         </button>

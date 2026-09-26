@@ -86,9 +86,9 @@ export function ElderShell({
     <div dir={dir} lang={locale} className="min-h-dvh bg-[var(--color-canvas)]">
       <header className="border-b-2 border-[var(--color-line)] bg-[var(--color-surface)] px-5 py-4">
         <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3">
-          <p className="text-[var(--text-lead)] font-bold">{patientName || 'MEDWYN'}</p>
+          <p className="text-lead font-bold">{patientName || 'MEDWYN'}</p>
           <div className="flex items-center gap-2">
-            <span className="text-[var(--text-small)]">A</span>
+            <span className="text-small">A</span>
             {(['normal', 'large', 'largest'] as const).map((size, i) => (
               <button
                 key={size}
@@ -117,11 +117,11 @@ export function ElderShell({
       <main id="elder-main" className="mx-auto max-w-2xl px-5 pt-8 pb-28">
         {screen === 'HOME' && (
           <div className="flex flex-col gap-6">
-            <h1 className="text-[var(--text-h1)] font-bold">
+            <h1 className="text-h1 font-bold">
               {greeting}
               {patientName ? `, ${patientName.split(' ')[0]}` : ''}
             </h1>
-            <p className="text-[var(--text-lead)] text-[var(--color-ink-soft)]">
+            <p className="text-lead text-[var(--color-ink-soft)]">
               {tr('elder.nothingToWorry')}
             </p>
 
@@ -155,22 +155,22 @@ export function ElderShell({
           <Screen title={tr('elder.nextVisit')} onBack={() => setScreen('HOME')} backLabel={tr('common.back')}>
             {nextVisit ? (
               <div className="flex flex-col gap-5">
-                <p className="text-[var(--text-h2)] font-bold">{nextVisit.dateLabel}</p>
-                <p className="text-[var(--text-h3)]">{nextVisit.windowLabel}</p>
+                <p className="text-h2 font-bold">{nextVisit.dateLabel}</p>
+                <p className="text-h3">{nextVisit.windowLabel}</p>
                 {nextVisit.technicianName && (
-                  <p className="text-[var(--text-lead)]">
+                  <p className="text-lead">
                     <strong>{nextVisit.technicianName}</strong>{' '}
                     {tr('elder.technicianComing')}
                   </p>
                 )}
                 {nextVisit.fastingText && (
                   <div className="rounded-[var(--radius-card)] border-2 border-[var(--color-yellow)] bg-[var(--color-yellow-wash)] p-5">
-                    <p className="text-[var(--text-lead)]">{tr('elder.fastingReminder')}</p>
+                    <p className="text-lead">{tr('elder.fastingReminder')}</p>
                   </div>
                 )}
               </div>
             ) : (
-              <p className="text-[var(--text-lead)]">{tr('elder.noVisitScheduled')}</p>
+              <p className="text-lead">{tr('elder.noVisitScheduled')}</p>
             )}
           </Screen>
         )}
@@ -178,7 +178,7 @@ export function ElderShell({
         {screen === 'REPORTS' && (
           <Screen title={tr('elder.myReports')} onBack={() => setScreen('HOME')} backLabel={tr('common.back')}>
             {reports.length === 0 ? (
-              <p className="text-[var(--text-lead)]">—</p>
+              <p className="text-lead">—</p>
             ) : (
               <div className="flex flex-col gap-4">
                 {reports.map((report) => (
@@ -193,10 +193,10 @@ export function ElderShell({
                           : 'border-[var(--color-red)] bg-[var(--color-red-wash)]'
                     }`}
                   >
-                    <span className="text-[var(--text-lead)] font-semibold">
+                    <span className="text-lead font-semibold">
                       {report.dateLabel}
                     </span>
-                    <span className="text-[var(--text-lead)] font-bold">
+                    <span className="text-lead font-bold">
                       {tr(
                         report.band === 'GREEN'
                           ? 'stoplight.green.title'
@@ -217,19 +217,19 @@ export function ElderShell({
             <div className="flex flex-col gap-5">
               <a
                 href={`tel:${supportPhone.replace(/\s/g, '')}`}
-                className="flex min-h-[var(--size-touch-lg)] items-center justify-center gap-4 rounded-[var(--radius-card)] border-4 border-[var(--color-primary)] bg-[var(--color-primary)] p-6 text-[var(--text-h3)] font-bold text-[var(--color-primary-ink)]"
+                className="flex min-h-[var(--size-touch-lg)] items-center justify-center gap-4 rounded-[var(--radius-card)] border-4 border-[var(--color-primary)] bg-[var(--color-primary)] p-6 text-h3 font-bold text-[var(--color-primary-ink)]"
               >
                 📞 {supportPhone}
               </a>
-              <p className="text-[var(--text-lead)]">{tr('common.callUs')}</p>
+              <p className="text-lead">{tr('common.callUs')}</p>
 
               <div className="rounded-[var(--radius-card)] border-4 border-[var(--color-red)] bg-[var(--color-red-wash)] p-5">
-                <p className="text-[var(--text-lead)] font-bold">
+                <p className="text-lead font-bold">
                   {tr('emergency.callNow')}
                 </p>
                 <a
                   href={`tel:${emergencyNumber}`}
-                  className="mt-4 flex min-h-[var(--size-touch-lg)] items-center justify-center rounded-[var(--radius-card)] border-4 border-[var(--color-red)] bg-[var(--color-red)] text-[var(--text-h2)] font-bold text-white"
+                  className="mt-4 flex min-h-[var(--size-touch-lg)] items-center justify-center rounded-[var(--radius-card)] border-4 border-[var(--color-red)] bg-[var(--color-red)] text-h2 font-bold text-white"
                 >
                   {emergencyNumber}
                 </a>
@@ -251,7 +251,7 @@ export function ElderShell({
                   }}
                   aria-pressed={locale === l.key}
                   lang={l.key}
-                  className={`min-h-[var(--size-touch-lg)] rounded-[var(--radius-card)] border-4 p-4 text-[var(--text-lead)] font-semibold ${
+                  className={`min-h-[var(--size-touch-lg)] rounded-[var(--radius-card)] border-4 p-4 text-lead font-semibold ${
                     locale === l.key
                       ? 'border-[var(--color-primary)] bg-[var(--color-primary-wash)]'
                       : 'border-[var(--color-line-strong)] bg-[var(--color-surface)]'
@@ -270,7 +270,7 @@ export function ElderShell({
         <button
           type="button"
           onClick={readAloud}
-          className="mx-auto flex min-h-[var(--size-touch)] w-full max-w-2xl items-center justify-center gap-3 rounded-[var(--radius-control)] border-2 border-[var(--color-primary)] bg-[var(--color-surface)] px-6 text-[var(--text-lead)] font-semibold"
+          className="mx-auto flex min-h-[var(--size-touch)] w-full max-w-2xl items-center justify-center gap-3 rounded-[var(--radius-control)] border-2 border-[var(--color-primary)] bg-[var(--color-surface)] px-6 text-lead font-semibold"
         >
           🔊 {tr('elder.readAloud')}
         </button>
@@ -298,7 +298,7 @@ function Tile({
         {emoji}
       </span>
       {/* The icon never stands alone. */}
-      <span className="text-center text-[var(--text-lead)] font-bold">{label}</span>
+      <span className="text-center text-lead font-bold">{label}</span>
     </button>
   );
 }
@@ -319,11 +319,11 @@ function Screen({
       <button
         type="button"
         onClick={onBack}
-        className="flex min-h-[var(--size-touch)] w-fit items-center gap-3 rounded-[var(--radius-control)] border-2 border-[var(--color-line-strong)] bg-[var(--color-surface)] px-5 text-[var(--text-lead)] font-semibold"
+        className="flex min-h-[var(--size-touch)] w-fit items-center gap-3 rounded-[var(--radius-control)] border-2 border-[var(--color-line-strong)] bg-[var(--color-surface)] px-5 text-lead font-semibold"
       >
         ← {backLabel}
       </button>
-      <h1 className="text-[var(--text-h1)] font-bold">{title}</h1>
+      <h1 className="text-h1 font-bold">{title}</h1>
       {children}
     </div>
   );

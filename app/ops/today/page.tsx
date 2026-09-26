@@ -139,7 +139,7 @@ export default async function OpsTodayPage() {
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <Stack gap="sm" className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-3">
-                          <H3 className="text-[var(--text-lead)]">{booking.patient.name}</H3>
+                          <H3 className="text-lead">{booking.patient.name}</H3>
                           <Badge tone={STATUS_TONE[booking.status] ?? 'neutral'}>
                             {booking.status.replace(/_/g, ' ').toLowerCase()}
                           </Badge>
@@ -156,7 +156,7 @@ export default async function OpsTodayPage() {
                           {booking.address.landmark && ` (${booking.address.landmark})`}
                         </Muted>
                         {booking.patient.careNotes && (
-                          <p className="rounded-[var(--radius-control)] bg-[var(--color-yellow-wash)] p-3 text-[var(--text-small)]">
+                          <p className="rounded-[var(--radius-control)] bg-[var(--color-yellow-wash)] p-3 text-small">
                             {booking.patient.careNotes}
                           </p>
                         )}

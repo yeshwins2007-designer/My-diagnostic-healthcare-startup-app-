@@ -65,7 +65,7 @@ export function LabVerificationPanel({
   return (
     <Stack gap="md">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <H3 className="text-[var(--text-lead)]">Verification checklist</H3>
+        <H3 className="text-lead">Verification checklist</H3>
         <Badge tone={remainingCount === 0 ? 'green' : 'yellow'}>
           {checks.length - remainingCount} of {checks.length} passed
         </Badge>
@@ -142,7 +142,7 @@ export function LabVerificationPanel({
       {(activateState.reason || suspendState.reason) && (
         <div className="rounded-[var(--radius-control)] border-2 border-[var(--color-red)] bg-[var(--color-red-wash)] p-4">
           <p className="font-semibold">{activateState.reason ?? suspendState.reason}</p>
-          <p className="text-[var(--text-small)]">
+          <p className="text-small">
             {activateState.remedy ?? suspendState.remedy}
           </p>
         </div>

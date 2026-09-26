@@ -81,7 +81,7 @@ export default async function WaitlistPage() {
               <Card key={entry.id} tone={entry.status === 'WAITING' ? 'surface' : 'sunken'}>
                 <Stack gap="sm">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <H3 className="text-[var(--text-lead)]">
+                    <H3 className="text-lead">
                       {entry.patientName}, {entry.patientAge}
                     </H3>
                     <div className="flex gap-2">

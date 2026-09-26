@@ -58,20 +58,20 @@ export default async function OpsHomePage() {
               <Card key={v.key} tone={v.health === 'BAD' ? 'red' : 'surface'}>
                 <Stack gap="sm">
                   <div className="flex items-start justify-between gap-3">
-                    <H3 className="text-[var(--text-lead)]">{v.label}</H3>
+                    <H3 className="text-lead">{v.label}</H3>
                     <Badge tone={HEALTH_TONE[v.health]}>
                       {v.health === 'NO_DATA' ? 'no data' : v.health.toLowerCase()}
                     </Badge>
                   </div>
 
-                  <p className="text-[var(--text-display)] font-bold leading-none">
+                  <p className="text-display font-bold leading-none">
                     {v.display}
                   </p>
                   <Muted>Target {v.target}</Muted>
 
                   {series.length > 1 && <Sparkline values={series} />}
 
-                  <p className="text-[var(--text-small)] leading-relaxed text-[var(--color-ink-soft)]">
+                  <p className="text-small leading-relaxed text-[var(--color-ink-soft)]">
                     {v.meaning}
                   </p>
                 </Stack>

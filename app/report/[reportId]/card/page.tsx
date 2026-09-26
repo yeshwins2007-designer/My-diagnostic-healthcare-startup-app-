@@ -101,8 +101,8 @@ export default async function StoplightCardPage({
           style={{ borderColor: bandColour }}
         >
           <header className="mb-6 flex items-baseline justify-between gap-4 border-b-2 border-[var(--color-line)] pb-4">
-            <span className="text-[var(--text-lead)] font-bold">{brand.name}</span>
-            <span className="text-[var(--text-small)] text-[var(--color-ink-faint)]">
+            <span className="text-lead font-bold">{brand.name}</span>
+            <span className="text-small text-[var(--color-ink-faint)]">
               {report.releasedAt?.toLocaleDateString('en-IN', {
                 day: 'numeric',
                 month: 'long',
@@ -111,8 +111,8 @@ export default async function StoplightCardPage({
             </span>
           </header>
 
-          <p className="text-[var(--text-h2)] font-bold">{report.patient.name}</p>
-          <p className="mb-6 text-[var(--text-lead)] text-[var(--color-ink-soft)]">
+          <p className="text-h2 font-bold">{report.patient.name}</p>
+          <p className="mb-6 text-lead text-[var(--color-ink-soft)]">
             {report.patient.ageYears} years
           </p>
 
@@ -123,19 +123,19 @@ export default async function StoplightCardPage({
             style={{ borderColor: bandColour, background: bandWash }}
           >
             <p
-              className="text-[var(--text-h1)] font-bold leading-tight"
+              className="text-h1 font-bold leading-tight"
               style={{ color: bandColour }}
             >
               {t(locale, titleKey)}
             </p>
           </div>
 
-          <p className="mb-6 text-[var(--text-lead)] leading-relaxed">
+          <p className="mb-6 text-lead leading-relaxed">
             {t(locale, bodyKey)}
           </p>
 
           <div className="mb-6 border-t-2 border-[var(--color-line)] pt-4">
-            <p className="text-[var(--text-small)] text-[var(--color-ink-soft)]">
+            <p className="text-small text-[var(--color-ink-soft)]">
               Processed at <strong>{report.lab.name}</strong>
               {report.lab.brandingConsent && report.lab.accreditation
                 ? `, NABL-accredited ${report.lab.accreditation.certificateNumber}`
@@ -145,21 +145,21 @@ export default async function StoplightCardPage({
             </p>
           </div>
 
-          <p className="mb-6 rounded-[var(--radius-control)] border-2 border-[var(--color-line)] bg-[var(--color-surface-sunken)] p-4 text-[var(--text-small)] leading-relaxed">
+          <p className="mb-6 rounded-[var(--radius-control)] border-2 border-[var(--color-line)] bg-[var(--color-surface-sunken)] p-4 text-small leading-relaxed">
             {t(locale, 'stoplight.disclaimer')}
           </p>
 
           <footer className="flex flex-wrap items-center justify-between gap-3 border-t-2 border-[var(--color-line)] pt-4">
-            <span className="text-[var(--text-lead)] font-bold">
+            <span className="text-lead font-bold">
               📞 {brand.supportPhone}
             </span>
-            <span className="text-[var(--text-small)] text-[var(--color-ink-faint)]">
+            <span className="text-small text-[var(--color-ink-faint)]">
               {report.booking.reference}
             </span>
           </footer>
         </article>
 
-        <p className="no-print mt-5 text-[var(--text-small)] text-[var(--color-ink-faint)]">
+        <p className="no-print mt-5 text-small text-[var(--color-ink-faint)]">
           This card deliberately carries no numbers. The full signed report, with every value and
           its reference range, is in the family’s account — and the person to go through it with
           is the treating doctor.

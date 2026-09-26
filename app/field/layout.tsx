@@ -21,7 +21,7 @@ export default async function FieldLayout({ children }: { children: React.ReactN
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-4 px-5 py-4">
           <Link
             href="/field"
-            className="inline-flex min-h-12 items-center text-[var(--text-lead)] font-bold"
+            className="inline-flex min-h-12 items-center text-lead font-bold"
           >
             Today’s route
           </Link>

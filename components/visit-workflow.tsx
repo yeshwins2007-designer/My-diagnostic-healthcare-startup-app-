@@ -45,7 +45,7 @@ function Refusal({ state }: { state: FieldActionState }) {
   return (
     <div className="rounded-[var(--radius-control)] border-2 border-[var(--color-red)] bg-[var(--color-red-wash)] p-4">
       <p className="font-semibold">{state.reason}</p>
-      <p className="text-[var(--text-small)]">{state.remedy}</p>
+      <p className="text-small">{state.remedy}</p>
     </div>
   );
 }
@@ -195,7 +195,7 @@ export function VisitWorkflow({
                   type="submit"
                   name="granted"
                   value="yes"
-                  className="min-h-[var(--size-touch-lg)] rounded-[var(--radius-control)] border-2 border-[var(--color-green)] bg-[var(--color-green-wash)] px-5 text-[var(--text-lead)] font-semibold text-[var(--color-green)]"
+                  className="min-h-[var(--size-touch-lg)] rounded-[var(--radius-control)] border-2 border-[var(--color-green)] bg-[var(--color-green-wash)] px-5 text-lead font-semibold text-[var(--color-green)]"
                 >
                   They agreed
                 </button>
@@ -203,7 +203,7 @@ export function VisitWorkflow({
                   type="submit"
                   name="granted"
                   value="no"
-                  className="min-h-[var(--size-touch-lg)] rounded-[var(--radius-control)] border-2 border-[var(--color-red)] bg-[var(--color-red-wash)] px-5 text-[var(--text-lead)] font-semibold text-[var(--color-red)]"
+                  className="min-h-[var(--size-touch-lg)] rounded-[var(--radius-control)] border-2 border-[var(--color-red)] bg-[var(--color-red-wash)] px-5 text-lead font-semibold text-[var(--color-red)]"
                 >
                   They declined
                 </button>
@@ -371,12 +371,12 @@ export function VisitWorkflow({
                 <span className={step.completedAt ? 'text-[var(--color-ink-faint)]' : ''}>
                   {step.sequence}. {step.label}
                   {step.blocking && !step.completedAt && (
-                    <span className="ml-2 text-[var(--text-tiny)] font-semibold text-[var(--color-red)]">
+                    <span className="ml-2 text-tiny font-semibold text-[var(--color-red)]">
                       blocking
                     </span>
                   )}
                   {step.actor !== 'TECHNICIAN' && (
-                    <span className="ml-2 text-[var(--text-tiny)] text-[var(--color-ink-faint)]">
+                    <span className="ml-2 text-tiny text-[var(--color-ink-faint)]">
                       ({step.actor.toLowerCase()})
                     </span>
                   )}

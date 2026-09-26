@@ -42,7 +42,7 @@ export default async function LoginPage() {
                   No SMS gateway is configured, so the code appears on screen and in the server
                   console. Any of these seeded numbers work:
                 </Muted>
-                <ul className="flex flex-col gap-2 font-mono text-[var(--text-small)]">
+                <ul className="flex flex-col gap-2 font-mono text-small">
                   <li>+91 98450 00001 — Yeshwin, founder / ops console</li>
                   <li>+91 98450 00101 — Anjali Iyer, caregiver (mother Lakshmi, 74)</li>
                   <li>+91 98450 00010 — Priya Nair, field technician</li>

@@ -69,7 +69,7 @@ export function BookVisitForm({
               min={minDate}
               defaultValue={minDate}
               required
-              className="min-h-[var(--size-touch)] w-full rounded-[var(--radius-control)] border-2 border-[var(--color-line-strong)] bg-[var(--color-surface)] px-4 text-[var(--text-base)]"
+              className="min-h-[var(--size-touch)] w-full rounded-[var(--radius-control)] border-2 border-[var(--color-line-strong)] bg-[var(--color-surface)] px-4 text-base"
             />
           </Field>
 
@@ -86,7 +86,7 @@ export function BookVisitForm({
           {state.reason && (
             <div className="rounded-[var(--radius-control)] border-2 border-[var(--color-red)] bg-[var(--color-red-wash)] p-4">
               <p className="font-semibold">{state.reason}</p>
-              <p className="text-[var(--text-small)]">{state.remedy}</p>
+              <p className="text-small">{state.remedy}</p>
             </div>
           )}
           {state.ok && state.message && (

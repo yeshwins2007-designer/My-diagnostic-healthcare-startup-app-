@@ -88,11 +88,11 @@ export function LabChooser({
                 }`}
               >
                 <span className="flex flex-wrap items-center gap-3">
-                  <span className="text-[var(--text-lead)] font-semibold">{o.name}</span>
+                  <span className="text-lead font-semibold">{o.name}</span>
                   {o.isZoneAnchor && <Badge tone="primary">Your area’s laboratory</Badge>}
                   {isOn && <Badge tone="green">Chosen</Badge>}
                 </span>
-                <span className="mt-1 block text-[var(--text-small)] text-[var(--color-ink-soft)]">
+                <span className="mt-1 block text-small text-[var(--color-ink-soft)]">
                   {o.certificateNumber ? `NABL ${o.certificateNumber}` : 'NABL accredited'}
                   {o.distanceKm !== null && ` · about ${o.distanceKm} km away`}
                 </span>
@@ -113,7 +113,7 @@ export function LabChooser({
                   {o.name}
                   {o.distanceKm !== null && ` · about ${o.distanceKm} km away`}
                 </p>
-                <p className="text-[var(--text-small)] text-[var(--color-ink-soft)]">
+                <p className="text-small text-[var(--color-ink-soft)]">
                   {o.reason}
                 </p>
               </div>
