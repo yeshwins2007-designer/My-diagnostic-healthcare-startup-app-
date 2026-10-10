@@ -51,11 +51,23 @@ describe('rateLimit', () => {
 });
 
 describe('clientKey', () => {
-  it('prefers the first x-forwarded-for hop', () => {
+  it('ignores the client-chosen first x-forwarded-for hop', () => {
+    // The leftmost entry is whatever the client sent. Trusting it let an
+    // attacker present a fresh "IP" on every request and never be limited;
+    // the rightmost entry is the one our own proxy appended.
+    const spoofed = (fake: string) =>
+      new Request('https://example.test', {
+        headers: { 'x-forwarded-for': `${fake}, 203.0.113.7` },
+      });
+    expect(clientKey(spoofed('1.1.1.1'), 'otp')).toBe('otp:203.0.113.7');
+    expect(clientKey(spoofed('2.2.2.2'), 'otp')).toBe(clientKey(spoofed('3.3.3.3'), 'otp'));
+  });
+
+  it('prefers the edge-set client address over forwarded hops', () => {
     const request = new Request('https://example.test', {
-      headers: { 'x-forwarded-for': '203.0.113.7, 10.0.0.1' },
+      headers: { 'cf-connecting-ip': '198.51.100.9', 'x-forwarded-for': '6.6.6.6, 10.0.0.1' },
     });
-    expect(clientKey(request, 'voice')).toBe('voice:203.0.113.7');
+    expect(clientKey(request, 'voice')).toBe('voice:198.51.100.9');
   });
 
   it('falls back to x-real-ip, then to a constant', () => {

@@ -9,6 +9,10 @@ export default defineConfig({
     environment: 'node',
   },
   resolve: {
-    alias: { '@': path.resolve(import.meta.dirname) },
+    alias: {
+      '@': path.resolve(import.meta.dirname),
+      // Lets database-backed tests import server modules directly.
+      'server-only': path.resolve(import.meta.dirname, 'tests/stubs/server-only.ts'),
+    },
   },
 });

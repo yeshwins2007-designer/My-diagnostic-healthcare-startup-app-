@@ -16,8 +16,8 @@ const VERSION = 'v1';
 
 /**
  * In development with no key configured we derive a deterministic key from
- * AUTH_SECRET so the app runs on a clean checkout. `assertProductionKey()`
- * refuses to let that reach production.
+ * AUTH_SECRET so the app runs on a clean checkout. lib/env.ts refuses to
+ * start a production server without a real key.
  */
 function key(): Buffer {
   if (env.FIELD_ENCRYPTION_KEY) {
@@ -28,14 +28,6 @@ function key(): Buffer {
     return raw;
   }
   return crypto.createHash('sha256').update(`fieldkey:${env.AUTH_SECRET}`).digest();
-}
-
-export function assertProductionKey(): void {
-  if (env.NODE_ENV === 'production' && !env.FIELD_ENCRYPTION_KEY) {
-    throw new Error(
-      'FIELD_ENCRYPTION_KEY is required in production. Generate one with: openssl rand -hex 32',
-    );
-  }
 }
 
 export function encryptField(plaintext: string): string {

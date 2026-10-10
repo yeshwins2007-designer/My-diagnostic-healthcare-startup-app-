@@ -40,6 +40,9 @@ jobs:
     env:
       DATABASE_URL: file:./dev.db
       ABDM_ENV: sandbox
+      # A preview is a demo: simulated SMS and payments, seeded families. The
+      # server refuses to start in production with simulators unless told so.
+      DEMO_MODE: 'true'
 
     steps:
       - uses: actions/checkout@v4

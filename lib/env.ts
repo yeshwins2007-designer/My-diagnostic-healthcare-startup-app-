@@ -21,6 +21,15 @@ const envSchema = z.object({
    */
   PUBLIC_APP_URL: z.string().url().optional(),
 
+  /**
+   * Set to "true" ONLY for a demo or preview. In production without it, the
+   * server refuses to start while sign-in codes or payments would be
+   * simulated: a simulated SMS gateway shows every login code on screen, which
+   * would let anyone sign in as anyone, including staff with access to every
+   * patient's records.
+   */
+  DEMO_MODE: z.enum(['true', 'false']).default('false'),
+
   /** Signing key for session JWTs and tracking-link tokens. */
   AUTH_SECRET: z.string().min(16).default('dev-only-insecure-secret-change-me'),
   /** AES-256-GCM key (64 hex chars) for field-level encryption of results. */
@@ -109,6 +118,48 @@ if (env.NODE_ENV === 'production' && USING_DEFAULT_SECRET) {
   } else {
     throw new Error(
       'AUTH_SECRET is still the development default. Generate one with `openssl rand -base64 48` and set it before serving production traffic.',
+    );
+  }
+}
+
+/** A deliberate demo or preview: simulators allowed, and labelled as such. */
+export const isDemo = env.DEMO_MODE === 'true';
+
+/**
+ * Production must be real. Each condition below, left unchecked, is a way to
+ * read or alter health records without being the person they belong to.
+ * Enforced at boot rather than at first use, so a misconfigured deployment
+ * fails before it ever serves a patient - and exempted during `next build`,
+ * which runs as production on any laptop.
+ */
+if (env.NODE_ENV === 'production' && !IS_BUILD_PHASE) {
+  const problems: string[] = [];
+  if (!isDemo) {
+    if (providerMode.sms === 'simulated') {
+      problems.push(
+        'No SMS gateway (MSG91_AUTH_KEY): sign-in codes would be shown on screen to anyone.',
+      );
+    }
+    if (providerMode.payments === 'simulated') {
+      problems.push(
+        'No payment gateway (RAZORPAY_KEY_ID/SECRET): payments would be simulated and free.',
+      );
+    }
+    if (providerMode.payments === 'live' && !env.RAZORPAY_WEBHOOK_SECRET) {
+      problems.push('RAZORPAY_WEBHOOK_SECRET is missing: payment webhooks could not be verified.');
+    }
+    if (!env.PUBLIC_APP_URL) {
+      problems.push('PUBLIC_APP_URL is missing: passkeys must be bound to the real domain.');
+    }
+  }
+  if (!env.FIELD_ENCRYPTION_KEY) {
+    problems.push(
+      'FIELD_ENCRYPTION_KEY is missing: results would be encrypted with a key derived from AUTH_SECRET. Generate one with `openssl rand -hex 32`.',
+    );
+  }
+  if (problems.length > 0) {
+    throw new Error(
+      `Refusing to serve production traffic:\n  - ${problems.join('\n  - ')}\n(For a demo or preview only, set DEMO_MODE=true.)`,
     );
   }
 }

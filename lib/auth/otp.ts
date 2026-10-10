@@ -12,11 +12,34 @@ import { db } from '../db';
 import { generateOtp, hashToken, safeEqual } from '../compliance/crypto';
 import { getSmsProvider } from '../providers/sms';
 import { audit } from '../compliance/audit';
+import { isDemo } from '../env';
 import type { UserRole } from '../enums';
 
 const OTP_TTL_MINUTES = 10;
 /** Stops one phone number being used to spray codes at another. */
 const RESEND_COOLDOWN_SECONDS = 30;
+
+/**
+ * Per-number budgets, counted in the database so they hold across server
+ * instances and restarts. Each code allows only a few guesses, but without a
+ * budget across codes an attacker could keep asking for fresh codes and keep
+ * guessing; with it, guessing a six-digit code is out of reach.
+ */
+const BUDGET_WINDOW_MINUTES = 60;
+// A demo shows every code on screen, so a budget there protects nothing and
+// only locks out testers sharing one seeded account.
+const MAX_CODES_PER_WINDOW = isDemo ? 100 : 5;
+const MAX_FAILED_GUESSES_PER_WINDOW = isDemo ? 200 : 10;
+
+async function budgetUsed(phone: string, purpose: string) {
+  const since = new Date(Date.now() - BUDGET_WINDOW_MINUTES * 60_000);
+  const recent = await db.otpChallenge.aggregate({
+    where: { phone, purpose, createdAt: { gte: since } },
+    _count: true,
+    _sum: { attempts: true },
+  });
+  return { codes: recent._count, failedGuesses: recent._sum.attempts ?? 0 };
+}
 
 export interface OtpRequestResult {
   ok: boolean;
@@ -48,6 +71,19 @@ export async function requestOtp(
   const phone = normalisePhone(rawPhone);
   if (!isValidIndianPhone(phone)) {
     return { ok: false, message: 'Enter a valid 10-digit Indian mobile number.' };
+  }
+
+  const budget = await budgetUsed(phone, purpose);
+  if (
+    budget.codes >= MAX_CODES_PER_WINDOW ||
+    budget.failedGuesses >= MAX_FAILED_GUESSES_PER_WINDOW
+  ) {
+    return {
+      ok: false,
+      message:
+        'Too many codes have been requested for this number. Please wait an hour, or call us.',
+      retryAfterSeconds: BUDGET_WINDOW_MINUTES * 60,
+    };
   }
 
   const recent = await db.otpChallenge.findFirst({
@@ -116,15 +152,25 @@ export async function verifyOtp(
   if (challenge.expiresAt < new Date()) {
     return { ok: false, message: 'That code has expired. Please ask for a new one.' };
   }
-  if (challenge.attempts >= challenge.maxAttempts) {
+  const budget = await budgetUsed(phone, purpose);
+  if (budget.failedGuesses >= MAX_FAILED_GUESSES_PER_WINDOW) {
+    return {
+      ok: false,
+      message: 'Too many wrong codes for this number. Please wait an hour, or call us.',
+    };
+  }
+
+  // Claim a guess atomically BEFORE comparing. Read-then-increment let
+  // parallel requests all pass the attempts check at once and exceed it.
+  const claimed = await db.otpChallenge.updateMany({
+    where: { id: challenge.id, consumedAt: null, attempts: { lt: challenge.maxAttempts } },
+    data: { attempts: { increment: 1 } },
+  });
+  if (claimed.count === 0) {
     return { ok: false, message: 'Too many attempts. Please ask for a new code.' };
   }
 
   if (!safeEqual(hashToken(code.trim()), challenge.codeHash)) {
-    await db.otpChallenge.update({
-      where: { id: challenge.id },
-      data: { attempts: { increment: 1 } },
-    });
     const left = challenge.maxAttempts - challenge.attempts - 1;
     return {
       ok: false,
@@ -135,10 +181,15 @@ export async function verifyOtp(
     };
   }
 
-  await db.otpChallenge.update({
-    where: { id: challenge.id },
-    data: { consumedAt: new Date() },
+  // A correct code is not a failed guess: give the attempt back, and consume
+  // the code so it can never be used twice, even by a racing request.
+  const consumed = await db.otpChallenge.updateMany({
+    where: { id: challenge.id, consumedAt: null },
+    data: { consumedAt: new Date(), attempts: { decrement: 1 } },
   });
+  if (consumed.count === 0) {
+    return { ok: false, message: 'Ask for a new code — this one is no longer valid.' };
+  }
 
   const existing = await db.user.findUnique({ where: { phone } });
   return {

@@ -54,6 +54,19 @@ cat > "${ENV_FILE}" <<EOF
 AUTH_SECRET="${AUTH_SECRET}"
 FIELD_ENCRYPTION_KEY="${FIELD_ENCRYPTION_KEY}"
 
+# --- demo mode -------------------------------------------------------------
+# true: simulated SMS and payments are allowed, and sign-in codes appear on
+# screen. Fine for a demo with seeded data; NEVER with real patients. Before
+# the first real family signs up: add MSG91_*, RAZORPAY_* and PUBLIC_APP_URL
+# below and set DEMO_MODE=false. The server refuses to start in production
+# with simulators unless this says true, so a real pilot cannot drift into
+# showing login codes on screen.
+DEMO_MODE=true
+
+# The address families open, e.g. https://app.medwyn.in. Passkeys are bound
+# to it; required once DEMO_MODE=false.
+# PUBLIC_APP_URL=
+
 # --- Cloudflare named tunnel ------------------------------------------------
 # From the Zero Trust dashboard: Networks -> Tunnels -> Create a tunnel.
 # Required for the --profile named stack, which is what a real pilot wants:
@@ -87,8 +100,8 @@ PILOT_SEED_DEMO_DATA=true
 # GOOGLE_MAPS_SERVER_KEY=
 
 # --- SMS (real OTPs) --------------------------------------------------------
-# Without these, OTP codes print to the container log:
-#   docker compose logs -f app
+# Without these the server only starts with DEMO_MODE=true, and codes are
+# shown on screen and in the container log.
 # MSG91_AUTH_KEY=
 # MSG91_SENDER_ID=
 

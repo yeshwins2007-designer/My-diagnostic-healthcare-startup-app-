@@ -72,17 +72,27 @@ export function rateLimit(
 }
 
 /**
- * Best-effort client identity from proxy headers.
+ * The client's IP, as the nearest trusted proxy saw it.
  *
- * These headers are trivially spoofable unless a trusted proxy sets them, so
- * this is a speed bump against casual abuse rather than an access control.
- * Anything that actually matters is behind a session or a signed token.
+ * The LEFTMOST X-Forwarded-For entry is whatever the client chose to send, so
+ * keying a limit on it lets an attacker pick a fresh "IP" per request and
+ * never be limited. Prefer headers only the edge can set (Cloudflare's
+ * cf-connecting-ip, the platform's x-real-ip), and otherwise take the
+ * RIGHTMOST entry, which the proxy in front of us appended itself.
+ *
+ * Still a speed bump rather than an access control: anything that actually
+ * matters is behind a session, a signed token, or a per-account budget kept
+ * in the database.
  */
+export function clientIp(headers: Headers): string {
+  const edge = headers.get('cf-connecting-ip') ?? headers.get('x-real-ip');
+  if (edge) return edge.trim();
+  const hops = headers.get('x-forwarded-for')?.split(',').map((h) => h.trim()).filter(Boolean);
+  return hops?.at(-1) ?? 'unknown';
+}
+
 export function clientKey(request: Request, scope: string): string {
-  const headers = request.headers;
-  const forwarded = headers.get('x-forwarded-for')?.split(',')[0]?.trim();
-  const ip = forwarded || headers.get('x-real-ip') || 'unknown';
-  return `${scope}:${ip}`;
+  return `${scope}:${clientIp(request.headers)}`;
 }
 
 /** Reset between tests. Not used in application code. */

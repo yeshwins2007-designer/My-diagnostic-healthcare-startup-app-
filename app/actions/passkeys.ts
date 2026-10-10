@@ -20,6 +20,7 @@ import { env } from '@/lib/env';
 import { brand } from '@/lib/brand';
 import { audit } from '@/lib/compliance/audit';
 import { createSession, getSessionUser, requireUser } from '@/lib/auth/session';
+import { clientIp, rateLimit } from '@/lib/rate-limit';
 
 /**
  * Passkeys: sign in with Face ID, Touch ID, a fingerprint or the phone's
@@ -175,7 +176,20 @@ export async function removePasskey(passkeyId: string): Promise<void> {
 
 // --- signing in with a passkey -------------------------------------------------
 
+/**
+ * Sign-in is reachable without a session and writes a challenge row, so it is
+ * limited per client: enough for a family tapping twice, not enough to fill
+ * the table or grind at verification.
+ */
+async function passkeyLimit(scope: string) {
+  const ip = clientIp(await headers());
+  return rateLimit(`passkey-${scope}:${ip}`, { limit: 20, windowSeconds: 600 });
+}
+
 export async function passkeyLoginOptions(): Promise<PublicKeyCredentialRequestOptionsJSON> {
+  if (!(await passkeyLimit('options')).allowed) {
+    throw new Error('Too many passkey attempts. Please wait a few minutes, or use your phone code.');
+  }
   const { rpID } = await relyingParty();
   // No allowCredentials: the phone offers whichever passkey it holds for this
   // site, so nobody has to type their number first.
@@ -188,6 +202,9 @@ const HOME: Record<string, string> = { OPS: '/ops', LAB: '/lab', TECHNICIAN: '/f
 
 export async function verifyPasskeyLogin(response: AuthenticationResponseJSON): Promise<PasskeyResult> {
   const failed = { ok: false as const, message: 'That passkey did not work. Please sign in with your phone code.' };
+  if (!(await passkeyLimit('verify')).allowed) {
+    return { ok: false, message: 'Too many passkey attempts. Please wait a few minutes, or use your phone code.' };
+  }
 
   const row = await consumeChallenge(response.response.clientDataJSON, 'LOGIN');
   if (!row) return { ok: false, message: 'That took too long. Please try again.' };
