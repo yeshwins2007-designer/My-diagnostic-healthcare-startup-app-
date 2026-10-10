@@ -39,7 +39,8 @@ async function wipe() {
     'patient', 'familyMember', 'family', 'technician', 'waitlistEntry',
     'planPanel', 'plan', 'panelItem', 'panel', 'labRateCardEntry',
     'labAgreement', 'accreditationCheck', 'labAccreditation', 'labMember',
-    'zone', 'lab', 'testDefinition', 'authSession', 'otpChallenge', 'user',
+    'zone', 'lab', 'testDefinition', 'authSession', 'otpChallenge',
+    'passkeyChallenge', 'passkey', 'user',
   ] as const;
 
   for (const table of tables) {

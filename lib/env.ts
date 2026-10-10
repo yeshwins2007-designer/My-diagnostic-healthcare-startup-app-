@@ -14,6 +14,13 @@ const envSchema = z.object({
   DATABASE_URL: z.string().default('file:./dev.db'),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 
+  /**
+   * The app's public address, e.g. https://app.medwyn.in. Passkeys are bound
+   * to a domain: set this in production so they can only ever be used there.
+   * Unset (previews, local), the request's own origin is used.
+   */
+  PUBLIC_APP_URL: z.string().url().optional(),
+
   /** Signing key for session JWTs and tracking-link tokens. */
   AUTH_SECRET: z.string().min(16).default('dev-only-insecure-secret-change-me'),
   /** AES-256-GCM key (64 hex chars) for field-level encryption of results. */

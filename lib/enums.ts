@@ -316,6 +316,8 @@ export const TicketStatus = set(['OPEN', 'IN_PROGRESS', 'RESOLVED']);
 
 export const AuditAction = set([
   'USER_LOGIN',
+  'PASSKEY_ADDED',
+  'PASSKEY_REMOVED',
   'CONSENT_GRANTED',
   'CONSENT_WITHDRAWN',
   'BOOKING_CREATED',

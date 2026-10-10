@@ -7,6 +7,8 @@ import { signOut } from '@/app/actions/auth';
 import { labChoicesForPatient } from '@/app/actions/caregiver';
 import { LabChooser } from '@/components/lab-chooser';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { PasskeyManager } from '@/components/passkeys';
+import { listMyPasskeys } from '@/app/actions/passkeys';
 import { Badge, Button, ButtonLink, Card, H2, H3, Muted, Page, Stack } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Profile' };
@@ -30,9 +32,10 @@ function Row({ href, title, body }: { href: string; title: string; body: string 
 export default async function ProfilePage() {
   const { session, family } = await loadFamilyContext();
   const patients = family?.patients ?? [];
-  const [membership, labChoices] = await Promise.all([
+  const [membership, labChoices, passkeys] = await Promise.all([
     family ? loadMembership(family.id) : null,
     Promise.all(patients.map(async (p) => [p.id, await labChoicesForPatient(p.id)] as const)),
+    listMyPasskeys(),
   ]);
   const choicesByPatient = new Map(labChoices);
   const initial = session.name.trim().charAt(0).toUpperCase() || '?';
@@ -111,6 +114,22 @@ export default async function ProfilePage() {
           <ButtonLink href="/caregiver/onboarding" tone="secondary" full>
             Add another parent
           </ButtonLink>
+        </Stack>
+
+        <Stack gap="sm">
+          <H2>Sign-in</H2>
+          <Muted>
+            Sign in with Face ID, Touch ID or your fingerprint instead of waiting for a code.
+          </Muted>
+          <PasskeyManager
+            passkeys={passkeys.map((p) => ({
+              id: p.id,
+              label: p.label,
+              backedUp: p.backedUp,
+              createdAt: p.createdAt.toISOString(),
+              lastUsedAt: p.lastUsedAt?.toISOString() ?? null,
+            }))}
+          />
         </Stack>
 
         <Stack gap="sm">

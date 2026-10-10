@@ -6,6 +6,7 @@
  * not just of the pure functions the unit tests cover:
  *
  *   - a new family can sign up, book and pay per test, and join Medwyn One
+ *   - a passkey signs in on its own, and a removed one stops working
  *   - an out-of-zone address is refused into a waitlist
  *   - a signed report does not reach a family until a human releases it
  *   - the critical-value alert will not close without the whole protocol
@@ -144,6 +145,55 @@ test.describe('a new family', () => {
     await expect(page.getByText('Medwyn One discount')).toBeVisible();
     // ₹1,499 − ₹450, collection free.
     await expect(page.getByRole('button', { name: /proceed to pay ₹1,049/i })).toBeVisible();
+  });
+});
+
+test.describe('passkeys', () => {
+  test('add a passkey, sign out, and sign back in with it alone', async ({ page, context, browserName }) => {
+    test.skip(browserName !== 'chromium', 'uses the Chrome DevTools virtual authenticator');
+    test.setTimeout(90_000);
+
+    // A platform authenticator with Face ID / fingerprint, as on a phone.
+    const cdp = await context.newCDPSession(page);
+    await cdp.send('WebAuthn.enable');
+    const { authenticatorId } = await cdp.send('WebAuthn.addVirtualAuthenticator', {
+      options: {
+        protocol: 'ctap2',
+        transport: 'internal',
+        hasResidentKey: true,
+        hasUserVerification: true,
+        isUserVerified: true,
+        automaticPresenceSimulation: true,
+      },
+    });
+
+    await signIn(page, '9845000103');
+    await page.goto('/caregiver/profile');
+    await page.getByRole('button', { name: /add a passkey/i }).click();
+    await expect(page.getByText(/passkey added/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Remove' })).toBeVisible();
+
+    await page.getByRole('button', { name: /sign out/i }).click();
+    await page.waitForURL((u) => !u.pathname.startsWith('/caregiver'));
+
+    // No number, no code: the passkey alone signs in.
+    await page.goto('/login');
+    await page.getByRole('button', { name: /sign in with a passkey/i }).click();
+    await page.waitForURL(/\/caregiver/);
+    await expect(page.getByText(/Hello, Fatima/)).toBeVisible();
+
+    // A removed passkey stops working, even though the device still holds it.
+    await page.goto('/caregiver/profile');
+    await page.getByRole('button', { name: 'Remove' }).click();
+    await expect(page.getByRole('button', { name: 'Remove' })).toHaveCount(0);
+    await page.getByRole('button', { name: /sign out/i }).click();
+    await page.waitForURL((u) => !u.pathname.startsWith('/caregiver'));
+    await page.goto('/login');
+    await page.getByRole('button', { name: /sign in with a passkey/i }).click();
+    await expect(page.getByText(/did not work/i)).toBeVisible();
+    await expect(page).toHaveURL(/\/login/);
+
+    await cdp.send('WebAuthn.removeVirtualAuthenticator', { authenticatorId });
   });
 });
 

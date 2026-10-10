@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { AuthFlow } from '@/components/auth-flow';
+import { PasskeySignIn } from '@/components/passkeys';
 import { BrandMark } from '@/components/brand-mark';
 import { getSessionUser } from '@/lib/auth/session';
 import { brand } from '@/lib/brand';
@@ -45,6 +46,8 @@ export default async function LoginPage() {
       </Stack>
 
       <AuthFlow intent="individual" />
+
+      <PasskeySignIn />
 
       <p className="text-center text-[var(--color-ink-soft)]">
         Don’t have an account?{' '}

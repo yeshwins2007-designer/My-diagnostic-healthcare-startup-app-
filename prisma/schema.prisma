@@ -45,8 +45,49 @@ model User {
   accreditationChecks AccreditationCheck[]
   sessions        AuthSession[]
   supportTickets  SupportTicket[] @relation("SupportTicketRaisedBy")
+  passkeys        Passkey[]
 
   @@index([role])
+}
+
+/// A passkey (WebAuthn credential): sign in with Face ID, Touch ID, a
+/// fingerprint or the phone's screen lock instead of a code. Only the public
+/// key is stored; the private key never leaves the person's device.
+model Passkey {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Base64url credential id, as the browser reports it.
+  credentialId String    @unique
+  publicKey    Bytes
+  /// Signature counter; a counter that goes backwards suggests a cloned key.
+  counter      Int       @default(0)
+  /// Comma-separated: internal, hybrid, usb...
+  transports   String    @default("")
+  /// singleDevice | multiDevice (synced through iCloud or Google).
+  deviceType   String    @default("singleDevice")
+  backedUp     Boolean   @default(false)
+  /// What the person sees in Profile, e.g. "iPhone".
+  label        String    @default("Passkey")
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+
+  @@index([userId])
+}
+
+/// One WebAuthn challenge, single-use and short-lived, so a captured
+/// response cannot be replayed.
+model PasskeyChallenge {
+  id        String   @id @default(cuid())
+  challenge String   @unique
+  /// REGISTER | LOGIN
+  purpose   String
+  /// Set for REGISTER: the signed-in user adding a passkey.
+  userId    String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
 }
 
 /// Phone + OTP is the real login flow in India. Codes are stored hashed and
