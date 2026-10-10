@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 import type { Metadata, Viewport } from 'next';
 import { brand } from '@/lib/brand';
 import './globals.css';
@@ -30,7 +31,9 @@ export const viewport: Viewport = {
   themeColor: '#05161d',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Set by proxy.ts per request; the inline script below runs only with it.
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -43,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&family=Noto+Sans+Bengali:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;600;700&family=Noto+Sans+Telugu:wght@400;600;700&family=Noto+Sans+Kannada:wght@400;600;700&family=Noto+Sans+Malayalam:wght@400;600;700&family=Noto+Sans+Gujarati:wght@400;600;700&family=Noto+Sans+Gurmukhi:wght@400;600;700&family=Noto+Nastaliq+Urdu:wght@400;600&display=swap"
         />
         <script
+          nonce={nonce}
           // Applies the saved reader text size and theme before first paint, so
           // an elderly user who chose "largest" never sees a flash of small text.
           dangerouslySetInnerHTML={{
