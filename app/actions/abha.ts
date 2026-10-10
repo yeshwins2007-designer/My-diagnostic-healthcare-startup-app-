@@ -290,8 +290,22 @@ export async function requestHealthHistory(patientId: string): Promise<AbhaActio
 export async function revokeAbdmConsent(consentId: string): Promise<AbhaActionState> {
   const user = await requireUser();
 
+  // The patient's own family, or ops acting on a request. Any other signed-in
+  // account used to be able to withdraw any patient's consent by its id.
+  const owned = await db.abdmConsentArtefact.findFirst({
+    where:
+      user.role === 'OPS'
+        ? { consentId }
+        : {
+            consentId,
+            abhaAccount: { patient: { family: { members: { some: { userId: user.id } } } } },
+          },
+    select: { id: true },
+  });
+  if (!owned) return { ok: false, error: 'We could not find that consent.' };
+
   const artefact = await db.abdmConsentArtefact.update({
-    where: { consentId },
+    where: { id: owned.id },
     data: { status: 'REVOKED', revokedAt: new Date() },
   });
 
@@ -317,7 +331,9 @@ export async function revokeAbdmConsent(consentId: string): Promise<AbhaActionSt
  * patient's own account.
  */
 export async function publishReportToAbha(reportId: string): Promise<AbhaActionState> {
-  const user = await requireUser();
+  // Writing into a person's national health record is an ops action. It used
+  // to accept any signed-in account, for any report.
+  const user = await requireRole('OPS');
 
   const report = await db.report.findUnique({
     where: { id: reportId },

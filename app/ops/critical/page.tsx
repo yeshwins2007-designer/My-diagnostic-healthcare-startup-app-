@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { db } from '@/lib/db';
 import { buildCriticalCallScript, escalationLevel } from '@/lib/sop/criticalValue';
-import { getSessionUser } from '@/lib/auth/session';
+import { requirePageRole } from '@/lib/auth/session';
 import { CriticalCallForm } from '@/components/critical-call-form';
 import {
   Badge,
@@ -27,7 +27,7 @@ export const dynamic = 'force-dynamic';
  * in writing. The script below is fixed, not free text.
  */
 export default async function CriticalValuesPage() {
-  const user = await getSessionUser();
+  const user = await requirePageRole('OPS');
 
   const alerts = await db.criticalValueAlert.findMany({
     where: { status: { not: 'CLOSED' } },

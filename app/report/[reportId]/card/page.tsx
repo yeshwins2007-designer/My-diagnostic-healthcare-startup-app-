@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
+import { allowDemoData, elderPatientId } from '@/lib/auth/elder';
+import { demoElderPatientId } from '@/lib/queries/elder';
 import { audit } from '@/lib/compliance/audit';
 import { brand } from '@/lib/brand';
 import { t } from '@/lib/i18n/dictionary';
@@ -45,6 +47,20 @@ export default async function StoplightCardPage({
 
   if (!report || report.status !== 'RELEASED') notFound();
 
+  // Who may see a health record: the patient's own family, ops, or the
+  // patient's own Elder Mode phone. Everyone else gets the same "not found" as
+  // a report that does not exist, so the link reveals nothing. This page used
+  // to render for anyone holding the URL.
+  const viewer = await getSessionUser();
+  const isFamily =
+    viewer?.role === 'CAREGIVER' && report.patient.family.members.some((m) => m.userId === viewer.id);
+  const isOps = viewer?.role === 'OPS';
+  const elderPatient = viewer ? null : await elderPatientId();
+  const isElderDevice = elderPatient === report.patientId;
+  const isDemoPatient =
+    !viewer && !elderPatient && allowDemoData && (await demoElderPatientId()) === report.patientId;
+  if (!isFamily && !isOps && !isElderDevice && !isDemoPatient) notFound();
+
   const caregiver = report.patient.family.members[0]?.user;
   const locale: Locale = lang && isLocale(lang)
     ? lang
@@ -53,13 +69,12 @@ export default async function StoplightCardPage({
       : 'en';
 
   // Every read of a health record is logged, including this one.
-  const viewer = await getSessionUser();
   await audit({
     action: 'REPORT_ACCESSED',
     entityType: 'Report',
     entityId: report.id,
     actorUserId: viewer?.id ?? null,
-    actorRole: viewer?.role ?? 'ANONYMOUS',
+    actorRole: viewer?.role ?? (isElderDevice ? 'ELDER_DEVICE' : 'DEMO'),
     detail: { surface: 'stoplight_card', locale },
   });
 

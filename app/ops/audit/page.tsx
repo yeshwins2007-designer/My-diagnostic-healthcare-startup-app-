@@ -12,6 +12,7 @@ import {
   Page,
   Stack,
 } from '@/components/ui';
+import { requirePageRole } from '@/lib/auth/session';
 
 export const metadata: Metadata = { title: 'Audit trail' };
 export const dynamic = 'force-dynamic';
@@ -24,6 +25,7 @@ export const dynamic = 'force-dynamic';
  * chain on each load so an auditor can watch it happen.
  */
 export default async function AuditPage() {
+  await requirePageRole('OPS');
   const [verification, entries, total] = await Promise.all([
     verifyChain(),
     db.auditLog.findMany({

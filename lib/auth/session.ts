@@ -9,14 +9,29 @@
 
 import 'server-only';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { SignJWT, jwtVerify } from 'jose';
 import { db } from '../db';
 import { env } from '../env';
 import { randomToken } from '../compliance/crypto';
 import type { UserRole } from '../enums';
 
-const COOKIE_NAME = 'ss_session';
-const SESSION_DAYS = 30;
+// __Host- in production: the browser then refuses the cookie unless it is
+// Secure, host-only and path=/, so no subdomain can plant or override it.
+const COOKIE_NAME = env.NODE_ENV === 'production' ? '__Host-ss_session' : 'ss_session';
+
+/**
+ * How long a sign-in lasts. A family stays signed in for a month - re-entering
+ * a code every day is how elderly families give up. Staff see every patient's
+ * records, so a lost ops or lab laptop must stop being a key by the next shift.
+ */
+const SESSION_HOURS: Record<string, number> = {
+  CAREGIVER: 30 * 24,
+  OPS: 12,
+  LAB: 12,
+  TECHNICIAN: 12,
+};
+const DEFAULT_SESSION_HOURS = 12;
 
 const secret = new TextEncoder().encode(env.AUTH_SECRET);
 
@@ -39,9 +54,9 @@ export async function createSession(
   userAgent?: string,
 ): Promise<void> {
   const tokenId = randomToken(16);
-  const expiresAt = new Date(Date.now() + SESSION_DAYS * 86_400_000);
-
   const user = await db.user.findUniqueOrThrow({ where: { id: userId } });
+  const hours = SESSION_HOURS[user.role] ?? DEFAULT_SESSION_HOURS;
+  const expiresAt = new Date(Date.now() + hours * 3_600_000);
 
   await db.authSession.create({
     data: { userId, tokenId, userAgent: userAgent ?? null, expiresAt },
@@ -51,7 +66,7 @@ export async function createSession(
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(userId)
     .setIssuedAt()
-    .setExpirationTime(`${SESSION_DAYS}d`)
+    .setExpirationTime(Math.floor(expiresAt.getTime() / 1000))
     .sign(secret);
 
   const jar = await cookies();
@@ -70,7 +85,7 @@ export async function destroySession(): Promise<void> {
 
   if (token) {
     try {
-      const { payload } = await jwtVerify(token, secret);
+      const { payload } = await jwtVerify(token, secret, { algorithms: ['HS256'] });
       const jti = (payload as unknown as Claims).jti;
       if (jti) {
         await db.authSession.updateMany({
@@ -94,7 +109,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
   let claims: Claims;
   try {
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, secret, { algorithms: ['HS256'] });
     claims = payload as unknown as Claims;
   } catch {
     return null;
@@ -142,5 +157,18 @@ export async function requireRole(...roles: UserRole[]): Promise<SessionUser> {
       `This area is for ${roles.join(' or ').toLowerCase()} accounts.`,
     );
   }
+  return user;
+}
+
+/**
+ * For pages: the role check, done by the page itself. A layout's check is not
+ * an access control - layouts do not re-run on client navigation, and a page
+ * segment can be rendered without its layout - so every page that reads
+ * protected data checks for itself, close to the data.
+ */
+export async function requirePageRole(...roles: UserRole[]): Promise<SessionUser> {
+  const user = await getSessionUser();
+  if (!user) redirect('/login');
+  if (!roles.includes(user.role)) redirect('/');
   return user;
 }

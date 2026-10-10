@@ -196,10 +196,30 @@ model Patient {
   abhaAccount   AbhaAccount?
   bookings      Booking[]
   subscriptions Subscription[]
+  elderAccess   ElderAccess[]
   reports       Report[]
   consents      ConsentRecord[]
 
   @@index([familyId])
+}
+
+/// A device-bound key to Elder Mode. The family opens a private link on the
+/// parent's phone once; the phone keeps the key in a secure cookie and Elder
+/// Mode shows that parent - no password, and nothing for anyone else. Only
+/// the token's hash is stored; the family can turn a link off at any time.
+model ElderAccess {
+  id              String    @id @default(cuid())
+  patientId       String
+  patient         Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  tokenHash       String    @unique
+  createdByUserId String
+  createdAt       DateTime  @default(now())
+  /// The link is single-use: opening it moves the key onto the device.
+  openedAt        DateTime?
+  lastUsedAt      DateTime?
+  revokedAt       DateTime?
+
+  @@index([patientId])
 }
 
 model PatientAddress {

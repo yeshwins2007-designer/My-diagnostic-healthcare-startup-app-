@@ -16,6 +16,7 @@ import {
   Page,
   Stack,
 } from '@/components/ui';
+import { requirePageRole } from '@/lib/auth/session';
 
 export const metadata: Metadata = { title: 'Monday numbers' };
 export const dynamic = 'force-dynamic';
@@ -32,6 +33,7 @@ const HEALTH_TONE = {
  * this screen — that is the point of it.
  */
 export default async function OpsHomePage() {
+  await requirePageRole('OPS');
   const zone = await db.zone.findFirst({ orderBy: { sequence: 'asc' } });
   const [sheet, history] = await Promise.all([
     buildMondaySheet(zone?.id),

@@ -335,8 +335,17 @@ export async function confirmBookingPayment(input: {
  * rather than bypassing it.
  */
 export async function completeSimulatedMandate(providerRef: string): Promise<void> {
+  // Exported from a 'use server' file, so callable directly: it must check
+  // for itself. Never with real payments, and only by the family whose
+  // membership it is.
+  if (getPaymentsProvider().mode !== 'simulated') return;
+  const user = await requireRole('CAREGIVER');
   const mandate = await db.paymentMandate.findFirst({
-    where: { providerRef },
+    where: {
+      providerRef,
+      status: 'PENDING',
+      subscription: { family: { members: { some: { userId: user.id } } } },
+    },
     include: { subscription: { include: { plan: true, patient: true } } },
   });
   if (!mandate) return;

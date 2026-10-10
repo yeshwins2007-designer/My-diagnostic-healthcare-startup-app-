@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { requirePageRole } from '@/lib/auth/session';
+import { providerMode } from '@/lib/env';
 import { db } from '@/lib/db';
 import { completeSimulatedMandate } from '@/app/actions/payments';
 import { formatINR, formatINRWithWords } from '@/lib/money';
@@ -34,8 +36,11 @@ export default async function SimulatedCheckoutPage({
   const { ref } = await params;
   const { method } = await searchParams;
 
+  // Demo only, and only for the family whose membership this is.
+  if (providerMode.payments !== 'simulated') notFound();
+  const user = await requirePageRole('CAREGIVER');
   const mandate = await db.paymentMandate.findFirst({
-    where: { providerRef: ref },
+    where: { providerRef: ref, subscription: { family: { members: { some: { userId: user.id } } } } },
     include: {
       subscription: { include: { plan: true, patient: true } },
     },

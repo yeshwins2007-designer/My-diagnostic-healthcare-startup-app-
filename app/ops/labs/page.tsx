@@ -22,6 +22,7 @@ import {
   Page,
   Stack,
 } from '@/components/ui';
+import { requirePageRole } from '@/lib/auth/session';
 
 export const metadata: Metadata = { title: 'Lab verification' };
 export const dynamic = 'force-dynamic';
@@ -45,6 +46,7 @@ const STATUS_TONE: Record<string, 'green' | 'yellow' | 'red' | 'info' | 'neutral
  * implying a machine checked something it did not.
  */
 export default async function OpsLabsPage() {
+  await requirePageRole('OPS');
   const labs = await db.lab.findMany({
     orderBy: [{ status: 'asc' }, { submittedAt: 'desc' }],
     include: {

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { requireRole } from '@/lib/auth/session';
 import { assertBookingBelongsToUser } from '@/lib/queries/caregiver';
-import { loadRouteGeometry } from '@/app/actions/caregiver';
+import { loadRouteGeometry } from '@/lib/queries/caregiver';
 import { env, providerMode } from '@/lib/env';
 import { TrackingMap } from '@/components/tracking-map';
 import {
@@ -29,7 +29,7 @@ export default async function TrackPage({
   const booking = await assertBookingBelongsToUser(bookingId, user.id);
   if (!booking) notFound();
 
-  const routePoints = await loadRouteGeometry(bookingId);
+  const routePoints = await loadRouteGeometry(bookingId, user.id);
 
   return (
     <Page>

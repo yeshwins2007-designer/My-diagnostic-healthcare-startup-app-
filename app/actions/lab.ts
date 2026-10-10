@@ -167,11 +167,13 @@ export async function receiveSpecimen(barcode: string): Promise<LabActionState> 
   const membership = await db.labMember.findFirst({ where: { userId: user.id } });
   if (!membership) return { ok: false, message: 'No laboratory is linked to this account.' };
 
-  const specimen = await db.specimen.findUnique({
-    where: { barcode: barcode.trim().toUpperCase() },
+  // Scoped to this lab's own bookings: a barcode alone must not let one lab
+  // move another lab's sample through the pipeline.
+  const specimen = await db.specimen.findFirst({
+    where: { barcode: barcode.trim().toUpperCase(), booking: { labId: membership.labId } },
     include: { booking: true },
   });
-  if (!specimen) return { ok: false, message: `No specimen with barcode ${barcode}.` };
+  if (!specimen) return { ok: false, message: `No specimen with barcode ${barcode} for your laboratory.` };
 
   await db.specimen.update({
     where: { id: specimen.id },
@@ -198,8 +200,19 @@ export async function rejectSpecimen(
     return { ok: false, message: 'Give the reason for rejecting the sample.' };
   }
 
+  const membership = await db.labMember.findFirst({ where: { userId: user.id } });
+  if (!membership) return { ok: false, message: 'No laboratory is linked to this account.' };
+
+  // Only this lab's own samples: a rejection triggers a recollection visit
+  // and a critical incident, so it must not be callable on another lab's.
+  const owned = await db.specimen.findFirst({
+    where: { id: specimenId, booking: { labId: membership.labId } },
+    select: { id: true },
+  });
+  if (!owned) return { ok: false, message: 'That sample is not with your laboratory.' };
+
   const specimen = await db.specimen.update({
-    where: { id: specimenId },
+    where: { id: owned.id },
     data: { status: 'REJECTED', rejectionReason: reason },
   });
 

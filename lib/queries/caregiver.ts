@@ -1,6 +1,7 @@
 import 'server-only';
 import { db } from '../db';
 import { requireRole, type SessionUser } from '../auth/session';
+import { decodePolyline } from '../geo';
 
 /**
  * The caregiver's family, with everything the dashboard needs in one round
@@ -130,4 +131,19 @@ export async function assertBookingBelongsToUser(bookingId: string, userId: stri
     },
   });
   return booking;
+}
+
+/**
+ * The technician's planned route for a family's own booking. It passes other
+ * patients' doors, so it is shown only to the family whose visit it is - and
+ * it lives here rather than in a 'use server' file, where every export is a
+ * public endpoint anyone can call with any booking id.
+ */
+export async function loadRouteGeometry(bookingId: string, userId: string) {
+  const booking = await db.booking.findFirst({
+    where: { id: bookingId, family: { members: { some: { userId } } } },
+    include: { route: true },
+  });
+  if (!booking?.route?.encodedPolyline) return [];
+  return decodePolyline(booking.route.encodedPolyline);
 }

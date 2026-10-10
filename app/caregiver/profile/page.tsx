@@ -8,6 +8,8 @@ import { labChoicesForPatient } from '@/app/actions/caregiver';
 import { LabChooser } from '@/components/lab-chooser';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { PasskeyManager } from '@/components/passkeys';
+import { ElderLink } from '@/components/elder-link';
+import { db } from '@/lib/db';
 import { listMyPasskeys } from '@/app/actions/passkeys';
 import { Badge, Button, ButtonLink, Card, H2, H3, Muted, Page, Stack } from '@/components/ui';
 
@@ -32,12 +34,27 @@ function Row({ href, title, body }: { href: string; title: string; body: string 
 export default async function ProfilePage() {
   const { session, family } = await loadFamilyContext();
   const patients = family?.patients ?? [];
-  const [membership, labChoices, passkeys] = await Promise.all([
+  const [membership, labChoices, passkeys, elderAccess] = await Promise.all([
     family ? loadMembership(family.id) : null,
     Promise.all(patients.map(async (p) => [p.id, await labChoicesForPatient(p.id)] as const)),
     listMyPasskeys(),
+    db.elderAccess.findMany({
+      where: { patientId: { in: patients.map((p) => p.id) }, revokedAt: null },
+      orderBy: { createdAt: 'desc' },
+    }),
   ]);
   const choicesByPatient = new Map(labChoices);
+  // Unopened links past their week are dead anyway; do not list them.
+  const linkCutoff = Date.now() - 7 * 86_400_000;
+  const elderDevices = (patientId: string) =>
+    elderAccess
+      .filter((a) => a.patientId === patientId && (a.openedAt || a.createdAt.getTime() > linkCutoff))
+      .map((a) => ({
+        id: a.id,
+        opened: !!a.openedAt,
+        createdAt: (a.openedAt ?? a.createdAt).toISOString(),
+        lastUsedAt: a.lastUsedAt?.toISOString() ?? null,
+      }));
   const initial = session.name.trim().charAt(0).toUpperCase() || '?';
 
   return (
@@ -97,6 +114,20 @@ export default async function ProfilePage() {
                         </ButtonLink>
                       )}
                     </div>
+                  </Stack>
+                </Card>
+                <Card>
+                  <Stack gap="sm">
+                    <H3>Elder Mode for {patient.name.split(' ')[0]}</H3>
+                    <Muted>
+                      A big-button screen on their own phone: the next visit, their reports, and one
+                      tap to call us or 108. No password; it works only on the phone you set up.
+                    </Muted>
+                    <ElderLink
+                      patientId={patient.id}
+                      firstName={patient.name.split(' ')[0]}
+                      devices={elderDevices(patient.id)}
+                    />
                   </Stack>
                 </Card>
                 {c?.ok && c.choices.length > 0 && (

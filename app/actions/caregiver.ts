@@ -11,7 +11,6 @@ import { evaluateRadius, type ZoneBoundary } from '@/lib/sop/radiusGuard';
 import { evaluateRouting } from '@/lib/sop/labRouting';
 import { isRefusal } from '@/lib/sop/types';
 import { getMapsProvider } from '@/lib/providers/maps';
-import { decodePolyline } from '@/lib/geo';
 import { quote } from '@/lib/pricing';
 import { loadMembership, membershipTerms } from '@/lib/queries/catalog';
 
@@ -440,15 +439,6 @@ export async function issueTrackingLink(bookingId: string): Promise<string | nul
 }
 
 /** Route geometry for the caregiver's map. */
-export async function loadRouteGeometry(bookingId: string) {
-  const booking = await db.booking.findUnique({
-    where: { id: bookingId },
-    include: { route: true },
-  });
-  if (!booking?.route?.encodedPolyline) return [];
-  return decodePolyline(booking.route.encodedPolyline);
-}
-
 /**
  * The laboratories this patient's family may choose between.
  *

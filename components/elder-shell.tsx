@@ -42,7 +42,10 @@ export function ElderShell({
   reports,
   supportPhone,
   emergencyNumber,
+  notice,
 }: {
+  /** Shown on the home screen, e.g. when this phone is not linked yet. */
+  notice?: string;
   locale: Locale;
   patientName: string;
   greeting: string;
@@ -121,9 +124,18 @@ export function ElderShell({
               {greeting}
               {patientName ? `, ${patientName.split(' ')[0]}` : ''}
             </h1>
-            <p className="text-lead text-[var(--color-ink-soft)]">
-              {tr('elder.nothingToWorry')}
-            </p>
+            {notice ? (
+              <p
+                role="status"
+                className="rounded-[var(--radius-card)] border-2 border-[var(--color-primary)] bg-[var(--color-primary-wash)] p-5 text-lead"
+              >
+                {notice}
+              </p>
+            ) : (
+              <p className="text-lead text-[var(--color-ink-soft)]">
+                {tr('elder.nothingToWorry')}
+              </p>
+            )}
 
             {/* Exactly four tiles. Not five. */}
             <div className="grid gap-5 sm:grid-cols-2">

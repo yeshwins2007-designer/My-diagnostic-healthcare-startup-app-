@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { db } from '@/lib/db';
 import { evaluateGates } from '@/lib/queries/metrics';
 import { Badge, Card, H1, H2, H3, Lead, Muted, Page, Stack } from '@/components/ui';
+import { requirePageRole } from '@/lib/auth/session';
 
 export const metadata: Metadata = { title: 'Growth gates' };
 export const dynamic = 'force-dynamic';
@@ -15,6 +16,7 @@ export const dynamic = 'force-dynamic';
  * wall.
  */
 export default async function GrowthGatesPage() {
+  await requirePageRole('OPS');
   const zone = await db.zone.findFirst({ orderBy: { sequence: 'asc' } });
   const { gates } = await evaluateGates(zone?.id);
   const waitlisted = await db.waitlistEntry.count({ where: { status: 'WAITING' } });

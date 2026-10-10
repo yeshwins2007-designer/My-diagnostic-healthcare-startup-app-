@@ -15,6 +15,7 @@ import {
   Page,
   Stack,
 } from '@/components/ui';
+import { requirePageRole } from '@/lib/auth/session';
 
 export const metadata: Metadata = { title: 'Today' };
 export const dynamic = 'force-dynamic';
@@ -38,6 +39,7 @@ function timeLabel(d: Date) {
 }
 
 export default async function OpsTodayPage() {
+  await requirePageRole('OPS');
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
   const endOfDay = new Date(startOfDay.getTime() + 86_400_000);

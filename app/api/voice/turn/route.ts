@@ -89,9 +89,17 @@ export async function POST(request: Request) {
   }
 
   // 3. Persist the conversation, with retention set at creation time.
-  const conversation = parsed.data.conversationId
+  // A conversation id from the client is honoured only if it is the same
+  // caller's: otherwise anyone could write to someone else's conversation.
+  const owned = parsed.data.conversationId
+    ? await db.voiceConversation.findFirst({
+        where: { id: parsed.data.conversationId, userId: user?.id ?? null },
+        select: { id: true },
+      })
+    : null;
+  const conversation = owned
     ? await db.voiceConversation.update({
-        where: { id: parsed.data.conversationId },
+        where: { id: owned.id },
         data: {
           transcriptText: { set: undefined },
           guardrailTrips: guard.allowed ? undefined : { increment: 1 },

@@ -11,6 +11,7 @@ import {
   Page,
   Stack,
 } from '@/components/ui';
+import { requirePageRole } from '@/lib/auth/session';
 
 export const metadata: Metadata = { title: 'Waitlist' };
 export const dynamic = 'force-dynamic';
@@ -24,6 +25,7 @@ export const dynamic = 'force-dynamic';
  * negative.
  */
 export default async function WaitlistPage() {
+  await requirePageRole('OPS');
   const entries = await db.waitlistEntry.findMany({
     orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
     include: { zone: true },

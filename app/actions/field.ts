@@ -280,13 +280,21 @@ export async function logTemperature(
   _prev: FieldActionState,
   formData: FormData,
 ): Promise<FieldActionState> {
-  const { user } = await technicianOrThrow();
+  const { user, technician } = await technicianOrThrow();
 
   const parsed = tempSchema.safeParse({
     ...Object.fromEntries(formData),
     boxSealed: formData.get('boxSealed') === 'on',
   });
   if (!parsed.success) return { ok: false, message: 'Enter the temperature shown on the box.' };
+
+  // Only for a sample this technician carries: a reading raises a critical
+  // incident when it is out of band, so a stranger's must not be accepted.
+  const carried = await db.specimen.findFirst({
+    where: { id: parsed.data.specimenId, booking: { technicianId: technician.id } },
+    select: { id: true },
+  });
+  if (!carried) return { ok: false, message: 'That sample is not on your route.' };
 
   const breach = isBreach(parsed.data.temperatureC);
 
@@ -475,7 +483,12 @@ export async function completeChecklistStep(
   bookingId: string,
   stepKey: ChecklistStepKey,
 ): Promise<FieldActionState> {
-  await technicianOrThrow();
+  const { technician } = await technicianOrThrow();
+  const own = await db.booking.findFirst({
+    where: { id: bookingId, technicianId: technician.id },
+    select: { id: true },
+  });
+  if (!own) return { ok: false, message: 'That visit is not on your route.' };
   await completeStep(bookingId, stepKey);
   revalidatePath(`/field/visit/${bookingId}`);
   return { ok: true };

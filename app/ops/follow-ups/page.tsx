@@ -14,6 +14,7 @@ import {
   Page,
   Stack,
 } from '@/components/ui';
+import { requirePageRole } from '@/lib/auth/session';
 
 export const metadata: Metadata = { title: 'Follow-up calls' };
 export const dynamic = 'force-dynamic';
@@ -26,6 +27,7 @@ export const dynamic = 'force-dynamic';
  * no way to tick it off without recording the two answers.
  */
 export default async function FollowUpsPage() {
+  await requirePageRole('OPS');
   const [pending, recent] = await Promise.all([
     db.followUpCall.findMany({
       where: { status: 'PENDING' },

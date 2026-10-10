@@ -35,7 +35,7 @@ async function wipe() {
     'locationPing', 'trackingSession', 'custodyHandoff', 'coldChainLog',
     'specimen', 'visitChecklistStep', 'bookingItem', 'ledgerEntry', 'payment',
     'paymentMandate', 'booking', 'subscription', 'route', 'fhirBundle',
-    'careContext', 'abdmConsentArtefact', 'abhaAccount', 'patientAddress',
+    'careContext', 'abdmConsentArtefact', 'abhaAccount', 'elderAccess', 'patientAddress',
     'patient', 'familyMember', 'family', 'technician', 'waitlistEntry',
     'planPanel', 'plan', 'panelItem', 'panel', 'labRateCardEntry',
     'labAgreement', 'accreditationCheck', 'labAccreditation', 'labMember',
