@@ -124,7 +124,8 @@ jobs:
             echo
             echo "| Surface | Number |"
             echo "| --- | --- |"
-            echo '| Caregiver | `+919845000101` |'
+            echo '| Family, Medwyn One member | `+919845000101` |'
+            echo '| Family, pays per test | `+919845000103` |'
             echo '| Ops console | `+919845000001` |'
             echo '| Field technician | `+919845000010` |'
             echo '| Partner lab | `+919845100200` |'
@@ -172,7 +173,8 @@ jobs:
           body = (
               f"Live preview is up: {url}\n\n"
               f"It stays up until {expires}.\n\n"
-              "Sign in with `+919845000101` (caregiver), `+919845000001` (ops), "
+              "Sign in with `+919845000101` (family, Medwyn One member), `+919845000103` "
+              "(family, pays per test), `+919845000001` (ops), "
               "`+919845000010` (field) or `+919845100200` (lab). The code is shown "
               "on screen because SMS is not configured.\n\n"
               "To try it as a new family instead, sign up with any other 10-digit number "
