@@ -36,7 +36,7 @@ export default async function JoinPage({
               <Lead>
                 {intent === 'business'
                   ? 'We will ask for your NABL certificate, your accredited scope and your capacity. Registering is an application — a person reviews every one before a single sample is routed to you.'
-                  : 'We will send a six-digit code to your mobile. You will add your parent’s details next; nothing is charged until you choose a plan.'}
+                  : 'We will send a six-digit code to your mobile. You will add your parent’s details next; nothing is charged until you book and pay for tests.'}
               </Lead>
             </Stack>
 
@@ -63,7 +63,7 @@ export default async function JoinPage({
                 <Badge tone="primary">Individual</Badge>
                 <H3>I am arranging tests for a parent</H3>
                 <p className="text-[var(--color-ink-soft)]">
-                  You add your parent’s details, choose a plan, and we come to their door. You
+                  You add your parent’s details, choose the tests, and we come to their door. You
                   get the tracking, the reports and the call after every one.
                 </p>
                 <a

@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { brand } from '@/lib/brand';
 import { db } from '@/lib/db';
 import { formatINR } from '@/lib/money';
+import { PricingSection } from '@/components/pricing-section';
+import { labForFamily, loadCatalog, loadMedwynOne } from '@/lib/queries/catalog';
 import { SiteHeader } from '@/components/site-header';
 import { BrandWaves } from '@/components/brand-mark';
 import {
@@ -18,8 +20,9 @@ import {
 } from '@/components/ui';
 
 export default async function LandingPage() {
-  const [plans, anchorLab, zone] = await Promise.all([
-    db.plan.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
+  const [catalog, plan, anchorLab, zone] = await Promise.all([
+    labForFamily(null).then(loadCatalog),
+    loadMedwynOne(),
     db.lab.findFirst({
       where: { status: 'ACTIVE', brandingConsent: true },
       include: { accreditation: true },
@@ -140,43 +143,8 @@ export default async function LandingPage() {
             </Stack>
           </section>
 
-          {/* Plans. Suraksha is the recommended middle option on purpose. */}
           <section>
-            <Stack gap="md">
-              <H2>Plans</H2>
-              <Muted>
-                A one-off test is available too, but monitoring an elderly parent is not a
-                one-off problem — so the plans are what we lead with.
-              </Muted>
-              <div className="grid gap-5 md:grid-cols-3">
-                {plans.map((plan) => (
-                  <Card
-                    key={plan.id}
-                    tone={plan.isRecommended ? 'primary' : 'surface'}
-                    className={plan.isRecommended ? 'ring-2 ring-[var(--color-primary)]' : ''}
-                  >
-                    <Stack gap="sm">
-                      {plan.isRecommended && <Badge tone="primary">Most families choose this</Badge>}
-                      <H3>{plan.name}</H3>
-                      <p className="text-[var(--color-ink-soft)]">{plan.tagline}</p>
-                      <p className="text-h2 font-bold">
-                        {formatINR(plan.pricePaise)}
-                        <span className="text-small font-normal text-[var(--color-ink-faint)]">
-                          {' '}
-                          / month
-                        </span>
-                      </p>
-                      <Muted>
-                        Or {formatINR(plan.annualPricePaise)} a year — two months free.
-                      </Muted>
-                    </Stack>
-                  </Card>
-                ))}
-              </div>
-              <ButtonLink href="/plans" tone="secondary">
-                Compare what each plan includes
-              </ButtonLink>
-            </Stack>
+            <PricingSection items={catalog} plan={plan} />
           </section>
 
           {/* Credibility comes from the accredited partner, and we say whose it

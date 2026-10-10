@@ -88,7 +88,9 @@ export default async function LabHome({
         items: { include: { panel: { include: { items: { include: { test: true } } } } } },
       },
     }),
-    db.booking.count({ where: { labId: lab.id, windowStart: { gte: startOfDay } } }),
+    db.booking.count({
+      where: { labId: lab.id, windowStart: { gte: startOfDay }, status: { not: 'AWAITING_PAYMENT' } },
+    }),
   ]);
 
   const scope = lab.accreditation ? parseScope(lab.accreditation.scope) : [];

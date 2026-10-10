@@ -148,6 +148,7 @@ export const PaymentMethod = set([
   'UPI_AUTOPAY',
   'UPI_INTENT',
   'CARD',
+  'APPLE_PAY',
   'NETBANKING',
   'CASH',
 ]);
@@ -176,6 +177,8 @@ export type LedgerAccount = (typeof LedgerAccount.values)[number];
 export const RouteStatus = set(['PLANNED', 'STARTED', 'COMPLETED', 'ABANDONED']);
 
 export const BookingStatus = set([
+  /** Booked in the app but not yet paid; holds no route or lab capacity. */
+  'AWAITING_PAYMENT',
   'REQUESTED',
   'SCHEDULED',
   'EN_ROUTE',

@@ -11,7 +11,8 @@
 import { PrismaClient } from '@prisma/client';
 import { encryptField, bookingReference } from '../lib/compliance/crypto';
 import { ageBandFor, CHECKLIST_STEPS } from '../lib/enums';
-import { paise, annualFromMonthly } from '../lib/money';
+import { paise } from '../lib/money';
+import { quote } from '../lib/pricing';
 import { DEMO_ANCHOR, DEMO_ROUTE_POLYLINE } from '../lib/providers/maps';
 
 const db = new PrismaClient();
@@ -55,18 +56,18 @@ async function main() {
   console.log('Seeding test catalogue…');
 
   const testSpecs = [
-    { code: 'HBA1C', name: 'HbA1c (glycated haemoglobin)', discipline: 'CLINICAL_BIOCHEMISTRY', sampleType: 'WHOLE_BLOOD', tubeType: 'Lavender (EDTA)', fastingHours: 0, stabilityHours: 6, loincCode: '4548-4' },
-    { code: 'GLU_F', name: 'Fasting blood glucose', discipline: 'CLINICAL_BIOCHEMISTRY', sampleType: 'PLASMA', tubeType: 'Grey (fluoride)', fastingHours: 10, stabilityHours: 3, loincCode: '1558-6' },
-    { code: 'LIPID', name: 'Lipid profile', discipline: 'CLINICAL_BIOCHEMISTRY', sampleType: 'SERUM', tubeType: 'Yellow (SST)', fastingHours: 10, stabilityHours: 6, loincCode: '57698-3' },
-    { code: 'CREAT', name: 'Serum creatinine', discipline: 'CLINICAL_BIOCHEMISTRY', sampleType: 'SERUM', tubeType: 'Yellow (SST)', fastingHours: 0, stabilityHours: 6, loincCode: '2160-0' },
-    { code: 'UREA', name: 'Blood urea', discipline: 'CLINICAL_BIOCHEMISTRY', sampleType: 'SERUM', tubeType: 'Yellow (SST)', fastingHours: 0, stabilityHours: 6, loincCode: '3094-0' },
-    { code: 'ELEC', name: 'Serum electrolytes', discipline: 'CLINICAL_BIOCHEMISTRY', sampleType: 'SERUM', tubeType: 'Yellow (SST)', fastingHours: 0, stabilityHours: 4, loincCode: '24326-1' },
-    { code: 'CBC', name: 'Complete blood count', discipline: 'HAEMATOLOGY', sampleType: 'WHOLE_BLOOD', tubeType: 'Lavender (EDTA)', fastingHours: 0, stabilityHours: 6, loincCode: '58410-2' },
-    { code: 'TSH', name: 'Thyroid stimulating hormone', discipline: 'IMMUNOASSAY', sampleType: 'SERUM', tubeType: 'Yellow (SST)', fastingHours: 0, stabilityHours: 8, loincCode: '3016-3' },
-    { code: 'VITD', name: 'Vitamin D (25-OH)', discipline: 'IMMUNOASSAY', sampleType: 'SERUM', tubeType: 'Yellow (SST)', fastingHours: 0, stabilityHours: 8, loincCode: '1989-3' },
-    { code: 'B12', name: 'Vitamin B12', discipline: 'IMMUNOASSAY', sampleType: 'SERUM', tubeType: 'Yellow (SST)', fastingHours: 0, stabilityHours: 8, loincCode: '2132-9' },
-    { code: 'URINE_R', name: 'Urine routine examination', discipline: 'CLINICAL_PATHOLOGY', sampleType: 'URINE', tubeType: 'Urine container', fastingHours: 0, stabilityHours: 2, loincCode: '24357-6' },
-    { code: 'URINE_CS', name: 'Urine culture and sensitivity', discipline: 'MICROBIOLOGY', sampleType: 'URINE', tubeType: 'Sterile container', fastingHours: 0, stabilityHours: 2, loincCode: '630-4' },
+    { code: 'HBA1C', name: 'HbA1c (glycated haemoglobin)', discipline: 'CLINICAL_BIOCHEMISTRY', sampleType: 'WHOLE_BLOOD', tubeType: 'Lavender (EDTA)', fastingHours: 0, stabilityHours: 6, loincCode: '4548-4', pricePaise: paise(549) },
+    { code: 'GLU_F', name: 'Fasting blood glucose', discipline: 'CLINICAL_BIOCHEMISTRY', sampleType: 'PLASMA', tubeType: 'Grey (fluoride)', fastingHours: 10, stabilityHours: 3, loincCode: '1558-6', pricePaise: paise(99) },
+    { code: 'LIPID', name: 'Lipid profile', discipline: 'CLINICAL_BIOCHEMISTRY', sampleType: 'SERUM', tubeType: 'Yellow (SST)', fastingHours: 10, stabilityHours: 6, loincCode: '57698-3', pricePaise: paise(599) },
+    { code: 'CREAT', name: 'Serum creatinine', discipline: 'CLINICAL_BIOCHEMISTRY', sampleType: 'SERUM', tubeType: 'Yellow (SST)', fastingHours: 0, stabilityHours: 6, loincCode: '2160-0', pricePaise: paise(199) },
+    { code: 'UREA', name: 'Blood urea', discipline: 'CLINICAL_BIOCHEMISTRY', sampleType: 'SERUM', tubeType: 'Yellow (SST)', fastingHours: 0, stabilityHours: 6, loincCode: '3094-0', pricePaise: paise(199) },
+    { code: 'ELEC', name: 'Serum electrolytes', discipline: 'CLINICAL_BIOCHEMISTRY', sampleType: 'SERUM', tubeType: 'Yellow (SST)', fastingHours: 0, stabilityHours: 4, loincCode: '24326-1', pricePaise: paise(449) },
+    { code: 'CBC', name: 'Complete blood count', discipline: 'HAEMATOLOGY', sampleType: 'WHOLE_BLOOD', tubeType: 'Lavender (EDTA)', fastingHours: 0, stabilityHours: 6, loincCode: '58410-2', pricePaise: paise(349) },
+    { code: 'TSH', name: 'Thyroid stimulating hormone', discipline: 'IMMUNOASSAY', sampleType: 'SERUM', tubeType: 'Yellow (SST)', fastingHours: 0, stabilityHours: 8, loincCode: '3016-3', pricePaise: paise(449) },
+    { code: 'VITD', name: 'Vitamin D (25-OH)', discipline: 'IMMUNOASSAY', sampleType: 'SERUM', tubeType: 'Yellow (SST)', fastingHours: 0, stabilityHours: 8, loincCode: '1989-3', pricePaise: paise(1299) },
+    { code: 'B12', name: 'Vitamin B12', discipline: 'IMMUNOASSAY', sampleType: 'SERUM', tubeType: 'Yellow (SST)', fastingHours: 0, stabilityHours: 8, loincCode: '2132-9', pricePaise: paise(999) },
+    { code: 'URINE_R', name: 'Urine routine examination', discipline: 'CLINICAL_PATHOLOGY', sampleType: 'URINE', tubeType: 'Urine container', fastingHours: 0, stabilityHours: 2, loincCode: '24357-6', pricePaise: paise(199) },
+    { code: 'URINE_CS', name: 'Urine culture and sensitivity', discipline: 'MICROBIOLOGY', sampleType: 'URINE', tubeType: 'Sterile container', fastingHours: 0, stabilityHours: 2, loincCode: '630-4', pricePaise: paise(799) },
   ];
 
   const tests = Object.fromEntries(
@@ -109,62 +110,24 @@ async function main() {
     },
   });
 
-  // --- plans ----------------------------------------------------------------
-  console.log('Seeding plans…');
+  // --- membership ---------------------------------------------------------
+  console.log('Seeding Medwyn One…');
 
-  const sathi = await db.plan.create({
+  // The only plan. Families pay per test; members get 30% off every test and
+  // package and a free home collection.
+  const medwynOne = await db.plan.create({
     data: {
-      code: 'SATHI',
-      name: 'Sathi',
-      tagline: 'Companion — a quarterly check, so nothing is missed',
-      pricePaise: paise(799),
-      annualPricePaise: annualFromMonthly(paise(799)),
-      visitsPerMonth: 0.34,
-      patientsCovered: 1,
-      sortOrder: 1,
-      panels: { create: [{ panelId: baselinePanel.id, perYear: 2 }] },
-    },
-  });
-
-  const suraksha = await db.plan.create({
-    data: {
-      code: 'SURAKSHA',
-      name: 'Suraksha',
-      tagline: 'Protection — the same person every month, and a call after every report',
-      pricePaise: paise(1799),
-      annualPricePaise: annualFromMonthly(paise(1799)),
-      visitsPerMonth: 1,
-      patientsCovered: 1,
+      code: 'MEDWYN_ONE',
+      name: 'Medwyn One',
+      tagline: '30% off every test, and no home-collection charge',
+      pricePaise: paise(499),
+      annualPricePaise: paise(999),
+      testDiscountPercent: 30,
+      freeCollection: true,
       isRecommended: true,
-      includesPriority: true,
-      sortOrder: 2,
-      panels: {
-        create: [
-          { panelId: baselinePanel.id, perYear: 4 },
-          { panelId: comprehensivePanel.id, perYear: 1 },
-        ],
-      },
-    },
-  });
-
-  const parivaar = await db.plan.create({
-    data: {
-      code: 'PARIVAAR',
-      name: 'Parivaar',
-      tagline: 'Family — both parents, twice a month, with a named coordinator',
-      pricePaise: paise(2999),
-      annualPricePaise: annualFromMonthly(paise(2999)),
-      visitsPerMonth: 2,
-      patientsCovered: 2,
-      includesPriority: true,
-      includesPhysicianReview: true,
-      sortOrder: 3,
-      panels: {
-        create: [
-          { panelId: baselinePanel.id, perYear: 4 },
-          { panelId: comprehensivePanel.id, perYear: 2 },
-        ],
-      },
+      visitsPerMonth: 0,
+      patientsCovered: 99,
+      sortOrder: 1,
     },
   });
 
@@ -392,18 +355,18 @@ async function main() {
   console.log('Seeding families and patients…');
 
   const familySpecs = [
-    { caregiver: 'Anjali Iyer', phone: '+919845000101', locale: 'en', patient: 'Lakshmi Iyer', age: 74, sex: 'FEMALE', conditions: 'Type 2 diabetes, hypertension', medications: 'Metformin, Amlodipine', mobility: 'ASSISTED', line1: '304, Shanti Nivas, 22nd Main', landmark: 'Opposite Cool Joint, 4th Block', lat: 12.9271, lng: 77.5892, plan: suraksha, tech: priya, founding: true },
-    { caregiver: 'Rahul Deshpande', phone: '+919845000102', locale: 'mr', patient: 'Vasant Deshpande', age: 81, sex: 'MALE', conditions: 'CKD stage 3, hypertension', medications: 'Telmisartan, Furosemide', mobility: 'HOUSEBOUND', line1: '11, Krishna Kripa, 9th Cross', landmark: 'Near Ashoka Pillar', lat: 12.9218, lng: 77.5828, plan: suraksha, tech: priya, founding: true },
-    { caregiver: 'Fatima Sheikh', phone: '+919845000103', locale: 'ur', patient: 'Rizwana Sheikh', age: 69, sex: 'FEMALE', conditions: 'Hypothyroidism, osteoarthritis', medications: 'Thyroxine', mobility: 'INDEPENDENT', line1: '7B, Noor Manzil, 5th Block', landmark: 'Behind Jayanagar Bus Depot', lat: 12.9245, lng: 77.5931, plan: sathi, tech: priya, founding: true },
-    { caregiver: 'Suresh Reddy', phone: '+919845000104', locale: 'te', patient: 'Padma Reddy', age: 77, sex: 'FEMALE', conditions: 'Type 2 diabetes, anaemia', medications: 'Glimepiride, Iron', mobility: 'ASSISTED', line1: '52, Sai Residency, 3rd Block', landmark: 'Next to Ganesha temple', lat: 12.9283, lng: 77.5851, plan: suraksha, tech: priya, founding: true },
-    { caregiver: 'Nithya Raman', phone: '+919845000105', locale: 'ta', patient: 'Kamala Raman', age: 84, sex: 'FEMALE', conditions: 'Dementia, hypertension', medications: 'Donepezil, Losartan', mobility: 'HOUSEBOUND', line1: '18, Meenakshi Illam, 26th Main', landmark: 'Opposite the park gate', lat: 12.9196, lng: 77.5867, plan: parivaar, tech: priya, founding: true },
-    { caregiver: 'Arjun Menon', phone: '+919845000106', locale: 'ml', patient: 'Gopalan Menon', age: 72, sex: 'MALE', conditions: 'Post-MI, dyslipidaemia', medications: 'Atorvastatin, Aspirin', mobility: 'INDEPENDENT', line1: '9, Kairali, 12th Main', landmark: 'Near Cool Joint circle', lat: 12.9259, lng: 77.5947, plan: suraksha, tech: ramesh, founding: false },
-    { caregiver: 'Simran Kaur', phone: '+919845000107', locale: 'pa', patient: 'Harbans Singh', age: 79, sex: 'MALE', conditions: 'COPD, diabetes', medications: 'Metformin, inhalers', mobility: 'ASSISTED', line1: '3, Guru Nivas, 8th Cross', landmark: 'Near the gurudwara', lat: 12.9231, lng: 77.5794, plan: suraksha, tech: ramesh, founding: false },
-    { caregiver: 'Debjani Bose', phone: '+919845000108', locale: 'bn', patient: 'Anima Bose', age: 76, sex: 'FEMALE', conditions: 'Hypothyroidism, osteoporosis', medications: 'Thyroxine, Calcium', mobility: 'INDEPENDENT', line1: '41, Basanti Bhavan, 15th Main', landmark: 'Beside the sweet shop', lat: 12.9204, lng: 77.5912, plan: sathi, tech: ramesh, founding: false },
-    { caregiver: 'Kiran Patel', phone: '+919845000109', locale: 'gu', patient: 'Bhikhabhai Patel', age: 83, sex: 'MALE', conditions: 'CKD stage 4, anaemia', medications: 'Erythropoietin, Sevelamer', mobility: 'HOUSEBOUND', line1: '66, Anand Villa, 7th Block', landmark: 'Near the Jain temple', lat: 12.9172, lng: 77.5849, plan: parivaar, tech: ramesh, founding: false },
-    { caregiver: 'Vikram Shetty', phone: '+919845000110', locale: 'kn', patient: 'Sharada Shetty', age: 71, sex: 'FEMALE', conditions: 'Prediabetes, vitamin D deficiency', medications: 'Cholecalciferol', mobility: 'INDEPENDENT', line1: '25, Tulsi Nilaya, 19th Main', landmark: 'Opposite the BDA complex', lat: 12.9287, lng: 77.5915, plan: sathi, tech: priya, founding: false },
-    { caregiver: 'Manish Agarwal', phone: '+919845000111', locale: 'hi', patient: 'Kamla Agarwal', age: 68, sex: 'FEMALE', conditions: 'Hypertension', medications: 'Amlodipine', mobility: 'INDEPENDENT', line1: '14, Shubh Apartments, 24th Main', landmark: 'Near the Ayyappa temple', lat: 12.9241, lng: 77.5877, plan: suraksha, tech: priya, founding: false },
-    { caregiver: 'Aditi Sharma', phone: '+919845000112', locale: 'hi', patient: 'Om Prakash Sharma', age: 86, sex: 'MALE', conditions: 'Parkinson’s, hypertension', medications: 'Levodopa, Ramipril', mobility: 'HOUSEBOUND', line1: '2, Vrindavan, 32nd Cross', landmark: 'Last house on the lane', lat: 12.9188, lng: 77.5824, plan: parivaar, tech: ramesh, founding: false },
+    { caregiver: 'Anjali Iyer', phone: '+919845000101', locale: 'en', patient: 'Lakshmi Iyer', age: 74, sex: 'FEMALE', conditions: 'Type 2 diabetes, hypertension', medications: 'Metformin, Amlodipine', mobility: 'ASSISTED', line1: '304, Shanti Nivas, 22nd Main', landmark: 'Opposite Cool Joint, 4th Block', lat: 12.9271, lng: 77.5892, member: true, tech: priya, founding: true },
+    { caregiver: 'Rahul Deshpande', phone: '+919845000102', locale: 'mr', patient: 'Vasant Deshpande', age: 81, sex: 'MALE', conditions: 'CKD stage 3, hypertension', medications: 'Telmisartan, Furosemide', mobility: 'HOUSEBOUND', line1: '11, Krishna Kripa, 9th Cross', landmark: 'Near Ashoka Pillar', lat: 12.9218, lng: 77.5828, member: true, tech: priya, founding: true },
+    { caregiver: 'Fatima Sheikh', phone: '+919845000103', locale: 'ur', patient: 'Rizwana Sheikh', age: 69, sex: 'FEMALE', conditions: 'Hypothyroidism, osteoarthritis', medications: 'Thyroxine', mobility: 'INDEPENDENT', line1: '7B, Noor Manzil, 5th Block', landmark: 'Behind Jayanagar Bus Depot', lat: 12.9245, lng: 77.5931, member: false, tech: priya, founding: true },
+    { caregiver: 'Suresh Reddy', phone: '+919845000104', locale: 'te', patient: 'Padma Reddy', age: 77, sex: 'FEMALE', conditions: 'Type 2 diabetes, anaemia', medications: 'Glimepiride, Iron', mobility: 'ASSISTED', line1: '52, Sai Residency, 3rd Block', landmark: 'Next to Ganesha temple', lat: 12.9283, lng: 77.5851, member: true, tech: priya, founding: true },
+    { caregiver: 'Nithya Raman', phone: '+919845000105', locale: 'ta', patient: 'Kamala Raman', age: 84, sex: 'FEMALE', conditions: 'Dementia, hypertension', medications: 'Donepezil, Losartan', mobility: 'HOUSEBOUND', line1: '18, Meenakshi Illam, 26th Main', landmark: 'Opposite the park gate', lat: 12.9196, lng: 77.5867, member: true, tech: priya, founding: true },
+    { caregiver: 'Arjun Menon', phone: '+919845000106', locale: 'ml', patient: 'Gopalan Menon', age: 72, sex: 'MALE', conditions: 'Post-MI, dyslipidaemia', medications: 'Atorvastatin, Aspirin', mobility: 'INDEPENDENT', line1: '9, Kairali, 12th Main', landmark: 'Near Cool Joint circle', lat: 12.9259, lng: 77.5947, member: true, tech: ramesh, founding: false },
+    { caregiver: 'Simran Kaur', phone: '+919845000107', locale: 'pa', patient: 'Harbans Singh', age: 79, sex: 'MALE', conditions: 'COPD, diabetes', medications: 'Metformin, inhalers', mobility: 'ASSISTED', line1: '3, Guru Nivas, 8th Cross', landmark: 'Near the gurudwara', lat: 12.9231, lng: 77.5794, member: true, tech: ramesh, founding: false },
+    { caregiver: 'Debjani Bose', phone: '+919845000108', locale: 'bn', patient: 'Anima Bose', age: 76, sex: 'FEMALE', conditions: 'Hypothyroidism, osteoporosis', medications: 'Thyroxine, Calcium', mobility: 'INDEPENDENT', line1: '41, Basanti Bhavan, 15th Main', landmark: 'Beside the sweet shop', lat: 12.9204, lng: 77.5912, member: false, tech: ramesh, founding: false },
+    { caregiver: 'Kiran Patel', phone: '+919845000109', locale: 'gu', patient: 'Bhikhabhai Patel', age: 83, sex: 'MALE', conditions: 'CKD stage 4, anaemia', medications: 'Erythropoietin, Sevelamer', mobility: 'HOUSEBOUND', line1: '66, Anand Villa, 7th Block', landmark: 'Near the Jain temple', lat: 12.9172, lng: 77.5849, member: true, tech: ramesh, founding: false },
+    { caregiver: 'Vikram Shetty', phone: '+919845000110', locale: 'kn', patient: 'Sharada Shetty', age: 71, sex: 'FEMALE', conditions: 'Prediabetes, vitamin D deficiency', medications: 'Cholecalciferol', mobility: 'INDEPENDENT', line1: '25, Tulsi Nilaya, 19th Main', landmark: 'Opposite the BDA complex', lat: 12.9287, lng: 77.5915, member: false, tech: priya, founding: false },
+    { caregiver: 'Manish Agarwal', phone: '+919845000111', locale: 'hi', patient: 'Kamla Agarwal', age: 68, sex: 'FEMALE', conditions: 'Hypertension', medications: 'Amlodipine', mobility: 'INDEPENDENT', line1: '14, Shubh Apartments, 24th Main', landmark: 'Near the Ayyappa temple', lat: 12.9241, lng: 77.5877, member: true, tech: priya, founding: false },
+    { caregiver: 'Aditi Sharma', phone: '+919845000112', locale: 'hi', patient: 'Om Prakash Sharma', age: 86, sex: 'MALE', conditions: 'Parkinson’s, hypertension', medications: 'Levodopa, Ramipril', mobility: 'HOUSEBOUND', line1: '2, Vrindavan, 32nd Cross', landmark: 'Last house on the lane', lat: 12.9188, lng: 77.5824, member: true, tech: ramesh, founding: false },
   ];
 
   const created: {
@@ -411,7 +374,7 @@ async function main() {
     patient: { id: string; name: string };
     address: { id: string };
     caregiver: { id: string; name: string };
-    subscription: { id: string };
+    subscription: { id: string } | null;
     tech: { id: string };
     spec: (typeof familySpecs)[number];
   }[] = [];
@@ -459,34 +422,31 @@ async function main() {
       },
     });
 
-    const discount = spec.founding ? 40 : 0;
-    const effective = Math.round(spec.plan.pricePaise * (1 - discount / 100));
-
-    const subscription = await db.subscription.create({
-      data: {
-        familyId: family.id,
-        patientId: patient.id,
-        planId: spec.plan.id,
-        status: 'ACTIVE',
-        billingCycle: spec.founding ? 'ANNUAL' : 'MONTHLY',
-        isFoundingMember: spec.founding,
-        discountPercent: discount,
-        effectivePricePaise: effective,
-        assignedTechnicianId: spec.tech.id,
-        startedAt: at(spec.founding ? -150 : -70, 10),
-        currentPeriodEnd: at(20, 10),
-        mandate: {
-          create: {
-            method: 'UPI_AUTOPAY',
-            providerRef: `sub_sim_seed_${patient.id.slice(-6)}`,
-            instrumentHint: `${spec.caregiver.split(' ')[0].toLowerCase()}@okhdfcbank`,
-            maxAmountPaise: paise(5000),
+    // Members pay monthly or yearly; everyone else pays per visit.
+    const subscription = spec.member
+      ? await db.subscription.create({
+          data: {
+            familyId: family.id,
+            planId: medwynOne.id,
             status: 'ACTIVE',
-            authenticatedAt: at(spec.founding ? -150 : -70, 10),
+            billingCycle: spec.founding ? 'ANNUAL' : 'MONTHLY',
+            effectivePricePaise: spec.founding ? medwynOne.annualPricePaise : medwynOne.pricePaise,
+            assignedTechnicianId: spec.tech.id,
+            startedAt: at(spec.founding ? -150 : -70, 10),
+            currentPeriodEnd: at(spec.founding ? 215 : 20, 10),
+            mandate: {
+              create: {
+                method: 'UPI_AUTOPAY',
+                providerRef: `sub_sim_seed_${patient.id.slice(-6)}`,
+                instrumentHint: `${spec.caregiver.split(' ')[0].toLowerCase()}@okhdfcbank`,
+                maxAmountPaise: paise(5000),
+                status: 'ACTIVE',
+                authenticatedAt: at(spec.founding ? -150 : -70, 10),
+              },
+            },
           },
-        },
-      },
-    });
+        })
+      : null;
 
     // ABHA on about half the patients — a realistic split for this age group,
     // and proof that the app works fine for the ones without.
@@ -544,6 +504,8 @@ async function main() {
     fastingHours: number;
   }) {
     const c = created[opts.index];
+    const panel = opts.panelId === baselinePanel.id ? baselinePanel : comprehensivePanel;
+    const price = quote([panel], c.subscription ? medwynOne : null);
     const windowStart = at(opts.dayOffset, opts.windowStartHour, 30);
     const windowEnd = new Date(windowStart.getTime() + 60 * 60_000);
 
@@ -553,7 +515,7 @@ async function main() {
         familyId: c.family.id,
         patientId: c.patient.id,
         addressId: c.address.id,
-        subscriptionId: c.subscription.id,
+        subscriptionId: c.subscription?.id ?? null,
         zoneId: zone.id,
         labId: anchorLab.id,
         technicianId: c.tech.id,
@@ -567,8 +529,11 @@ async function main() {
           : null,
         fastingRequired: opts.fastingHours > 0,
         fastingHours: opts.fastingHours,
-        totalPaise: 0,
-        items: { create: [{ panelId: opts.panelId, pricePaise: 0 }] },
+        subtotalPaise: price.subtotalPaise,
+        discountPaise: price.discountPaise,
+        collectionFeePaise: price.collectionFeePaise,
+        totalPaise: price.totalPaise,
+        items: { create: [{ panelId: opts.panelId, pricePaise: panel.pricePaise }] },
         checklistSteps: {
           create: CHECKLIST_STEPS.map((step) => ({
             stepKey: step.key,

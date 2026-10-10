@@ -167,7 +167,7 @@ const SCRIPTED_INTENTS: { intent: string; patterns: RegExp[]; reply: string }[] 
     intent: 'billing',
     patterns: [/plan|price|cost|bill|payment|subscription/i, /कितना|पैसे|भुगतान/],
     reply:
-      'You are on Suraksha, at one thousand seven hundred and ninety nine rupees a month. It includes a monthly home visit with the same technician, the quarterly baseline panel, and a family call within twenty four hours of every report. Your next payment is on the first.',
+      'You pay for the tests you book, and home collection is one hundred and ninety nine rupees. With Medwyn One, at four hundred and ninety nine rupees a month or nine hundred and ninety nine a year, every test is thirty percent off and collection is free.',
   },
   {
     intent: 'complaint',

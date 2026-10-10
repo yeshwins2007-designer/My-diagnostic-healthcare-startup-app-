@@ -507,6 +507,9 @@ model TestDefinition {
   /// Hours the specimen stays viable — feeds the sample clock.
   stabilityHours Int    @default(6)
   loincCode     String?
+  /// What a family pays for this test on its own, in paise. Packages are
+  /// cheaper than the sum of their tests; this is the price when ordered alone.
+  pricePaise    Int     @default(0)
   isActive      Boolean @default(true)
 
   panelItems  PanelItem[]
@@ -549,13 +552,15 @@ model PanelItem {
 
 model Plan {
   id            String  @id @default(cuid())
-  code          String  @unique // SATHI | SURAKSHA | PARIVAAR
+  code          String  @unique // MEDWYN_ONE
   name          String
   tagline       String
-  /// Monthly price in paise (79900 / 179900 / 299900).
+  /// Monthly membership price in paise.
   pricePaise    Int
-  /// Annual prepay price — the blueprint's "two months free" lever.
+  /// Yearly membership price in paise.
   annualPricePaise Int
+  /// Percentage off every test and package a member books.
+  testDiscountPercent Int @default(0)
   visitsPerMonth Float  @default(1)
   patientsCovered Int   @default(1)
   /// Presentation only: Suraksha is the recommended middle option.
@@ -586,8 +591,10 @@ model Subscription {
   id            String   @id @default(cuid())
   familyId      String
   family        Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  patientId     String
-  patient       Patient  @relation(fields: [patientId], references: [id])
+  /// Membership covers the whole family; a patient is recorded only for
+  /// legacy per-patient plans.
+  patientId     String?
+  patient       Patient? @relation(fields: [patientId], references: [id])
   planId        String
   plan          Plan     @relation(fields: [planId], references: [id])
   /// SubscriptionStatus: PENDING | ACTIVE | PAUSED | CANCELLED | PAST_DUE
@@ -648,7 +655,7 @@ model Payment {
   booking        Booking? @relation(fields: [bookingId], references: [id])
   amountPaise    Int
   currency       String   @default("INR")
-  /// PaymentMethod: UPI_AUTOPAY | UPI_INTENT | CARD | NETBANKING | CASH
+  /// PaymentMethod: UPI_AUTOPAY | UPI_INTENT | CARD | APPLE_PAY | NETBANKING | CASH
   method         String
   /// PaymentStatus: CREATED | PENDING | CAPTURED | FAILED | REFUNDED
   status         String   @default("CREATED")
@@ -765,7 +772,7 @@ model Booking {
   routeId        String?
   route          Route?   @relation(fields: [routeId], references: [id])
 
-  /// BookingStatus: REQUESTED | SCHEDULED | EN_ROUTE | ARRIVED | COLLECTED |
+  /// BookingStatus: AWAITING_PAYMENT | REQUESTED | SCHEDULED | EN_ROUTE | ARRIVED | COLLECTED |
   /// IN_TRANSIT | AT_LAB | PROCESSING | REPORTED | CLOSED | CANCELLED |
   /// RECOLLECTION_REQUIRED
   status         String   @default("REQUESTED")
@@ -786,6 +793,10 @@ model Booking {
   fastingRequired Boolean @default(false)
   fastingHours    Int     @default(0)
 
+  /// Retail price of everything ordered, before any membership discount.
+  subtotalPaise      Int  @default(0)
+  /// Membership discount on the tests, as a positive amount.
+  discountPaise      Int  @default(0)
   collectionFeePaise Int  @default(0)
   totalPaise         Int  @default(0)
 

@@ -54,7 +54,7 @@ export default async function SimulatedCheckoutPage({
   async function approve() {
     'use server';
     await completeSimulatedMandate(ref);
-    redirect('/caregiver?mandate=approved');
+    redirect('/caregiver/membership?joined=1');
   }
 
   const sub = mandate.subscription;
@@ -74,7 +74,7 @@ export default async function SimulatedCheckoutPage({
 
         <Card>
           <Stack gap="sm">
-            <DataRow label="Paying for" value={`${sub.patient.name} · ${sub.plan.name}`} />
+            <DataRow label="Paying for" value={`${sub.patient?.name ?? 'Your family'} · ${sub.plan.name}`} />
             <DataRow
               label="Amount"
               value={formatINR(sub.effectivePricePaise)}
@@ -111,7 +111,7 @@ export default async function SimulatedCheckoutPage({
           </Button>
         </form>
 
-        <ButtonLink href="/caregiver/plan" tone="quiet" full>
+        <ButtonLink href="/caregiver/membership" tone="quiet" full>
           Cancel and go back
         </ButtonLink>
       </Stack>

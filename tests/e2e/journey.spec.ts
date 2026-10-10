@@ -5,8 +5,7 @@
  * exist to prove the claims the README makes are true of the running product,
  * not just of the pure functions the unit tests cover:
  *
- *   - a new family can sign up, pay and book the first visit, and is not
- *     promised anything the product does not do
+ *   - a new family can sign up, book and pay per test, and join Medwyn One
  *   - an out-of-zone address is refused into a waitlist
  *   - a signed report does not reach a family until a human releases it
  *   - the critical-value alert will not close without the whole protocol
@@ -84,7 +83,7 @@ test.describe('public surfaces', () => {
 });
 
 test.describe('a new family', () => {
-  test('signs up, pays, and books the first visit without false promises', async ({ page }) => {
+  test('signs up, books and pays per test, then joins Medwyn One', async ({ page }) => {
     test.setTimeout(90_000);
     // A number that has never been seen, so this is the real first-run path.
     const phone = '97' + String(Date.now()).slice(-8);
@@ -105,31 +104,46 @@ test.describe('a new family', () => {
     await page.getByLabel(/house number/i).fill('14, 11th Main, 4th Block');
     await page.getByLabel(/landmark/i).fill('Near Jayanagar Shopping Complex');
     await page.getByLabel(/pincode/i).fill('560011'); // the zone's own centre
-    await page.getByRole('button', { name: /add and choose a plan/i }).click();
+    await page.getByRole('button', { name: /add and book tests/i }).click();
 
-    await page.waitForURL(/\/caregiver\/plan\?patient=/);
-    await page.getByRole('button', { name: /continue to approve/i }).click();
-    await page.getByRole('link', { name: /approve the upi mandate/i }).click();
-    await page.waitForURL(/\/checkout\//);
-    await page.getByRole('button', { name: /^approve/i }).click();
-    await page.waitForURL(/\/caregiver\?mandate=approved/);
+    // Pay per test: a package at the lab's price plus the collection fee.
+    await page.waitForURL(/\/caregiver\/book\?patient=/);
+    await page.getByRole('button', { name: /Elder Baseline Panel/ }).click();
+    await page.getByRole('button', { name: /continue/i }).click();
+    await expect(page.getByRole('heading', { name: 'Booking details' })).toBeVisible();
+    await expect(page.getByText('₹199')).toBeVisible(); // home collection, non-member
+    await page.getByRole('button', { name: /proceed to pay ₹1,698/i }).click();
 
-    // Nothing books visits on a family's behalf, so the screen must not say it does.
-    const main = page.locator('main');
-    await expect(main).not.toContainText(/visits automatically/i);
-    await expect(page.getByText('No visit booked')).toBeVisible();
-
-    await page.goto('/caregiver/visits');
-    await expect(main).not.toContainText(/visits automatically/i);
-    await expect(page.getByRole('heading', { name: 'Book the first visit' })).toBeVisible();
-    await page.getByRole('button', { name: /book this visit/i }).click();
-    await expect(page.getByRole('heading', { name: 'Book an extra visit' })).toBeVisible();
+    await page.waitForURL(/\/caregiver\/checkout\//);
+    await expect(page.getByRole('heading', { name: 'Secure checkout' })).toBeVisible();
+    await page.getByRole('radio', { name: /apple pay/i }).click();
+    await page.getByRole('button', { name: /apple pay/i }).click();
+    await page.waitForURL(/\/caregiver\/visits\?booked=/);
+    await expect(page.getByText('Booked and confirmed')).toBeVisible();
 
     // A first visit has no "last time" to be the same as.
+    const main = page.locator('main');
     await page.goto('/caregiver');
     await expect(page.getByText('Next visit')).toBeVisible();
     await expect(main).toContainText(/is coming\./);
     await expect(main).not.toContainText(/same technician as last time/i);
+    await expect(main).not.toContainText(/visits automatically/i);
+
+    // Joining Medwyn One takes the collection fee off and 30% off the tests.
+    await page.goto('/caregiver/membership');
+    await page.getByRole('radio', { name: /monthly/i }).click();
+    await page.getByRole('button', { name: /join medwyn one · ₹499 a month/i }).click();
+    await page.waitForURL(/\/checkout\/simulated\//);
+    await page.getByRole('button', { name: /^approve/i }).click();
+    await page.waitForURL(/\/caregiver\/membership\?joined=1/);
+    await expect(page.getByText('Welcome to Medwyn One')).toBeVisible();
+
+    await page.goto('/caregiver/book?kind=panel');
+    await page.getByRole('button', { name: /Elder Baseline Panel/ }).click();
+    await page.getByRole('button', { name: /continue/i }).click();
+    await expect(page.getByText('Medwyn One discount')).toBeVisible();
+    // ₹1,499 − ₹450, collection free.
+    await expect(page.getByRole('button', { name: /proceed to pay ₹1,049/i })).toBeVisible();
   });
 });
 
@@ -145,7 +159,7 @@ test.describe('the radius rule', () => {
     // Whitefield — roughly 17 km from the Jayanagar anchor.
     await page.getByLabel(/pincode/i).fill('560066');
 
-    await page.getByRole('button', { name: /add and choose a plan/i }).click();
+    await page.getByRole('button', { name: /add and book tests/i }).click();
 
     await expect(page.getByText(/cannot serve this address well yet/i)).toBeVisible();
     await expect(page.getByText(/waitlist/i).first()).toBeVisible();

@@ -25,10 +25,9 @@ export const viewport: Viewport = {
   // this every env(safe-area-inset-*) resolves to zero and the .safe-* helpers
   // in globals.css do nothing.
   viewportFit: 'cover',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f4fafb' },
-    { media: '(prefers-color-scheme: dark)', color: '#08171c' },
-  ],
+  // The night canvas is the default in every mode; light is a choice made in
+  // Profile, after the browser chrome has already been coloured.
+  themeColor: '#05161d',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

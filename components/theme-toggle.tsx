@@ -13,16 +13,16 @@ import { useEffect, useState } from 'react';
  *
  * How the three states map onto app/globals.css:
  *
- *   auto   no data-theme attribute  -> the prefers-color-scheme media query wins
- *   light  data-theme="light"       -> excluded from that query, bare :root applies
- *   dark   data-theme="dark"        -> the explicit dark block applies
+ *   dark   no data-theme attribute  -> the brand's night palette, the default
+ *   light  data-theme="light"       -> the light palette
+ *   auto   data-theme="auto"        -> light only when the phone is set to light
  */
 
 type Theme = 'auto' | 'light' | 'dark';
 
 const OPTIONS: { value: Theme; label: string; icon: string }[] = [
-  { value: 'light', label: 'Light', icon: '☀' },
   { value: 'dark', label: 'Dark', icon: '☾' },
+  { value: 'light', label: 'Light', icon: '☀' },
   { value: 'auto', label: 'Auto', icon: '◐' },
 ];
 
@@ -31,17 +31,17 @@ export function ThemeToggle() {
   // stored preference is adopted on mount. The inline script in the layout has
   // already painted the right colours by then, so nothing flashes except which
   // button reads as pressed.
-  const [theme, setTheme] = useState<Theme>('auto');
+  const [theme, setTheme] = useState<Theme>('dark');
 
   useEffect(() => {
     const current = document.documentElement.getAttribute('data-theme');
-    if (current === 'light' || current === 'dark') setTheme(current);
+    if (current === 'light' || current === 'auto') setTheme(current);
   }, []);
 
   function choose(next: Theme) {
     setTheme(next);
     const root = document.documentElement;
-    if (next === 'auto') {
+    if (next === 'dark') {
       root.removeAttribute('data-theme');
     } else {
       root.setAttribute('data-theme', next);
@@ -49,7 +49,7 @@ export function ThemeToggle() {
     try {
       // Empty rather than absent, matching the reader-size control: the
       // restore script treats a falsy value as "no override".
-      localStorage.setItem('ss_theme', next === 'auto' ? '' : next);
+      localStorage.setItem('ss_theme', next === 'dark' ? '' : next);
     } catch {
       // Private mode can throw. The choice still applies to this visit.
     }

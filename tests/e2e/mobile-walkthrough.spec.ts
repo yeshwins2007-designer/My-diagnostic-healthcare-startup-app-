@@ -135,36 +135,34 @@ test.describe('the light/dark control', () => {
   test.use({ viewport: PHONE, colorScheme: 'light', deviceScaleFactor: 2 });
   test.setTimeout(120_000);
 
-  test('overrides the phone setting and survives a reload', async ({ page }) => {
-    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+  test('night by default, light by choice, auto follows the phone', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
 
     const bg = () =>
       page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 
-    // The device is emulating light, so this is the palette we start from.
-    const lightBg = await bg();
-    await expect(page.locator('html')).not.toHaveAttribute('data-theme', 'dark');
+    // The phone is set to light, but the brand's night palette is the default.
+    await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.+/);
+    const nightBg = await bg();
 
-    // Choosing dark must beat the operating system's preference.
-    await page.getByRole('button', { name: 'Dark' }).click();
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-    const darkBg = await bg();
-    expect(darkBg, 'the palette did not actually change').not.toBe(lightBg);
-    await page.screenshot({ path: `${OUT}/theme-dark-forced.png`, fullPage: true });
-
-    // A preference nobody has to set twice.
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-    expect(await bg()).toBe(darkBg);
-
-    // And back: light must hold even if the phone is set to dark.
+    // Choosing light changes the palette, and survives a reload.
     await page.getByRole('button', { name: 'Light' }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    const lightBg = await bg();
+    expect(lightBg, 'the palette did not actually change').not.toBe(nightBg);
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     expect(await bg()).toBe(lightBg);
 
-    // Auto hands control back to the operating system.
+    // Dark returns to the night palette.
+    await page.getByRole('button', { name: 'Dark' }).click();
+    await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.+/);
+    expect(await bg()).toBe(nightBg);
+    await page.screenshot({ path: `${OUT}/theme-night.png`, fullPage: true });
+
+    // Auto hands control to the phone, which is set to light here.
     await page.getByRole('button', { name: 'Auto' }).click();
-    await expect(page.locator('html')).not.toHaveAttribute('data-theme', 'dark');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'auto');
     expect(await bg()).toBe(lightBg);
   });
 });
@@ -217,34 +215,26 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.locator('input[name="state"]').fill(IN_ZONE.state);
       await page.locator('input[name="pincode"]').fill(IN_ZONE.pincode);
 
-      await page.getByRole('button', { name: /add and choose a plan/i }).click();
-      await page.waitForTimeout(3000);
+      await page.getByRole('button', { name: /add and book tests/i }).click();
+      await page.waitForURL(/\/caregiver\/book/, { timeout: 30_000 });
 
-      // 3 — Plan chooser
-      note(await inspect(page, '05-plan-chooser', scheme), 'plan chooser');
+      // 3 — Choose tests
+      note(await inspect(page, '05-book', scheme), 'book tests');
+      await page.getByRole('button', { name: /Elder Baseline Panel/ }).click();
+      await page.waitForTimeout(400);
+      note(await inspect(page, '06-selected', scheme), 'test selected');
 
-      // Pick a plan. The cards are aria-pressed toggles above the form.
-      await page.locator('button[aria-pressed]').first().click();
+      // Booking details
+      await page.getByRole('button', { name: /continue/i }).click();
       await page.waitForTimeout(600);
-      note(await inspect(page, '06-plan-selected', scheme), 'plan selected');
+      note(await inspect(page, '07-details', scheme), 'booking details');
 
-      // Billing cycle, then payment method.
-      await page.getByRole('button', { name: /every month/i }).first().click();
-      await page.waitForTimeout(400);
-      await page.getByRole('button', { name: /upi autopay/i }).first().click();
-      await page.waitForTimeout(400);
-      note(await inspect(page, '07-cycle-and-method', scheme), 'cycle and method');
-
-      // Submit the mandate request. The server action answers with an authUrl.
-      await page.locator('button[type="submit"]').last().click();
-      await page.waitForTimeout(3000);
-      note(await inspect(page, '08-mandate-ready', scheme), 'mandate ready');
-
-      // 4 — Checkout. The authUrl surfaces as a link, not a redirect.
-      const approve = page.getByRole('link', { name: /approve the .*mandate/i });
-      await expect(approve, 'the approve-mandate link never appeared').toHaveCount(1);
-      await approve.click();
+      // 4 — Secure checkout
+      await page.getByRole('button', { name: /proceed to pay/i }).click();
       await page.waitForURL(/\/checkout\//, { timeout: 30_000 });
+      await page.getByRole('radio', { name: /apple pay/i }).click();
+      await page.waitForTimeout(400);
+      note(await inspect(page, '08-checkout-apple-pay', scheme), 'apple pay selected');
 
       const result = await inspect(page, '09-checkout', scheme);
       note(result, 'checkout');

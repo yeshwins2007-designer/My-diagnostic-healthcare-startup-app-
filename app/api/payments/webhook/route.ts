@@ -63,6 +63,46 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: true, deduplicated: true });
       }
 
+      // A booking paid in the browser: the checkout normally settles it, but a
+      // closed tab or a dropped connection must not leave a paid visit unconfirmed.
+      const bookingPayment = payment.order_id
+        ? await db.payment.findFirst({
+            where: { providerOrderId: payment.order_id, bookingId: { not: null } },
+            include: { booking: true },
+          })
+        : null;
+      if (bookingPayment?.booking) {
+        if (bookingPayment.status !== 'CAPTURED') {
+          await db.payment.update({
+            where: { id: bookingPayment.id },
+            data: { status: 'CAPTURED', providerPaymentId: payment.id, capturedAt: new Date() },
+          });
+          if (bookingPayment.booking.status === 'AWAITING_PAYMENT') {
+            await db.booking.update({
+              where: { id: bookingPayment.booking.id },
+              data: { status: 'SCHEDULED' },
+            });
+          }
+          await db.ledgerEntry.create({
+            data: {
+              paymentId: bookingPayment.id,
+              bookingId: bookingPayment.booking.id,
+              account: 'REVENUE',
+              amountPaise: bookingPayment.amountPaise,
+              note: `Booking ${bookingPayment.booking.reference} (webhook)`,
+            },
+          });
+          await audit({
+            action: 'PAYMENT_CAPTURED',
+            entityType: 'Booking',
+            entityId: bookingPayment.booking.id,
+            actorRole: 'SYSTEM',
+            detail: { amountPaise: bookingPayment.amountPaise, eventType, via: 'webhook' },
+          });
+        }
+        break;
+      }
+
       const mandate = payment.order_id
         ? await db.paymentMandate.findFirst({
             where: { providerRef: payment.order_id },

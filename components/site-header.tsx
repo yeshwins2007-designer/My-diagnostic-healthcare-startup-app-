@@ -33,7 +33,7 @@ export async function SiteHeader() {
             href="/plans"
             className="rounded-[var(--radius-control)] px-4 py-3 font-semibold hover:bg-[var(--color-surface-sunken)]"
           >
-            Plans
+            Prices
           </Link>
           <Link
             href="/trust"

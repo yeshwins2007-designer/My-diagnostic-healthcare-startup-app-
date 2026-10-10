@@ -9,9 +9,10 @@ import {
 } from '@/lib/queries/caregiver';
 import { SampleJourney } from '@/components/sample-journey';
 import { classifyArrival, fastingInstruction } from '@/lib/sop/visitWindow';
-import { BookVisitForm } from '@/components/book-visit-form';
+import { formatINR } from '@/lib/money';
 import {
   Badge,
+  ButtonLink,
   Card,
   EmptyState,
   H1,
@@ -23,18 +24,23 @@ import {
   Stack,
 } from '@/components/ui';
 
-export const metadata: Metadata = { title: 'Visits' };
+export const metadata: Metadata = { title: 'Bookings' };
 export const dynamic = 'force-dynamic';
 
 function timeLabel(d: Date) {
   return d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
-export default async function VisitsPage() {
+export default async function VisitsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ booked?: string }>;
+}) {
+  const { booked } = await searchParams;
   const { family } = await loadFamilyContext();
   if (!family) redirect('/caregiver/onboarding');
 
-  const [upcoming, inProgress, past, panels] = await Promise.all([
+  const [upcoming, inProgress, past, unpaid] = await Promise.all([
     loadUpcomingVisits(family.id),
     loadInProgressVisits(family.id),
     db.booking.findMany({
@@ -43,26 +49,69 @@ export default async function VisitsPage() {
       take: 10,
       include: { patient: true, technician: { include: { user: true } } },
     }),
-    db.panel.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
+    db.booking.findMany({
+      where: { familyId: family.id, status: 'AWAITING_PAYMENT', windowStart: { gte: new Date() } },
+      orderBy: { windowStart: 'asc' },
+      include: { patient: true, items: { include: { panel: true, test: true } } },
+    }),
   ]);
+  const confirmed = booked ? upcoming.find((b) => b.reference === booked) : undefined;
 
   return (
     <Page>
       <Stack gap="lg">
         <Stack gap="sm">
-          <H1>Visits</H1>
+          <H1>Bookings</H1>
           <Lead>
             We promise a sixty-minute window, not a countdown. If we are going to miss it, we
             call you before it ends.
           </Lead>
+          <ButtonLink href="/caregiver/book" className="self-start">
+            Book tests
+          </ButtonLink>
         </Stack>
+
+        {confirmed && (
+          <Card tone="green" className="rise-in">
+            <Stack gap="sm">
+              <H3>Booked and confirmed</H3>
+              <p>
+                {confirmed.patient.name} ·{' '}
+                {confirmed.windowStart.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}{' '}
+                at {timeLabel(confirmed.windowStart)}. Reference {confirmed.reference}.
+              </p>
+            </Stack>
+          </Card>
+        )}
+
+        {unpaid.length > 0 && (
+          <Stack gap="md">
+            <H2>Waiting for payment</H2>
+            {unpaid.map((b) => (
+              <Card key={b.id} tone="yellow">
+                <Stack gap="sm">
+                  <p className="font-semibold">
+                    {b.patient.name} ·{' '}
+                    {b.windowStart.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}{' '}
+                    at {timeLabel(b.windowStart)}
+                  </p>
+                  <Muted>{b.items.map((i) => i.panel?.name ?? i.test?.name).join(', ')}</Muted>
+                  <p>This visit is not confirmed until it is paid for or set to cash at the door.</p>
+                  <ButtonLink href={`/caregiver/checkout/${b.id}`} className="self-start">
+                    Pay {formatINR(b.totalPaise)}
+                  </ButtonLink>
+                </Stack>
+              </Card>
+            ))}
+          </Stack>
+        )}
 
         <Stack gap="md">
           <H2>Coming up</H2>
           {upcoming.length === 0 ? (
             <EmptyState
               title="Nothing booked"
-              body="Choose a morning below. Booking takes about a minute."
+              body="Choose the tests and a morning that suits you. Booking takes about a minute."
             />
           ) : (
             upcoming.map((booking) => (
@@ -154,28 +203,6 @@ export default async function VisitsPage() {
             )}
           </Stack>
         )}
-
-        <Stack gap="md">
-          {/* "Extra" only once there is a visit for it to be extra to. */}
-          <H2>
-            {upcoming.length + inProgress.length + past.length === 0
-              ? 'Book the first visit'
-              : 'Book an extra visit'}
-          </H2>
-          <Muted>
-            Included in your plan at no extra charge. We will only offer slots inside the
-            morning window, because that is when fasting samples work and when our routes run.
-          </Muted>
-          <BookVisitForm
-            patients={family.patients.map((p) => ({ id: p.id, name: p.name }))}
-            panels={panels.map((p) => ({
-              id: p.id,
-              name: p.name,
-              description: p.description,
-              fastingHours: p.fastingHours,
-            }))}
-          />
-        </Stack>
 
         {past.length > 0 && (
           <Stack gap="md">

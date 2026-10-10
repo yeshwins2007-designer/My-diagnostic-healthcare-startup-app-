@@ -38,7 +38,7 @@ test.setTimeout(180_000);
 
 test('public surfaces', async ({ page }) => {
   await shoot(page, '/', '01-landing');
-  await shoot(page, '/plans', '02-plans');
+  await shoot(page, '/plans', '02-prices');
   await shoot(page, '/trust', '03-trust');
   await shoot(page, '/join', '04-join-role-chooser');
 });
@@ -58,7 +58,7 @@ test('caregiver', async ({ page }) => {
   await shoot(page, '/caregiver', '08-caregiver-home');
   await shoot(page, '/caregiver/visits', '09-caregiver-visits');
   await shoot(page, '/caregiver/reports', '10-caregiver-reports');
-  await shoot(page, '/caregiver/plan', '11-caregiver-plan');
+  await shoot(page, '/caregiver/membership', '11-caregiver-membership');
   await shoot(page, '/caregiver/calls', '12-caregiver-calls');
   await shoot(page, '/caregiver/onboarding', '13-caregiver-add-parent');
 });

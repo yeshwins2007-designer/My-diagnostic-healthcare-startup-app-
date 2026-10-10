@@ -12,6 +12,8 @@ import { evaluateRouting } from '@/lib/sop/labRouting';
 import { isRefusal } from '@/lib/sop/types';
 import { getMapsProvider } from '@/lib/providers/maps';
 import { decodePolyline } from '@/lib/geo';
+import { quote } from '@/lib/pricing';
+import { loadMembership, membershipTerms } from '@/lib/queries/catalog';
 
 export interface CaregiverActionState {
   ok: boolean;
@@ -177,39 +179,46 @@ export async function addPatient(
   });
 
   revalidatePath('/caregiver');
-  redirect(`/caregiver/plan?patient=${patient.id}`);
+  redirect(`/caregiver/book?patient=${patient.id}`);
 }
 
 // --- booking a visit ---------------------------------------------------------
 
-const bookVisitSchema = z.object({
+const createBookingSchema = z.object({
   patientId: z.string().min(1),
-  panelId: z.string().min(1),
+  /** One or more "panel:<id>" / "test:<id>" keys, comma separated. */
+  items: z.string().min(1),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   windowStartHour: z.coerce.number().min(6).max(10),
 });
 
 /**
+ * A family books what the laboratory offers - a package, single tests, or
+ * both - and pays for it before the visit is confirmed.
+ *
  * Booking runs the routing gate before it writes anything: the lab must be
  * ACTIVE, its accreditation current, its accredited scope must cover every
- * discipline in the order, and it must be under its capacity ceiling.
+ * discipline in the order, and it must be under its capacity ceiling. The
+ * price comes from lib/pricing, the same function every screen shows, and is
+ * written onto the booking so the checkout charges exactly what was quoted.
+ *
+ * The booking is held as AWAITING_PAYMENT, which takes no route or lab
+ * capacity, and the family is sent to the checkout.
  */
-export async function bookVisit(
+export async function createBooking(
   _prev: CaregiverActionState,
   formData: FormData,
 ): Promise<CaregiverActionState> {
   const user = await requireRole('CAREGIVER');
 
-  const parsed = bookVisitSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, message: 'Please choose a panel, a date and a time.' };
+  const parsed = createBookingSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { ok: false, message: 'Please choose at least one test, a date and a time.' };
+  }
 
   const patient = await db.patient.findFirst({
     where: { id: parsed.data.patientId, family: { members: { some: { userId: user.id } } } },
-    include: {
-      addresses: { where: { isPrimary: true }, take: 1 },
-      subscriptions: { where: { status: 'ACTIVE' }, take: 1 },
-      family: true,
-    },
+    include: { addresses: { where: { isPrimary: true }, take: 1 } },
   });
   if (!patient) return { ok: false, message: 'We could not find that patient.' };
 
@@ -222,128 +231,129 @@ export async function bookVisit(
     };
   }
 
-  const [panel, zone] = await Promise.all([
-    db.panel.findUnique({
-      where: { id: parsed.data.panelId },
+  const keys = [...new Set(parsed.data.items.split(',').map((k) => k.trim()).filter(Boolean))];
+  const panelIds = keys.filter((k) => k.startsWith('panel:')).map((k) => k.slice(6));
+  const testIds = keys.filter((k) => k.startsWith('test:')).map((k) => k.slice(5));
+
+  const [panels, singleTests, zone, membership] = await Promise.all([
+    db.panel.findMany({
+      where: { id: { in: panelIds }, isActive: true },
       include: { items: { include: { test: true } } },
     }),
-    db.zone.findUnique({ where: { id: address.zoneId }, include: { anchorLab: true } }),
+    db.testDefinition.findMany({ where: { id: { in: testIds }, isActive: true } }),
+    db.zone.findUnique({ where: { id: address.zoneId } }),
+    loadMembership(patient.familyId),
   ]);
 
-  if (!panel || !zone?.anchorLabId) {
-    return { ok: false, message: 'That panel or zone is not available.' };
+  if (panels.length + singleTests.length === 0 || panels.length + singleTests.length !== keys.length) {
+    return { ok: false, message: 'One of those tests is no longer offered. Please choose again.' };
   }
+  if (!zone?.anchorLabId) return { ok: false, message: 'That zone has no laboratory yet.' };
+
+  // Every distinct test the lab has to run, for the accreditation-scope check.
+  const allTests = [
+    ...new Map(
+      [...panels.flatMap((p) => p.items.map((i) => i.test)), ...singleTests].map((t) => [t.id, t]),
+    ).values(),
+  ];
+  const routingTests = allTests.map((t) => ({ code: t.code, name: t.name, discipline: t.discipline }));
+  const orderLabel = [...panels.map((p) => p.code), ...singleTests.map((t) => t.code)].join('+');
 
   const startOfDay = new Date(`${parsed.data.date}T00:00:00`);
   const endOfDay = new Date(startOfDay.getTime() + 86_400_000);
+  const volumeOn = (labId: string) =>
+    db.booking.count({
+      where: {
+        labId,
+        windowStart: { gte: startOfDay, lt: endOfDay },
+        status: { notIn: ['AWAITING_PAYMENT', 'CANCELLED'] },
+      },
+    });
+  const routable = async (labId: string) => {
+    const lab = await db.lab.findUnique({ where: { id: labId }, include: { accreditation: true } });
+    if (!lab) return null;
+    const check = evaluateRouting(
+      {
+        id: lab.id,
+        name: lab.name,
+        status: lab.status,
+        capacityCeiling: lab.capacityCeiling,
+        todayVolume: await volumeOn(lab.id),
+        accreditation: lab.accreditation
+          ? {
+              certificateNumber: lab.accreditation.certificateNumber,
+              scope: lab.accreditation.scope,
+              validUntil: lab.accreditation.validUntil,
+            }
+          : null,
+      },
+      routingTests,
+    );
+    return { lab, check };
+  };
 
   /**
-   * The family's chosen lab wins, but only while it can still do the work.
-   * A preference recorded weeks ago can go stale — an accreditation lapses, a
-   * panel gains a discipline the lab is not accredited for — so it is offered
-   * to evaluateRouting first and silently falls back to the zone's anchor if
-   * it no longer passes. Falling back beats refusing the booking: the family
-   * still gets their visit, and the substitution is written to the audit log
-   * rather than hidden.
+   * The family's chosen lab wins while it can still do the work. A preference
+   * recorded weeks ago can go stale, so it is checked first and falls back to
+   * the zone's anchor if it no longer passes, with the substitution audited.
    */
-  let lab = await db.lab.findUnique({
-    where: { id: zone.anchorLabId },
-    include: { accreditation: true },
-  });
-
+  let routed = null as Awaited<ReturnType<typeof routable>>;
   if (patient.preferredLabId && patient.preferredLabId !== zone.anchorLabId) {
-    const preferred = await db.lab.findUnique({
-      where: { id: patient.preferredLabId },
-      include: { accreditation: true },
-    });
-    if (preferred) {
-      const preferredVolume = await db.booking.count({
-        where: { labId: preferred.id, windowStart: { gte: startOfDay, lt: endOfDay } },
+    const preferred = await routable(patient.preferredLabId);
+    if (preferred && isRefusal(preferred.check)) {
+      await audit({
+        action: 'LAB_ROUTING_REFUSED',
+        entityType: 'Lab',
+        entityId: preferred.lab.id,
+        actorUserId: user.id,
+        actorRole: 'CAREGIVER',
+        detail: { reason: preferred.check.reason, order: orderLabel, fellBackTo: zone.anchorLabId, wasPreferred: true },
       });
-      const check = evaluateRouting(
-        {
-          id: preferred.id,
-          name: preferred.name,
-          status: preferred.status,
-          capacityCeiling: preferred.capacityCeiling,
-          todayVolume: preferredVolume,
-          accreditation: preferred.accreditation
-            ? {
-                certificateNumber: preferred.accreditation.certificateNumber,
-                scope: preferred.accreditation.scope,
-                validUntil: preferred.accreditation.validUntil,
-              }
-            : null,
-        },
-        panel.items.map((i) => ({
-          code: i.test.code,
-          name: i.test.name,
-          discipline: i.test.discipline,
-        })),
-      );
-
-      if (isRefusal(check)) {
-        await audit({
-          action: 'LAB_ROUTING_REFUSED',
-          entityType: 'Lab',
-          entityId: preferred.id,
-          actorUserId: user.id,
-          actorRole: 'CAREGIVER',
-          detail: {
-            reason: check.reason,
-            panel: panel.code,
-            fellBackTo: zone.anchorLabId,
-            wasPreferred: true,
-          },
-        });
-      } else {
-        lab = preferred;
-      }
+    } else if (preferred) {
+      routed = preferred;
     }
   }
-
-  if (!lab) return { ok: false, message: 'The zone has no anchor laboratory.' };
-
-  const todayVolume = await db.booking.count({
-    where: { labId: lab.id, windowStart: { gte: startOfDay, lt: endOfDay } },
-  });
-
-  const routing = evaluateRouting(
-    {
-      id: lab.id,
-      name: lab.name,
-      status: lab.status,
-      capacityCeiling: lab.capacityCeiling,
-      todayVolume,
-      accreditation: lab.accreditation
-        ? {
-            certificateNumber: lab.accreditation.certificateNumber,
-            scope: lab.accreditation.scope,
-            validUntil: lab.accreditation.validUntil,
-          }
-        : null,
-    },
-    panel.items.map((i) => ({
-      code: i.test.code,
-      name: i.test.name,
-      discipline: i.test.discipline,
-    })),
-  );
-
-  if (isRefusal(routing)) {
+  routed ??= await routable(zone.anchorLabId);
+  if (!routed) return { ok: false, message: 'The zone has no anchor laboratory.' };
+  if (isRefusal(routed.check)) {
     await audit({
       action: 'LAB_ROUTING_REFUSED',
       entityType: 'Lab',
-      entityId: lab.id,
+      entityId: routed.lab.id,
       actorUserId: user.id,
       actorRole: 'CAREGIVER',
-      detail: { reason: routing.reason, panel: panel.code },
+      detail: { reason: routed.check.reason, order: orderLabel },
     });
-    return { ok: false, reason: routing.reason, remedy: routing.remedy };
+    return { ok: false, reason: routed.check.reason, remedy: routed.check.remedy };
   }
+  const lab = routed.lab;
+
+  // Continuity: a member's assigned technician, else whoever came last time.
+  const previous = await db.booking.findFirst({
+    where: { patientId: patient.id, technicianId: { not: null } },
+    orderBy: { windowStart: 'desc' },
+    select: { technicianId: true },
+  });
+  const fallbackTech = await db.technician.findFirst({
+    where: { zoneId: zone.id, isActive: true },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true },
+  });
+  const technicianId =
+    membership?.assignedTechnicianId ?? previous?.technicianId ?? fallbackTech?.id ?? null;
+
+  const items = [
+    ...panels.map((p) => ({ panelId: p.id, pricePaise: p.pricePaise })),
+    ...singleTests.map((t) => ({ testId: t.id, pricePaise: t.pricePaise })),
+  ];
+  const price = quote(items, membershipTerms(membership));
+  const fastingHours = Math.max(0, ...panels.map((p) => p.fastingHours), ...singleTests.map((t) => t.fastingHours));
 
   const windowStart = new Date(startOfDay);
   windowStart.setHours(parsed.data.windowStartHour, 30, 0, 0);
+  if (windowStart.getTime() < Date.now()) {
+    return { ok: false, message: 'That time has already passed. Please choose a later morning.' };
+  }
   const windowEnd = new Date(
     windowStart.getTime() +
       (VISIT_MINUTES_BY_MOBILITY[patient.mobility] ?? 20) * 60_000 +
@@ -359,22 +369,21 @@ export async function bookVisit(
       familyId: patient.familyId,
       patientId: patient.id,
       addressId: address.id,
-      subscriptionId: patient.subscriptions[0]?.id ?? null,
+      subscriptionId: membership?.id ?? null,
       zoneId: zone.id,
       labId: lab.id,
-      technicianId: patient.subscriptions[0]?.assignedTechnicianId ?? null,
-      status: 'SCHEDULED',
+      technicianId,
+      status: 'AWAITING_PAYMENT',
       intakeChannel: 'APP',
       windowStart,
       windowEnd,
-      fastingRequired: panel.fastingHours > 0,
-      fastingHours: panel.fastingHours,
-      totalPaise: patient.subscriptions[0] ? 0 : panel.pricePaise,
-      items: {
-        create: [
-          { panelId: panel.id, pricePaise: patient.subscriptions[0] ? 0 : panel.pricePaise },
-        ],
-      },
+      fastingRequired: fastingHours > 0,
+      fastingHours,
+      subtotalPaise: price.subtotalPaise,
+      discountPaise: price.discountPaise,
+      collectionFeePaise: price.collectionFeePaise,
+      totalPaise: price.totalPaise,
+      items: { create: items },
       checklistSteps: {
         create: CHECKLIST_STEPS.map((step) => ({
           stepKey: step.key,
@@ -392,11 +401,11 @@ export async function bookVisit(
     entityId: booking.id,
     actorUserId: user.id,
     actorRole: 'CAREGIVER',
-    detail: { reference: booking.reference, labId: lab.id, panel: panel.code },
+    detail: { reference: booking.reference, labId: lab.id, order: orderLabel, totalPaise: price.totalPaise },
   });
 
   revalidatePath('/caregiver');
-  return { ok: true, message: `Booked. Reference ${booking.reference}.` };
+  redirect(`/caregiver/checkout/${booking.id}`);
 }
 
 // --- live tracking link ------------------------------------------------------

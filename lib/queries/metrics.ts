@@ -30,7 +30,7 @@ export async function buildMondaySheet(zoneId?: string): Promise<MondaySheet> {
     ledger,
   ] = await Promise.all([
     db.booking.findMany({
-      where: { ...zoneFilter, windowEnd: { lt: now }, status: { notIn: ['CANCELLED'] } },
+      where: { ...zoneFilter, windowEnd: { lt: now }, status: { notIn: ['CANCELLED', 'AWAITING_PAYMENT'] } },
       select: { windowStart: true, windowEnd: true, arrivedAt: true },
     }),
     db.specimen.findMany({ select: { status: true } }),

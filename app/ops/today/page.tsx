@@ -43,7 +43,8 @@ export default async function OpsTodayPage() {
   const endOfDay = new Date(startOfDay.getTime() + 86_400_000);
 
   const bookings = await db.booking.findMany({
-    where: { windowStart: { gte: startOfDay, lt: endOfDay } },
+    // Unpaid bookings are not work yet: no route, no technician time.
+    where: { windowStart: { gte: startOfDay, lt: endOfDay }, status: { not: 'AWAITING_PAYMENT' } },
     orderBy: { windowStart: 'asc' },
     include: {
       patient: true,

@@ -224,7 +224,7 @@ describe('output guard (layer 3): the agent cannot volunteer an interpretation',
   const SAFE_OUTPUTS = [
     'Priya will be at the door on Tuesday between six thirty and seven thirty.',
     'The report was signed yesterday evening and is in your account under Reports.',
-    'You are on Suraksha, at one thousand seven hundred and ninety nine rupees a month.',
+    'With Medwyn One, every test is thirty percent off and home collection is free.',
     'Please finish dinner by eight thirty tonight. Water is fine after that.',
     'I have moved the visit to Wednesday morning. You will get it in writing.',
     'I am not able to explain results. I am asking a coordinator to call you.',

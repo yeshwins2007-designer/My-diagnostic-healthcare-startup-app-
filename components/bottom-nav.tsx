@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-type Icon = 'home' | 'visits' | 'reports' | 'calls' | 'plan';
+type Icon = 'home' | 'visits' | 'reports' | 'calls' | 'plan' | 'profile';
 
 const PATHS: Record<Icon, string> = {
   home: 'M3 11.5 12 4l9 7.5M5.5 9.5V20h13V9.5M10 20v-5.5h4V20',
@@ -12,6 +12,7 @@ const PATHS: Record<Icon, string> = {
   calls:
     'M6.6 4h3l1.5 4-2 1.3a11 11 0 0 0 5.6 5.6l1.3-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.6 6.2 2 2 0 0 1 6.6 4z',
   plan: 'M3.5 6.5h17v11h-17zM3.5 10h17M7 14.5h4',
+  profile: 'M12 12.5a4.25 4.25 0 1 0 0-8.5 4.25 4.25 0 0 0 0 8.5zM4.5 20.5c.9-3.6 3.9-5.8 7.5-5.8s6.6 2.2 7.5 5.8',
 };
 
 export interface BottomNavItem {
@@ -43,9 +44,9 @@ export function BottomNav({ items }: { items: BottomNavItem[] }) {
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-30 border-t-2 border-[var(--color-line)] bg-[var(--color-surface)] pb-[env(safe-area-inset-bottom)] sm:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t-2 border-[var(--card-border)] bg-[color-mix(in_oklab,var(--color-surface)_92%,transparent)] pb-[env(safe-area-inset-bottom)] backdrop-blur-md sm:hidden"
     >
-      <ul className="mx-auto grid max-w-lg grid-cols-5 px-1 pt-1">
+      <ul className="mx-auto grid max-w-lg grid-cols-4 px-1 pt-1">
         {items.map((item) => {
           const active = isActive(item.href);
           return (

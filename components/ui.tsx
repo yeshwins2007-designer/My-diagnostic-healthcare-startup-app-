@@ -74,7 +74,7 @@ export function Card({
   elevated?: boolean;
 }) {
   const tones: Record<string, string> = {
-    surface: 'bg-[var(--color-surface)] border-[var(--color-line)]',
+    surface: 'glass',
     sunken: 'bg-[var(--color-surface-sunken)] border-[var(--color-line)]',
     primary: 'bg-[var(--color-primary-wash)] border-[var(--color-primary)]',
     green: 'bg-[var(--color-green-wash)] border-[var(--color-green)]',
@@ -90,9 +90,7 @@ export function Card({
           ? 'rounded-[var(--radius-card-lg)] [box-shadow:var(--shadow-card)]'
           : 'rounded-[var(--radius-card)]',
         tones[tone],
-        elevated &&
-          tone === 'surface' &&
-          'border-[color-mix(in_oklab,var(--color-line-strong)_55%,var(--color-surface))]',
+
         className,
       )}
       style={style}
@@ -142,9 +140,9 @@ type ButtonTone = 'primary' | 'secondary' | 'quiet' | 'danger';
 
 const buttonTones: Record<ButtonTone, string> = {
   primary:
-    'bg-[var(--color-primary)] text-[var(--color-primary-ink)] border-[var(--color-primary)] hover:bg-[var(--color-primary-hover)]',
+    'btn-glow text-[var(--color-primary-ink)] border-transparent',
   secondary:
-    'bg-[var(--color-surface)] text-[var(--color-ink)] border-[var(--color-line-strong)] hover:bg-[var(--color-surface-sunken)]',
+    'bg-[var(--color-surface)] text-[var(--color-ink)] border-[var(--card-border)] hover:bg-[var(--color-surface-sunken)]',
   quiet:
     'bg-transparent text-[var(--color-ink-soft)] border-transparent hover:bg-[var(--color-surface-sunken)]',
   danger:
@@ -152,7 +150,7 @@ const buttonTones: Record<ButtonTone, string> = {
 };
 
 const buttonBase =
-  'inline-flex items-center justify-center gap-3 rounded-[var(--radius-control)] border-2 px-6 font-semibold min-h-[var(--size-touch)] text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+  'inline-flex items-center justify-center gap-3 rounded-full border-2 px-7 font-semibold min-h-[var(--size-touch)] text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
 
 export function Button({
   children,
@@ -241,7 +239,7 @@ export function Field({
 }
 
 const inputBase =
-  'w-full rounded-[var(--radius-control)] border-2 border-[var(--color-line-strong)] bg-[var(--color-surface)] px-4 py-3 min-h-[var(--size-touch)] text-base text-[var(--color-ink)] placeholder:text-[var(--color-ink-faint)] hover:border-[var(--color-ink-faint)] focus:border-[var(--color-primary)]';
+  'w-full rounded-[var(--radius-control)] border-2 border-[var(--card-border)] bg-[var(--field-bg)] px-4 py-3 min-h-[var(--size-touch)] text-base text-[var(--color-ink)] placeholder:text-[var(--color-ink-faint)] hover:border-[var(--color-ink-faint)] focus:border-[var(--color-primary)]';
 
 // ComponentProps rather than *HTMLAttributes: in React 19 ref is an ordinary
 // prop, and the attribute types omit it, which blocks forwarding a ref.

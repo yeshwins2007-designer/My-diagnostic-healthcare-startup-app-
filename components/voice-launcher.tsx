@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { LOCALES, type Locale } from '@/lib/i18n/locales';
 
 interface Turn {
@@ -18,7 +19,10 @@ interface Turn {
  * server-side. The client never decides what is safe to say — it only renders
  * what came back, and shows plainly when a question has been handed to a human.
  */
+const FLOW_PATHS = ['/caregiver/book', '/caregiver/checkout'];
+
 export function VoiceLauncher() {
+  const pathname = usePathname() ?? '';
   const [open, setOpen] = useState(false);
   const [locale, setLocale] = useState<Locale>('en');
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -112,6 +116,11 @@ export function VoiceLauncher() {
     recognition.start();
   }
 
+  // Booking and checkout end in one primary button pinned above the nav; a
+  // floating button there would sit on top of it. The call button in the
+  // header stays available on those screens.
+  if (!open && FLOW_PATHS.some((p) => pathname.startsWith(p))) return null;
+
   if (!open) {
     return (
       <button
@@ -166,7 +175,7 @@ export function VoiceLauncher() {
           <div className="text-small text-[var(--color-ink-soft)]">
             <p className="mb-3">
               Ask about the next visit, where the technician is, fasting instructions, moving a
-              visit, or your plan.
+              visit, or a booking.
             </p>
             <p>
               I cannot explain what results mean, or advise on medicines — those go straight to

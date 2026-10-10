@@ -20,7 +20,7 @@ function Submit() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" full disabled={pending}>
-      {pending ? 'Checking the address…' : 'Add and choose a plan'}
+      {pending ? 'Checking the address…' : 'Add and book tests'}
     </Button>
   );
 }

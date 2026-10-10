@@ -205,7 +205,7 @@ export const DEFLECTION_SCRIPTS: Record<Exclude<GuardCategory, 'EMERGENCY'>, str
   // Every deflection must end somewhere a person is waiting. A refusal with no
   // route to a human is a wall, and this one was one until a test caught it.
   RESULT_VALUE_REQUEST: `I don't have access to any test values, and I'm not able to read results out. The signed report is in the app under Reports, and your doctor is the right person to go through it with. I'm asking a coordinator to call you back so you're not left with this on your own, and I can tell you whether the report has been released and help with your next visit.`,
-  PROMPT_INJECTION: `I can only help with appointments, reports delivery, plans and billing for ${brand.name}. I can't take on another role. Would you like me to book, move or explain a visit?`,
+  PROMPT_INJECTION: `I can only help with appointments, reports delivery, prices and billing for ${brand.name}. I can't take on another role. Would you like me to book, move or explain a visit?`,
 };
 
 /** Screens what the caller said, before the agent responds. */
