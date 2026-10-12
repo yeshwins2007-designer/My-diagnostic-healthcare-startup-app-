@@ -15,12 +15,12 @@ export async function SiteHeader() {
   const user = await getSessionUser();
 
   return (
-    <header className="border-b-2 border-[var(--color-line)] bg-[var(--color-surface)]">
+    <header className="glass sticky top-0 z-30 border-b pt-[env(safe-area-inset-top)]">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-8">
         <Link href="/" className="flex items-center gap-3">
-          <BrandMark size={48} className="shrink-0 rounded-xl" />
+          <BrandMark size={36} className="shrink-0 rounded-[9px]" />
           <span className="flex flex-col leading-tight">
-            <span className="text-lead font-bold">{brand.name}</span>
+            <span className="font-mono text-[0.8125rem] font-medium tracking-[0.2em]">{brand.name}</span>
             <span className="text-tiny text-[var(--color-ink-faint)]">
               {brand.city}
             </span>
@@ -50,14 +50,14 @@ export async function SiteHeader() {
           {user ? (
             <Link
               href={HOME_FOR_ROLE[user.role] ?? '/'}
-              className="rounded-[var(--radius-control)] border-2 border-[var(--color-primary)] bg-[var(--color-primary)] px-5 py-3 font-semibold text-[var(--color-primary-ink)]"
+              className="rounded-[var(--radius-control)] border border-[var(--color-primary)] bg-[var(--color-primary)] px-5 py-3 font-semibold text-[var(--color-primary-ink)]"
             >
               {user.name.split(' ')[0]}’s dashboard
             </Link>
           ) : (
             <Link
               href="/join"
-              className="rounded-[var(--radius-control)] border-2 border-[var(--color-primary)] bg-[var(--color-primary)] px-5 py-3 font-semibold text-[var(--color-primary-ink)]"
+              className="rounded-[var(--radius-control)] border border-[var(--color-primary)] bg-[var(--color-primary)] px-5 py-3 font-semibold text-[var(--color-primary-ink)]"
             >
               Sign in
             </Link>

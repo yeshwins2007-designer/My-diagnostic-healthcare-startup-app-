@@ -14,8 +14,8 @@ import { memberPrice } from '@/lib/pricing';
 import { fastingInstruction } from '@/lib/sop/visitWindow';
 import { urgency } from '@/lib/sop/followUp';
 import { OverallBandChip, type Band } from '@/components/band-chip';
-import { BrandWaves } from '@/components/brand-mark';
-import { Badge, ButtonLink, Card, H2, H3, Muted, Page, Stack } from '@/components/ui';
+import { Morph } from '@/components/morph';
+import { Badge, ButtonLink, Card, Eyebrow, H2, H3, Metric, Page, Stack, type StatusTone } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Home' };
 export const dynamic = 'force-dynamic';
@@ -41,20 +41,39 @@ function Tile({ href, label, icon }: { href: string; label: string; icon: keyof 
   return (
     <Link
       href={href}
-      className="tap-surface glass flex aspect-square min-h-[var(--size-touch)] flex-col items-center justify-center gap-2 rounded-[var(--radius-card)] border-2 p-2 text-center"
+      className="tap-surface panel group flex min-h-24 flex-col justify-between gap-3 rounded-[var(--radius-card)] border p-3.5"
     >
-      <svg aria-hidden viewBox="0 0 24 24" width="34" height="34" className="text-[var(--color-primary)]">
-        <path d={ICONS[icon]} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <svg aria-hidden viewBox="0 0 24 24" width="22" height="22" className="text-[var(--color-ink-faint)] group-hover:text-[var(--color-ink)]">
+        <path d={ICONS[icon]} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
-      <span className="text-small leading-tight font-semibold">{label}</span>
+      <span className="text-small leading-tight font-medium">{label}</span>
     </Link>
   );
 }
 
+/** Time until a visit, as an instrument reads it: 2d 06h, 14h 05m, 35m. */
+function countdown(to: Date, now = new Date()) {
+  const mins = Math.max(0, Math.round((to.getTime() - now.getTime()) / 60_000));
+  const d = Math.floor(mins / 1440);
+  const h = Math.floor((mins % 1440) / 60);
+  const m = mins % 60;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  if (d > 0) return `${d}d ${pad(h)}h`;
+  if (h > 0) return `${h}h ${pad(m)}m`;
+  return `${m}m`;
+}
+
+const BAND_READING: Record<Band, { value: string; tone: StatusTone }> = {
+  GREEN: { value: 'In range', tone: 'green' },
+  YELLOW: { value: 'Review', tone: 'yellow' },
+  RED: { value: 'Doctor today', tone: 'red' },
+};
+
 /**
- * The dashboard, after the reference design: search, six shortcuts, package
- * banners - and above all of it, an urgent result if there is one. Every
- * shortcut leads somewhere the app actually serves.
+ * The dashboard: a status grid first (the next visit, the latest result,
+ * the membership, the call we owe), then shortcuts, packages and detail. An
+ * urgent result outranks all of it. Every shortcut leads somewhere the app
+ * actually serves.
  */
 export default async function CaregiverHome() {
   const { family } = await loadFamilyContext();
@@ -83,31 +102,12 @@ export default async function CaregiverHome() {
   const packages = catalog.filter((c) => c.kind === 'panel');
   const discount = membership?.plan.testDiscountPercent ?? 0;
 
+  const band = latestReport ? BAND_READING[latestReport.overallBand as Band] : null;
+  const call = pendingCall ? urgency(pendingCall.dueBy) : null;
+
   return (
     <Page>
-      <Stack gap="lg">
-        <form action="/caregiver/book" role="search" className="relative">
-          <label htmlFor="home-search" className="sr-only">
-            Search tests and packages
-          </label>
-          <svg
-            aria-hidden
-            viewBox="0 0 24 24"
-            width="22"
-            height="22"
-            className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-[var(--color-ink-soft)]"
-          >
-            <path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15zM16 16l5 5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-          <input
-            id="home-search"
-            name="q"
-            type="search"
-            placeholder="Search tests, packages…"
-            className="min-h-[var(--size-touch)] w-full rounded-full border-2 border-[var(--card-border)] bg-[var(--field-bg)] pr-4 pl-12 text-base placeholder:text-[var(--color-ink-faint)] focus:border-[var(--color-primary)]"
-          />
-        </form>
-
+      <div className="stagger flex flex-col gap-5">
         {/* A flagged result outranks everything else on the screen. */}
         {openCritical && (
           <Card tone="red">
@@ -118,10 +118,10 @@ export default async function CaregiverHome() {
                 Please contact their doctor today. We have already called you, and we will call
                 again to check that you reached someone.
               </p>
-              <Muted>
+              <p className="text-small text-[var(--color-ink-soft)]">
                 We cannot explain what the result means — only a doctor can. The signed report
                 is below.
-              </Muted>
+              </p>
               <ButtonLink href={`/caregiver/reports/${openCritical.id}`} tone="danger">
                 Open the report
               </ButtonLink>
@@ -129,7 +129,66 @@ export default async function CaregiverHome() {
           </Card>
         )}
 
-        <nav aria-label="Shortcuts" className="grid grid-cols-3 gap-3">
+        {/* At a glance: four readings, each one the thing to know first. */}
+        <section
+          aria-label="At a glance"
+          className="panel grid grid-cols-2 overflow-hidden rounded-[var(--radius-card-lg)] border [box-shadow:var(--shadow-card)] sm:grid-cols-4"
+        >
+          <Metric
+            className="border-r border-b border-[var(--color-line)] p-4 sm:border-b-0"
+            label="Upcoming"
+            value={live ? (live.status === 'ARRIVED' ? 'At door' : 'En route') : next ? countdown(next.windowStart) : 'None'}
+            tone={live ? 'green' : next ? 'info' : 'neutral'}
+            live={!!live}
+            sub={next ? `${next.patient.name.split(' ')[0]} · ${next.windowStart.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}` : 'Nothing booked'}
+          />
+          <Metric
+            className="border-b border-[var(--color-line)] p-4 sm:border-r sm:border-b-0"
+            label="Latest result"
+            value={band ? band.value : 'None yet'}
+            tone={band ? band.tone : 'neutral'}
+            sub={latestReport ? latestReport.patient.name.split(' ')[0] : 'After the first visit'}
+          />
+          <Metric
+            className="border-r border-[var(--color-line)] p-4"
+            label="Medwyn One"
+            value={membership ? `${discount}%` : 'Not joined'}
+            unit={membership ? 'off' : undefined}
+            tone={membership ? 'green' : 'neutral'}
+            sub={membership ? 'Free collection' : 'Paying per test'}
+          />
+          <Metric
+            className="p-4"
+            label="Our call to you"
+            value={call ? (call.level === 'OVERDUE' ? 'Overdue' : `${Math.max(0, Math.round(call.hoursRemaining))}h`) : 'None'}
+            tone={call ? (call.level === 'SCHEDULED' ? 'info' : 'yellow') : 'neutral'}
+            sub={call ? 'Within 24h of a report' : 'Nothing owed'}
+          />
+        </section>
+
+        <form action="/caregiver/book" role="search" className="relative">
+          <label htmlFor="home-search" className="sr-only">
+            Search tests and packages
+          </label>
+          <svg
+            aria-hidden
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-[var(--color-ink-faint)]"
+          >
+            <path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15zM16 16l5 5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+          <input
+            id="home-search"
+            name="q"
+            type="search"
+            placeholder="Search tests, packages…"
+            className="min-h-[var(--size-touch)] w-full rounded-[var(--radius-control)] border border-[var(--color-line-strong)] bg-[var(--field-bg)] pr-4 pl-11 text-base placeholder:text-[var(--color-ink-faint)] focus:border-[var(--color-ink-faint)] focus:outline-none"
+          />
+        </form>
+
+        <nav aria-label="Shortcuts" className="grid grid-cols-3 gap-2.5">
           <Tile href="/caregiver/book?kind=panel" label="Health packages" icon="package" />
           <Tile href="/caregiver/book?kind=test" label="Blood tests" icon="tube" />
           <Tile href="/caregiver/book" label="Home visit" icon="home" />
@@ -143,19 +202,22 @@ export default async function CaregiverHome() {
         </nav>
 
         {(packages.length > 0 || !membership) && (
-          <section aria-label="Packages" className="snap-row -mx-5 px-5 pb-1">
+          <section aria-label="Packages" className="snap-row -mx-5 px-5 pb-1 sm:-mx-8 sm:px-8">
             {!membership && (
               <Link
                 href="/caregiver/membership"
-                className="brand-surface tap-surface relative flex min-h-48 flex-col justify-end gap-2 overflow-hidden rounded-[var(--radius-card-lg)] border-2 border-[var(--card-border)] p-5 [box-shadow:var(--glow)]"
+                className="brand-surface tap-surface flex min-h-44 flex-col justify-between gap-6 rounded-[var(--radius-card-lg)] border border-[var(--color-line-strong)] p-5"
               >
-                <BrandWaves />
-                <span className="brand-content flex flex-col gap-2">
-                  <span className="text-h3 font-bold">Medwyn One</span>
-                  <span>30% off every test and free home collection. From ₹499 a month.</span>
-                  <span className="btn-glow mt-1 inline-flex min-h-12 items-center self-start rounded-full px-5 font-semibold !text-[var(--color-primary-ink)]">
-                    Join now
-                  </span>
+                <span className="flex items-center justify-between gap-3">
+                  <Eyebrow>Membership</Eyebrow>
+                  <span className="reading text-small text-[var(--color-ink-faint)]">₹499 / mo</span>
+                </span>
+                <span className="brand-content flex flex-col gap-1.5">
+                  <span className="text-h3 font-semibold">Medwyn One</span>
+                  <span className="text-small text-[var(--color-ink-soft)]">30% off every test and free home collection. From ₹499 a month.</span>
+                </span>
+                <span className="btn-glow inline-flex min-h-11 items-center self-start rounded-[var(--radius-control)] px-4 text-small font-medium !text-[var(--color-primary-ink)]">
+                  Join now
                 </span>
               </Link>
             )}
@@ -163,25 +225,27 @@ export default async function CaregiverHome() {
               <Link
                 key={p.key}
                 href={`/caregiver/book?item=${encodeURIComponent(p.key)}`}
-                className="brand-surface tap-surface relative flex min-h-48 flex-col justify-end gap-2 overflow-hidden rounded-[var(--radius-card-lg)] border-2 border-[var(--card-border)] p-5 [box-shadow:var(--glow)]"
+                className="brand-surface tap-surface flex min-h-44 flex-col justify-between gap-6 rounded-[var(--radius-card-lg)] border border-[var(--color-line-strong)] p-5"
               >
-                <BrandWaves />
-                <span className="brand-content flex flex-col gap-2">
-                  <span className="text-h3 font-bold">{p.name}</span>
-                  <span>
-                    {p.includes.length} tests ·{' '}
+                <span className="flex items-center justify-between gap-3">
+                  <Eyebrow>Package · {p.includes.length} tests</Eyebrow>
+                  {discount > 0 && <span className="eyebrow !text-[var(--color-green)]">−{discount}%</span>}
+                </span>
+                <span className="brand-content flex flex-col gap-1.5">
+                  <span className="text-h3 font-semibold">{p.name}</span>
+                  <span className="reading flex items-baseline gap-2 text-lead">
                     {discount > 0 ? (
                       <>
-                        <strong>{formatINR(memberPrice(p.pricePaise, discount))}</strong>{' '}
-                        <s className="opacity-80">{formatINR(p.pricePaise)}</s>
+                        <strong className="font-medium">{formatINR(memberPrice(p.pricePaise, discount))}</strong>{' '}
+                        <s className="text-small text-[var(--color-ink-faint)]">{formatINR(p.pricePaise)}</s>
                       </>
                     ) : (
-                      <strong>{formatINR(p.pricePaise)}</strong>
+                      <strong className="font-medium">{formatINR(p.pricePaise)}</strong>
                     )}
                   </span>
-                  <span className="btn-glow mt-1 inline-flex min-h-12 items-center self-start rounded-full px-5 font-semibold !text-[var(--color-primary-ink)]">
-                    Book now
-                  </span>
+                </span>
+                <span className="btn-glow inline-flex min-h-11 items-center self-start rounded-[var(--radius-control)] px-4 text-small font-medium !text-[var(--color-primary-ink)]">
+                  Book now
                 </span>
               </Link>
             ))}
@@ -189,28 +253,34 @@ export default async function CaregiverHome() {
         )}
 
         {next && (
-          <Card tone="primary">
+          <Card elevated>
             <Stack gap="md">
-              <Badge tone="primary">Next visit</Badge>
+              <div className="flex items-center justify-between gap-3">
+                <Badge tone={live && live.id === next.id ? 'green' : 'primary'}>Next visit</Badge>
+                <span className="reading text-small text-[var(--color-ink-faint)]">{countdown(next.windowStart)}</span>
+              </div>
               <H2 className="text-h3">
                 {next.patient.name} · {dateLabel(next.windowStart)}
               </H2>
-              <p className="text-lead">
-                Between <strong>{timeLabel(next.windowStart)}</strong> and{' '}
-                <strong>{timeLabel(next.windowEnd)}</strong>
+              <p className="reading text-lead">
+                {timeLabel(next.windowStart)} <span className="text-[var(--color-ink-faint)]">→</span>{' '}
+                {timeLabel(next.windowEnd)}
+              </p>
+              <p className="sr-only">
+                Between {timeLabel(next.windowStart)} and {timeLabel(next.windowEnd)}
               </p>
               {next.technician && (
-                <p>
-                  <strong>{next.technician.user.name}</strong> is coming
+                <p className="text-[var(--color-ink-soft)]">
+                  <strong className="font-medium text-[var(--color-ink)]">{next.technician.user.name}</strong> is coming
                   {sameTechnicianAsLastTime ? ' — the same technician as last time.' : '.'}
                 </p>
               )}
               {next.fastingRequired && (
                 <Card tone="yellow" className="p-4">
-                  <p>{fastingInstruction(next.fastingHours, next.windowStart)}</p>
+                  <p className="text-small">{fastingInstruction(next.fastingHours, next.windowStart)}</p>
                 </Card>
               )}
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-2.5">
                 {live && live.id === next.id && (
                   <ButtonLink href={`/caregiver/track/${next.id}`}>See where they are</ButtonLink>
                 )}
@@ -226,7 +296,7 @@ export default async function CaregiverHome() {
           <Card tone="info">
             <Stack gap="sm">
               <H3>We owe you a call</H3>
-              <p>
+              <p className="text-[var(--color-ink-soft)]">
                 We call every family within 24 hours of a report. Yours is{' '}
                 {urgency(pendingCall.dueBy).label.toLowerCase()}.
               </p>
@@ -235,25 +305,30 @@ export default async function CaregiverHome() {
         )}
 
         {latestReport && (
-          <Card>
-            <Stack gap="sm">
-              <H3>Latest report</H3>
-              <p>
-                {latestReport.patient.name} ·{' '}
-                {latestReport.releasedAt?.toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })}{' '}
-                · processed at {latestReport.lab.name}
-              </p>
-              <OverallBandChip band={latestReport.overallBand as Band} />
-              <Link
-                href={`/caregiver/reports/${latestReport.id}`}
-                className="inline-flex min-h-12 items-center self-start font-semibold text-[var(--color-primary)] underline"
-              >
-                Open it
-              </Link>
-            </Stack>
-          </Card>
+          <Link
+            href={`/caregiver/reports/${latestReport.id}`}
+            className="tap-surface block rounded-[var(--radius-card-lg)]"
+            aria-label={`Latest report: ${latestReport.patient.name}. Open it`}
+          >
+            <Morph name={`report-${latestReport.id}`}>
+              <div className="panel flex flex-col gap-3 rounded-[var(--radius-card-lg)] border p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <Eyebrow>Latest report</Eyebrow>
+                  <span className="reading text-small text-[var(--color-ink-faint)]">
+                    {latestReport.releasedAt?.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </span>
+                </div>
+                <H3>{latestReport.patient.name}</H3>
+                <p className="text-small text-[var(--color-ink-faint)]">Processed at {latestReport.lab.name}</p>
+                <div className="flex items-center justify-between gap-3">
+                  <OverallBandChip band={latestReport.overallBand as Band} />
+                  <span className="text-small font-medium">Open it →</span>
+                </div>
+              </div>
+            </Morph>
+          </Link>
         )}
-      </Stack>
+      </div>
     </Page>
   );
 }

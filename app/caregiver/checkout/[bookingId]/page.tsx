@@ -48,14 +48,14 @@ export default async function CheckoutPage({ params }: { params: Promise<{ booki
           <Link
             href="/caregiver/book"
             aria-label="Back to booking"
-            className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[var(--card-border)] text-lead"
+            className="flex h-12 w-12 items-center justify-center rounded-full border border-[var(--card-border)] text-lead"
           >
             <span aria-hidden>‹</span>
           </Link>
           <h1 className="text-h2 font-bold">Secure checkout</h1>
         </div>
 
-        <section className="glass flex flex-col gap-3 rounded-[var(--radius-card-lg)] border-2 p-5">
+        <section className="glass flex flex-col gap-3 rounded-[var(--radius-card-lg)] border p-5">
           <ul className="flex flex-col gap-2">
             {booking.items.map((item) => (
               <li key={item.id} className="flex items-start justify-between gap-3">
@@ -71,7 +71,7 @@ export default async function CheckoutPage({ params }: { params: Promise<{ booki
           </p>
         </section>
 
-        <dl className="glass flex flex-col gap-2 rounded-[var(--radius-card-lg)] border-2 p-5">
+        <dl className="glass flex flex-col gap-2 rounded-[var(--radius-card-lg)] border p-5">
           <div className="flex justify-between gap-3">
             <dt className="text-[var(--color-ink-soft)]">Subtotal</dt>
             <dd>{formatINR(booking.subtotalPaise)}</dd>
@@ -86,7 +86,7 @@ export default async function CheckoutPage({ params }: { params: Promise<{ booki
             <dt className="text-[var(--color-ink-soft)]">Home collection</dt>
             <dd>{waived ? <span className="text-[var(--color-green)]">Free with Medwyn One</span> : formatINR(booking.collectionFeePaise)}</dd>
           </div>
-          <div className="flex justify-between gap-3 border-t-2 border-[var(--color-line)] pt-3 text-h3 font-bold">
+          <div className="flex justify-between gap-3 border-t border-[var(--color-line)] pt-3 text-h3 font-bold">
             <dt>Total</dt>
             <dd className="text-[var(--color-primary)]">{formatINR(booking.totalPaise)}</dd>
           </div>

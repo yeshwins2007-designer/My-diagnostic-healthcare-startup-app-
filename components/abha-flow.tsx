@@ -173,7 +173,7 @@ export function AbhaFlow({
             type="button"
             onClick={() => setTab('LINK')}
             aria-pressed={tab === 'LINK'}
-            className={`min-h-[var(--size-touch)] flex-1 rounded-[var(--radius-control)] border-2 px-4 font-semibold ${
+            className={`min-h-[var(--size-touch)] flex-1 rounded-[var(--radius-control)] border px-4 font-semibold ${
               tab === 'LINK'
                 ? 'border-[var(--color-primary)] bg-[var(--color-primary-wash)]'
                 : 'border-[var(--color-line-strong)]'
@@ -185,7 +185,7 @@ export function AbhaFlow({
             type="button"
             onClick={() => setTab('CREATE')}
             aria-pressed={tab === 'CREATE'}
-            className={`min-h-[var(--size-touch)] flex-1 rounded-[var(--radius-control)] border-2 px-4 font-semibold ${
+            className={`min-h-[var(--size-touch)] flex-1 rounded-[var(--radius-control)] border px-4 font-semibold ${
               tab === 'CREATE'
                 ? 'border-[var(--color-primary)] bg-[var(--color-primary-wash)]'
                 : 'border-[var(--color-line-strong)]'
@@ -226,7 +226,7 @@ export function AbhaFlow({
                     type="button"
                     onClick={() => setMethod('MOBILE_OTP')}
                     aria-pressed={method === 'MOBILE_OTP'}
-                    className={`min-h-[var(--size-touch)] rounded-[var(--radius-control)] border-2 px-4 font-semibold ${
+                    className={`min-h-[var(--size-touch)] rounded-[var(--radius-control)] border px-4 font-semibold ${
                       method === 'MOBILE_OTP'
                         ? 'border-[var(--color-primary)] bg-[var(--color-primary-wash)]'
                         : 'border-[var(--color-line-strong)]'
@@ -238,7 +238,7 @@ export function AbhaFlow({
                     type="button"
                     onClick={() => setMethod('AADHAAR_OTP')}
                     aria-pressed={method === 'AADHAAR_OTP'}
-                    className={`min-h-[var(--size-touch)] rounded-[var(--radius-control)] border-2 px-4 font-semibold ${
+                    className={`min-h-[var(--size-touch)] rounded-[var(--radius-control)] border px-4 font-semibold ${
                       method === 'AADHAAR_OTP'
                         ? 'border-[var(--color-primary)] bg-[var(--color-primary-wash)]'
                         : 'border-[var(--color-line-strong)]'

@@ -72,7 +72,7 @@ export default async function GrowthGatesPage() {
                   ))}
                 </ul>
 
-                <p className="rounded-[var(--radius-control)] border-2 border-[var(--color-line)] bg-[var(--color-surface)] p-4 leading-relaxed">
+                <p className="rounded-[var(--radius-control)] border border-[var(--color-line)] bg-[var(--color-surface)] p-4 leading-relaxed">
                   {gate.guidance}
                 </p>
               </Stack>

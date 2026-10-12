@@ -10,16 +10,18 @@ import { DISCIPLINE_LABELS, type Discipline } from '@/lib/enums';
 import { Disclosure } from '@/components/disclosure';
 import { OverallBandChip } from '@/components/band-chip';
 import { RangeMeter, positionOf, type RangePosition } from '@/components/range-meter';
+import { Morph } from '@/components/morph';
 import {
   Badge,
   ButtonLink,
   Card,
   DataRow,
   Disclaimer,
+  Eyebrow,
   H1,
   H2,
   H3,
-  Lead,
+  Metric,
   Muted,
   Page,
   Stack,
@@ -153,38 +155,60 @@ export default async function ReportDetailPage({
       <Stack gap="lg">
         <Link
           href="/caregiver/reports"
-          className="inline-flex min-h-12 items-center gap-2 self-start font-semibold text-[var(--color-primary)]"
+          className="inline-flex min-h-12 items-center gap-2 self-start text-small font-medium text-[var(--color-ink-faint)] hover:text-[var(--color-ink)]"
         >
           <span aria-hidden>←</span> All reports
         </Link>
 
-        <Card elevated className="rise-in">
-          <Stack gap="md">
-            <Stack gap="sm">
-              <span className="text-small font-semibold tracking-wide text-[var(--color-ink-soft)] uppercase">
-                Laboratory report
+        {/* The same card the summary was: it morphs into this header. */}
+        <Morph name={`report-${report.id}`}>
+          <section className="panel flex flex-col gap-5 rounded-[var(--radius-card-lg)] border p-5 [box-shadow:var(--shadow-card)] sm:p-6">
+            <div className="flex items-center justify-between gap-3">
+              <Eyebrow>Laboratory report</Eyebrow>
+              <span className="reading text-small text-[var(--color-ink-faint)]">
+                {report.booking.reference}
               </span>
+            </div>
+            <Stack gap="sm">
               <H1>{report.patient.name}</H1>
-              <Lead>
+              <p className="reading text-small text-[var(--color-ink-soft)]">
                 {report.releasedAt?.toLocaleDateString('en-IN', {
                   weekday: 'long',
                   day: 'numeric',
                   month: 'long',
                   year: 'numeric',
                 })}
-              </Lead>
+              </p>
             </Stack>
-            <div className="flex flex-wrap items-center gap-4 border-t border-[var(--color-line)] pt-4">
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-line)] bg-[var(--color-line)] sm:grid-cols-3">
+              <Metric
+                className="bg-[var(--color-surface)] p-3.5"
+                label="Outside range"
+                value={`${outside}/${results.length}`}
+                tone={outside === 0 ? 'green' : band === 'RED' ? 'red' : 'yellow'}
+              />
+              <Metric
+                className="bg-[var(--color-surface)] p-3.5"
+                label="Laboratory"
+                value={<span className="text-base">{report.lab.name}</span>}
+              />
+              <Metric
+                className="col-span-2 bg-[var(--color-surface)] p-3.5 sm:col-span-1"
+                label="Collected"
+                value={report.booking.windowStart.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
               <OverallBandChip band={band} />
-              <p className="text-[var(--color-ink-soft)]">
-                <strong className="font-semibold text-[var(--color-ink)]">
+              <p className="text-small text-[var(--color-ink-soft)]">
+                <strong className="font-medium text-[var(--color-ink)]">
                   {outside} of {results.length}
                 </strong>{' '}
                 outside the laboratory’s range
               </p>
             </div>
-          </Stack>
-        </Card>
+          </section>
+        </Morph>
 
         {openCritical.length > 0 && (
           <Card tone="red">
@@ -210,96 +234,88 @@ export default async function ReportDetailPage({
         )}
 
         <Stack gap="md">
-          <H2>Results</H2>
+          <div className="flex items-end justify-between gap-3">
+            <H2>Results</H2>
+            <Eyebrow>{results.length} parameters</Eyebrow>
+          </div>
           <Muted>Tap any result for the details your doctor may ask about.</Muted>
 
-          <ul className="flex flex-col gap-4">
-            {results.map(({ param, value, numeric, band: paramBand, position }, i) => {
+          <ul className="stagger panel flex flex-col overflow-hidden rounded-[var(--radius-card-lg)] border">
+            {results.map(({ param, value, numeric, band: paramBand, position }) => {
               const hasRange = param.refLow !== null && param.refHigh !== null;
               const discipline =
                 DISCIPLINE_LABELS[param.test.discipline as Discipline] ?? param.test.discipline;
               return (
-                <Card
+                <li
                   key={param.id}
-                  as="li"
-                  elevated
-                  className={`rise-in ${param.isCritical ? 'border-[var(--color-red)]' : ''}`}
-                  // Cards arrive in sequence rather than all at once; capped so a
-                  // long panel never makes the last result wait.
-                  style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
+                  className={`border-b border-[var(--color-line)] px-5 py-4 last:border-b-0 ${
+                    param.isCritical ? 'bg-[var(--color-red-wash)] [box-shadow:inset_2px_0_0_var(--color-red)]' : ''
+                  }`}
                 >
-                  <div>
-                    <Disclosure
-                      summary={
-                        <span className="flex flex-col gap-3">
-                          <span className="flex flex-wrap items-start justify-between gap-3">
-                            <span className="font-semibold">{param.test.name}</span>
-                            <StatusChip
-                              band={paramBand}
-                              position={position}
-                              critical={param.isCritical}
-                            />
+                  <Disclosure
+                    summary={
+                      <span className="flex flex-col gap-2.5">
+                        <span className="flex flex-wrap items-start justify-between gap-3">
+                          <span className="font-medium">{param.test.name}</span>
+                          <StatusChip
+                            band={paramBand}
+                            position={position}
+                            critical={param.isCritical}
+                          />
+                        </span>
+                        <span className="flex items-baseline gap-2">
+                          {/* The reading: the heaviest thing in the row. */}
+                          <span className="reading text-[1.75rem] leading-none font-medium tracking-tight">
+                            {value ?? '—'}
                           </span>
-                          <span className="flex items-baseline gap-2">
-                            {/* The result is the heaviest thing on the card. Sans
-                                and proportional: tabular or mono figures make a
-                                standalone number look broken. */}
-                            <span className="text-h2 leading-none font-bold tracking-tight text-[var(--color-ink)]">
-                              {value ?? '—'}
-                            </span>
-                            {param.unit && (
-                              <span className="text-small font-normal text-[var(--color-ink-soft)]">
-                                {param.unit}
-                              </span>
-                            )}
-                          </span>
-                          {hasRange && Number.isFinite(numeric) && (
-                            <RangeMeter
-                              value={numeric}
-                              low={param.refLow as number}
-                              high={param.refHigh as number}
-                              band={paramBand}
-                            />
-                          )}
-                          {hasRange && (
-                            <span className="text-small font-normal text-[var(--color-ink-soft)]">
-                              Laboratory range{' '}
-                              <span className="font-semibold text-[var(--color-ink)]">
-                                {param.refLow} – {param.refHigh}
-                              </span>{' '}
+                          {param.unit && (
+                            <span className="font-mono text-small text-[var(--color-ink-faint)]">
                               {param.unit}
                             </span>
                           )}
                         </span>
-                      }
-                    >
-                      <div className="rounded-[var(--radius-control)] bg-[var(--color-surface-sunken)] px-4">
-                        {param.isCritical && (
-                          <p className="border-b border-[var(--color-line)] py-3 font-semibold text-[var(--color-red)]">
-                            The laboratory flagged this value. Please speak to {firstName}’s
-                            doctor today.
-                          </p>
-                        )}
-                        <DataRow label="Area of testing" value={discipline} />
-                        <DataRow label="Sample" value={humanise(param.test.sampleType)} />
-                        <DataRow
-                          label="Fasting"
-                          value={
-                            param.test.fastingHours > 0
-                              ? `${param.test.fastingHours} hours`
-                              : 'Not required'
-                          }
-                        />
-                        {param.test.loincCode && (
-                          <DataRow
-                            label="Standard code, for your doctor"
-                            value={<span className="font-mono">{param.test.loincCode}</span>}
+                        {hasRange && Number.isFinite(numeric) && (
+                          <RangeMeter
+                            value={numeric}
+                            low={param.refLow as number}
+                            high={param.refHigh as number}
+                            band={paramBand}
                           />
                         )}
-                      </div>
-                    </Disclosure>
-                  </div>
-                </Card>
+                        {hasRange && (
+                          <span className="flex items-center justify-between gap-3 text-small text-[var(--color-ink-faint)]">
+                            <span>Laboratory range</span>
+                            <span className="font-mono text-[var(--color-ink-soft)]">
+                              {param.refLow} – {param.refHigh} {param.unit}
+                            </span>
+                          </span>
+                        )}
+                      </span>
+                    }
+                  >
+                    <div className="rounded-[var(--radius-control)] border border-[var(--color-line)] bg-[var(--color-surface-sunken)] px-4">
+                      {param.isCritical && (
+                        <p className="border-b border-[var(--color-line)] py-3 font-medium text-[var(--color-red)]">
+                          The laboratory flagged this value. Please speak to {firstName}’s
+                          doctor today.
+                        </p>
+                      )}
+                      <DataRow label="Area of testing" value={discipline} />
+                      <DataRow label="Sample" value={humanise(param.test.sampleType)} />
+                      <DataRow
+                        label="Fasting"
+                        value={
+                          param.test.fastingHours > 0
+                            ? `${param.test.fastingHours} hours`
+                            : 'Not required'
+                        }
+                      />
+                      {param.test.loincCode && (
+                        <DataRow label="Standard code, for your doctor" value={param.test.loincCode} />
+                      )}
+                    </div>
+                  </Disclosure>
+                </li>
               );
             })}
           </ul>

@@ -21,32 +21,25 @@ export interface BottomNavItem {
   icon: Icon;
 }
 
+/** Home is exact-match; everything else owns its sub-routes. */
+function useIsActive(items: { href: string }[]) {
+  const pathname = usePathname();
+  return (href: string) => (href === items[0]?.href ? pathname === href : pathname.startsWith(href));
+}
+
 /**
- * Primary navigation, within thumb reach.
- *
- * On a phone held one-handed the top of the screen is the hardest place to
- * reach, and the family checking a parent's results is often doing it while
- * holding something else. Below 640px this replaces the scrolling pill row in
- * the header; above it the nav is hidden and the header row returns.
- *
- * Each item is a 64px-tall target with a visible label: an icon alone is a
- * guessing game for someone who does not live in apps. The shell sets
- * .has-bottom-nav so fixed and sticky elements clear it; see globals.css.
+ * Primary navigation on a phone, within thumb reach: glass over the content,
+ * a labelled 48px+ target per item, and a single light under the active one.
+ * Hidden from 640px, where TopNav takes over in the header.
  */
 export function BottomNav({ items }: { items: BottomNavItem[] }) {
-  const pathname = usePathname();
-
-  // Home is exact-match; everything else owns its sub-routes, so a single
-  // report still lights up "Reports".
-  const isActive = (href: string) =>
-    href === items[0]?.href ? pathname === href : pathname.startsWith(href);
-
+  const isActive = useIsActive(items);
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-30 border-t-2 border-[var(--card-border)] bg-[color-mix(in_oklab,var(--color-surface)_92%,transparent)] pb-[env(safe-area-inset-bottom)] backdrop-blur-md sm:hidden"
+      className="glass fixed inset-x-0 bottom-0 z-30 border-t pb-[env(safe-area-inset-bottom)] sm:hidden"
     >
-      <ul className="mx-auto grid max-w-lg grid-cols-4 px-1 pt-1">
+      <ul className="mx-auto grid max-w-lg grid-cols-4 px-1">
         {items.map((item) => {
           const active = isActive(item.href);
           return (
@@ -54,33 +47,65 @@ export function BottomNav({ items }: { items: BottomNavItem[] }) {
               <Link
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
-                className={`flex min-h-[var(--size-touch)] flex-col items-center justify-center gap-1 rounded-[var(--radius-control)] px-1 text-tiny font-semibold ${
-                  active ? 'text-[var(--color-primary)]' : 'text-[var(--color-ink-soft)]'
+                className={`relative flex min-h-16 flex-col items-center justify-center gap-1.5 px-1 text-[0.6875rem] font-medium tracking-[0.04em] ${
+                  active ? 'text-[var(--color-ink)]' : 'text-[var(--color-ink-faint)]'
                 }`}
               >
-                <span
-                  className={`flex h-8 w-14 items-center justify-center rounded-full ${
-                    active ? 'bg-[var(--color-primary-wash)]' : ''
-                  }`}
-                  style={{ transition: 'background-color var(--dur-settle) var(--ease-out-soft)' }}
-                >
-                  <svg aria-hidden viewBox="0 0 24 24" width="26" height="26">
-                    <path
-                      d={PATHS[item.icon]}
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={active ? 2.25 : 1.9}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </span>
+                <svg aria-hidden viewBox="0 0 24 24" width="22" height="22">
+                  <path
+                    d={PATHS[item.icon]}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={active ? 2 : 1.6}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
                 <span className="leading-none">{item.label}</span>
+                <span
+                  aria-hidden
+                  className={`absolute top-0 h-px w-8 bg-[var(--color-ink)] transition-opacity ${active ? 'opacity-100' : 'opacity-0'}`}
+                />
               </Link>
             </li>
           );
         })}
       </ul>
+    </nav>
+  );
+}
+
+/**
+ * The same items as a segmented control in the header, from 640px. With
+ * `scroll`, it stays visible at every width and scrolls sideways on a phone
+ * (the ops console, which has no bottom bar).
+ */
+export function TopNav({ items, scroll }: { items: { href: string; label: string }[]; scroll?: boolean }) {
+  const isActive = useIsActive(items);
+  return (
+    <nav
+      aria-label="Main"
+      className={`items-center gap-1 rounded-[var(--radius-control)] border border-[var(--color-line)] p-1 ${
+        scroll ? 'scroll-x flex w-full whitespace-nowrap' : 'hidden sm:flex'
+      }`}
+    >
+      {items.map((item) => {
+        const active = isActive(item.href);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            aria-current={active ? 'page' : undefined}
+            className={`inline-flex min-h-11 items-center rounded-[calc(var(--radius-control)-3px)] px-3.5 text-small font-medium ${
+              active
+                ? 'bg-[var(--color-primary-wash)] text-[var(--color-ink)] [box-shadow:inset_0_0_0_1px_var(--color-line-strong)]'
+                : 'text-[var(--color-ink-faint)] hover:text-[var(--color-ink)]'
+            }`}
+          >
+            {item.label}
+          </Link>
+        );
+      })}
     </nav>
   );
 }

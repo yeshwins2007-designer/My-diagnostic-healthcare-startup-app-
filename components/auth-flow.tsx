@@ -113,7 +113,7 @@ export function AuthFlow({ intent }: { intent: 'individual' | 'business' }) {
             </Field>
 
             {devCode && (
-              <div className="rounded-[var(--radius-control)] border-2 border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-sunken)] p-4">
+              <div className="rounded-[var(--radius-control)] border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-sunken)] p-4">
                 <Muted>
                   No SMS gateway is configured, so here is the code:{' '}
                   <strong className="font-mono text-lead text-[var(--color-ink)]">

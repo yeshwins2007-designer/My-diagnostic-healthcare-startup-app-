@@ -116,7 +116,7 @@ export function BookFlow({
 
   if (patients.length === 0) {
     return (
-      <div className="glass rounded-[var(--radius-card-lg)] border-2 p-6">
+      <div className="glass rounded-[var(--radius-card-lg)] border p-6">
         <p className="mb-4">Add the person the tests are for, and their address, first.</p>
         <Link href="/caregiver/onboarding" className="font-semibold text-[var(--color-primary)] underline">
           Add a parent
@@ -148,11 +148,11 @@ export function BookFlow({
 
         <section
           aria-label="Summary"
-          className="glass flex flex-col gap-4 rounded-[var(--radius-card-lg)] border-2 p-5"
+          className="glass flex flex-col gap-4 rounded-[var(--radius-card-lg)] border p-5"
         >
           <h2 className="text-center text-h3 font-semibold">Summary</h2>
 
-          <div className="grid grid-cols-1 gap-3 rounded-[var(--radius-control)] border-2 border-[var(--card-border)] bg-[var(--field-bg)] p-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 rounded-[var(--radius-control)] border border-[var(--card-border)] bg-[var(--field-bg)] p-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1">
               <span className="text-small text-[var(--color-ink-soft)]">Date</span>
               <input
@@ -162,7 +162,7 @@ export function BookFlow({
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 required
-                className="min-h-12 rounded-[var(--radius-control)] border-2 border-[var(--card-border)] bg-transparent px-3 font-semibold"
+                className="min-h-12 rounded-[var(--radius-control)] border border-[var(--card-border)] bg-transparent px-3 font-semibold"
               />
               {/* Native date fields format by device locale; spell it out so
                   10/11 can never be read as the wrong month. */}
@@ -191,7 +191,7 @@ export function BookFlow({
             </label>
           </div>
 
-          <div className="rounded-[var(--radius-control)] border-2 border-[var(--card-border)] bg-[var(--field-bg)] p-4">
+          <div className="rounded-[var(--radius-control)] border border-[var(--card-border)] bg-[var(--field-bg)] p-4">
             <span className="text-small text-[var(--color-ink-soft)]">Patient</span>
             {patients.length > 1 ? (
               <Select
@@ -212,7 +212,7 @@ export function BookFlow({
             <p className="mt-1 text-small text-[var(--color-ink-soft)]">At home: {patient?.address}</p>
           </div>
 
-          <div className="flex items-center gap-4 rounded-[var(--radius-control)] border-2 border-[var(--card-border)] bg-[var(--field-bg)] p-4">
+          <div className="flex items-center gap-4 rounded-[var(--radius-control)] border border-[var(--card-border)] bg-[var(--field-bg)] p-4">
             <div className="min-w-0 flex-1">
               <span className="text-small text-[var(--color-ink-soft)]">Laboratory</span>
               <p className="font-semibold">{patient?.labName}</p>
@@ -235,7 +235,7 @@ export function BookFlow({
           </div>
 
           {fasting > 0 && (
-            <p className="rounded-[var(--radius-control)] border-2 border-[var(--color-yellow)] bg-[var(--color-yellow-wash)] p-4 text-small">
+            <p className="rounded-[var(--radius-control)] border border-[var(--color-yellow)] bg-[var(--color-yellow-wash)] p-4 text-small">
               These tests need {fasting} hours of fasting. The exact time to stop eating
               appears on the booking once it is confirmed.
             </p>
@@ -250,7 +250,7 @@ export function BookFlow({
             ))}
           </ul>
 
-          <dl className="flex flex-col gap-2 border-t-2 border-[var(--color-line)] pt-4">
+          <dl className="flex flex-col gap-2 border-t border-[var(--color-line)] pt-4">
             <div className="flex justify-between gap-3">
               <dt className="text-[var(--color-ink-soft)]">Tests</dt>
               <dd>{formatINR(price.subtotalPaise)}</dd>
@@ -283,7 +283,7 @@ export function BookFlow({
         {!membership && withoutMembership.totalPaise > 0 && (
           <Link
             href="/caregiver/membership"
-            className="glass flex items-center justify-between gap-3 rounded-[var(--radius-card)] border-2 p-4"
+            className="glass flex items-center justify-between gap-3 rounded-[var(--radius-card)] border p-4"
           >
             <span>
               <span className="block font-semibold">Save with Medwyn One</span>
@@ -302,7 +302,7 @@ export function BookFlow({
           </p>
         )}
 
-        <div className="stick-above-nav sticky -mx-5 border-t-2 border-[var(--color-line)] bg-[var(--color-canvas)] px-5 py-4">
+        <div className="stick-above-nav sticky -mx-5 border-t border-[var(--color-line)] bg-[var(--color-canvas)] px-5 py-4">
           <ProceedButton total={price.totalPaise} />
         </div>
       </form>
@@ -341,7 +341,7 @@ export function BookFlow({
             role="tab"
             aria-selected={kind === value}
             onClick={() => setKind(value)}
-            className={`min-h-12 rounded-full border-2 px-4 text-small font-semibold ${
+            className={`min-h-12 rounded-full border px-4 text-small font-semibold ${
               kind === value
                 ? 'border-transparent bg-[var(--color-primary)] text-[var(--color-primary-ink)]'
                 : 'border-[var(--card-border)] text-[var(--color-ink-soft)]'
@@ -372,13 +372,13 @@ export function BookFlow({
                   type="button"
                   aria-pressed={on}
                   onClick={() => toggle(item.key)}
-                  className={`tap-surface glass flex w-full items-start gap-4 rounded-[var(--radius-card)] border-2 p-4 text-left ${
+                  className={`tap-surface glass flex w-full items-start gap-4 rounded-[var(--radius-card)] border p-4 text-left ${
                     on ? '!border-[var(--color-primary)]' : ''
                   }`}
                 >
                   <span
                     aria-hidden
-                    className={`mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 ${
+                    className={`mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${
                       on
                         ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-primary-ink)]'
                         : 'border-[var(--color-line-strong)]'
@@ -407,7 +407,7 @@ export function BookFlow({
         </ul>
       )}
 
-      <div className="stick-above-nav sticky -mx-5 border-t-2 border-[var(--color-line)] bg-[var(--color-canvas)] px-5 py-4">
+      <div className="stick-above-nav sticky -mx-5 border-t border-[var(--color-line)] bg-[var(--color-canvas)] px-5 py-4">
         <Button
           type="button"
           full

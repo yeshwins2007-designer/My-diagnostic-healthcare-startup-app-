@@ -176,7 +176,7 @@ export default async function OpsLabsPage() {
                         </div>
 
                         {certificate && isRefusal(certificate) && (
-                          <div className="rounded-[var(--radius-control)] border-2 border-[var(--color-red)] bg-[var(--color-red-wash)] p-4">
+                          <div className="rounded-[var(--radius-control)] border border-[var(--color-red)] bg-[var(--color-red-wash)] p-4">
                             <p className="font-semibold">{certificate.reason}</p>
                             <p className="text-small">{certificate.remedy}</p>
                           </div>

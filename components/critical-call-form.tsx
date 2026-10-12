@@ -49,7 +49,7 @@ export function CriticalCallForm({ alertId }: { alertId: string }) {
           </label>
 
           {state.reason && (
-            <div className="rounded-[var(--radius-control)] border-2 border-[var(--color-yellow)] bg-[var(--color-yellow-wash)] p-4">
+            <div className="rounded-[var(--radius-control)] border border-[var(--color-yellow)] bg-[var(--color-yellow-wash)] p-4">
               <p className="font-semibold">{state.reason}</p>
               <p className="text-small">{state.remedy}</p>
             </div>

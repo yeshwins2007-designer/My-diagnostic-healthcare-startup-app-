@@ -88,7 +88,7 @@ export function SampleJourney({ status }: { status: string }) {
               )}
               <span
                 aria-hidden
-                className={`relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
+                className={`relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
                   done || now
                     ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-primary-ink)]'
                     : 'border-[var(--color-line-strong)] bg-[var(--color-surface)]'

@@ -32,7 +32,7 @@ export function PricingSection({
 
       <div className="grid gap-4 md:grid-cols-3">
         {packages.map((p) => (
-          <div key={p.key} className="glass flex flex-col gap-3 rounded-[var(--radius-card-lg)] border-2 p-5">
+          <div key={p.key} className="glass flex flex-col gap-3 rounded-[var(--radius-card-lg)] border p-5">
             <H3>{p.name}</H3>
             <p className="text-small text-[var(--color-ink-soft)]">{p.includes.join(', ')}</p>
             <p className="text-h2 font-bold">{formatINR(p.pricePaise)}</p>
@@ -43,7 +43,7 @@ export function PricingSection({
         ))}
 
         {plan && (
-          <div className="brand-surface relative flex flex-col gap-3 overflow-hidden rounded-[var(--radius-card-lg)] border-2 border-[var(--color-primary)] p-5 [box-shadow:var(--glow)]">
+          <div className="brand-surface relative flex flex-col gap-3 overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--color-line-strong)] p-5 [box-shadow:var(--shadow-card)]">
             <div className="brand-content flex flex-col gap-3">
               <Badge tone="primary">Membership</Badge>
               <H3>Medwyn One</H3>
@@ -62,11 +62,11 @@ export function PricingSection({
       </div>
 
       {full ? (
-        <div className="glass overflow-hidden rounded-[var(--radius-card-lg)] border-2">
+        <div className="glass overflow-hidden rounded-[var(--radius-card-lg)] border">
           <table className="w-full text-left">
             <caption className="sr-only">Single test prices</caption>
             <thead>
-              <tr className="border-b-2 border-[var(--color-line)] text-small text-[var(--color-ink-soft)]">
+              <tr className="border-b border-[var(--color-line)] text-small text-[var(--color-ink-soft)]">
                 <th scope="col" className="p-4 font-semibold">Single test</th>
                 <th scope="col" className="p-4 text-right font-semibold">Price</th>
                 {pct > 0 && <th scope="col" className="p-4 text-right font-semibold">Member</th>}

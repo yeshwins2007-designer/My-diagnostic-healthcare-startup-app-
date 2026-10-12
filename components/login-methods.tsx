@@ -43,7 +43,7 @@ export function LoginMethods({ emailEnabled }: { emailEnabled: boolean }) {
         role="tablist"
         aria-label="Sign in with"
         onKeyDown={onKeyDown}
-        className="glass grid grid-cols-2 gap-1 rounded-full border-2 p-1"
+        className="glass grid grid-cols-2 gap-1 rounded-full border p-1"
       >
         {TABS.map((t) => {
           const selected = tab === t.id;

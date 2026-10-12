@@ -28,24 +28,17 @@ declare global {
   }
 }
 
-/** The card art from the reference design: the brand's waves on deep teal. */
+/** Card art: an obsidian card on the hairline grid, no gradients. */
 function CardArt() {
   return (
     <div
       aria-hidden
-      className="relative h-36 overflow-hidden rounded-[var(--radius-card)] border border-[var(--card-border)] p-4"
-      style={{ background: 'radial-gradient(120% 140% at 10% 0%, #14515f 0%, #072a34 60%)' }}
+      className="brand-surface relative h-36 overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-line-strong)] p-4"
     >
-      <svg className="absolute inset-0 h-full w-full" viewBox="0 0 320 140" preserveAspectRatio="none">
-        <g fill="none" strokeLinecap="round">
-          <path d="M-10 90C60 40 120 130 190 80s110-60 150-20" stroke="#30DBDB" strokeWidth="5" opacity=".7" />
-          <path d="M-10 110C70 60 130 150 200 100s100-50 140-10" stroke="#5FD9D9" strokeWidth="3" opacity=".45" />
-        </g>
-      </svg>
-      <div className="relative flex h-full flex-col justify-between text-white">
-        <span className="self-end text-small font-semibold tracking-widest">DEBIT / CREDIT</span>
-        <span className="h-7 w-10 rounded-md bg-gradient-to-br from-[#e8d7a0] to-[#b89b4a]" />
-        <span className="text-small tracking-[0.2em]">•••• •••• •••• ••••</span>
+      <div className="relative flex h-full flex-col justify-between">
+        <span className="eyebrow self-end">Debit / credit</span>
+        <span className="h-7 w-10 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-primary-wash)]" />
+        <span className="font-mono text-small tracking-[0.2em] text-[var(--color-ink-soft)]">•••• •••• •••• ••••</span>
       </div>
     </div>
   );
@@ -63,7 +56,7 @@ function ApplePayButton({ total }: { total: number }) {
       type="submit"
       disabled={pending}
       aria-label={`Pay ${formatINR(total)} with Apple Pay`}
-      className="flex min-h-[var(--size-touch)] w-full items-center justify-center gap-2 rounded-full border-2 border-white/40 bg-black px-6 font-semibold text-white disabled:opacity-60"
+      className="flex min-h-[var(--size-touch)] w-full items-center justify-center gap-2 rounded-[var(--radius-control)] border border-white/20 bg-black px-6 font-medium text-white disabled:opacity-60"
       style={
         native
           ? ({
@@ -143,7 +136,7 @@ export function CheckoutForm({
       <input type="hidden" name="bookingId" value={bookingId} />
       <input type="hidden" name="method" value={method} />
 
-      <section className="glass flex flex-col gap-4 rounded-[var(--radius-card-lg)] border-2 p-5">
+      <section className="glass flex flex-col gap-4 rounded-[var(--radius-card-lg)] border p-5">
         <h2 className="text-h3 font-semibold">Payment method</h2>
         {method === 'CARD' && <CardArt />}
         <div role="radiogroup" aria-label="Payment method" className="grid gap-3">
@@ -156,7 +149,7 @@ export function CheckoutForm({
                 role="radio"
                 aria-checked={on}
                 onClick={() => setMethod(m.value)}
-                className={`flex min-h-[var(--size-touch)] items-center gap-4 rounded-[var(--radius-control)] border-2 px-4 py-3 text-left ${
+                className={`flex min-h-[var(--size-touch)] items-center gap-4 rounded-[var(--radius-control)] border px-4 py-3 text-left ${
                   on
                     ? 'border-[var(--color-primary)] bg-[var(--color-primary-wash)]'
                     : 'border-[var(--card-border)] bg-[var(--field-bg)]'
@@ -164,7 +157,7 @@ export function CheckoutForm({
               >
                 <span
                   aria-hidden
-                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
+                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
                     on ? 'border-[var(--color-primary)]' : 'border-[var(--color-line-strong)]'
                   }`}
                 >

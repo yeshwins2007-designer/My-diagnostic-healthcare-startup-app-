@@ -81,7 +81,7 @@ export function LabChooser({
                 aria-checked={isOn}
                 disabled={pending}
                 onClick={() => choose(o.id)}
-                className={`min-h-[var(--size-touch)] rounded-[var(--radius-control)] border-2 px-5 py-4 text-left ${
+                className={`min-h-[var(--size-touch)] rounded-[var(--radius-control)] border px-5 py-4 text-left ${
                   isOn
                     ? 'border-[var(--color-primary)] bg-[var(--color-primary-wash)]'
                     : 'border-[var(--color-line)] bg-[var(--color-surface)]'
@@ -107,7 +107,7 @@ export function LabChooser({
             {unavailable.map((o) => (
               <div
                 key={o.id}
-                className="rounded-[var(--radius-control)] border-2 border-[var(--color-line)] bg-[var(--color-surface-sunken)] px-5 py-4"
+                className="rounded-[var(--radius-control)] border border-[var(--color-line)] bg-[var(--color-surface-sunken)] px-5 py-4"
               >
                 <p className="font-semibold text-[var(--color-ink-soft)]">
                   {o.name}

@@ -42,19 +42,19 @@ export function Disclosure({
         <svg
           aria-hidden
           viewBox="0 0 24 24"
-          width="28"
-          height="28"
-          className="shrink-0 text-[var(--color-ink-soft)]"
+          width="20"
+          height="20"
+          className="shrink-0 text-[var(--color-ink-faint)]"
           style={{
             transform: open ? 'rotate(180deg)' : 'none',
-            transition: 'transform var(--dur-settle) var(--ease-out-soft)',
+            transition: 'transform var(--dur-spring) var(--ease-spring)',
           }}
         >
           <path
             d="M6 9l6 6 6-6"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2.5"
+            strokeWidth="1.8"
             strokeLinecap="round"
             strokeLinejoin="round"
           />

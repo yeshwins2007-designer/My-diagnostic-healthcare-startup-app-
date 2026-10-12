@@ -1,9 +1,11 @@
 /**
- * UI primitives.
+ * UI primitives: the Obsidian system's parts.
  *
- * The elderly design rules live here rather than in a style guide nobody
- * reads: a Button is 64px tall because the component makes it so, not because
- * a designer remembered. Every surface in the app composes from these.
+ * Every surface composes from these, so the rules live in the components and
+ * not in a style guide: a Button is 48px tall because the component makes it
+ * so; a status colour appears only through a status component. The props are
+ * unchanged from the previous system, so screens switch look without their
+ * logic changing.
  */
 
 import type { ReactNode } from 'react';
@@ -27,7 +29,7 @@ export function Page({
   return (
     <main
       className={cx(
-        'mx-auto w-full px-5 py-8 sm:px-8',
+        'mx-auto w-full px-5 py-6 sm:px-8 sm:py-10',
         wide ? 'max-w-7xl' : 'max-w-3xl',
         className,
       )}
@@ -46,9 +48,11 @@ export function Stack({
   gap?: 'sm' | 'md' | 'lg';
   className?: string;
 }) {
-  const gaps = { sm: 'gap-3', md: 'gap-5', lg: 'gap-8' };
+  const gaps = { sm: 'gap-2.5', md: 'gap-4', lg: 'gap-8' };
   return <div className={cx('flex flex-col', gaps[gap], className)}>{children}</div>;
 }
+
+export type Tone = 'surface' | 'sunken' | 'primary' | 'green' | 'yellow' | 'red' | 'info';
 
 export function Card({
   children,
@@ -62,35 +66,29 @@ export function Card({
   className?: string;
   /** For per-instance values that cannot be classes, e.g. a stagger delay. */
   style?: React.CSSProperties;
-  tone?: 'surface' | 'sunken' | 'primary' | 'green' | 'yellow' | 'red' | 'info';
+  tone?: Tone;
   as?: 'section' | 'article' | 'div' | 'li';
-  /**
-   * The premium container: larger radius, a soft two-layer shadow, and a
-   * border softened toward the surface. Reserved for the object a page is
-   * about — a result, a summary — so it stands out against plain cards.
-   * The border stays 2px: a 1px hairline disappears for low-vision readers,
-   * who are this app's core audience.
-   */
+  /** The flagship container: the result, the summary. One or two per screen. */
   elevated?: boolean;
 }) {
-  const tones: Record<string, string> = {
-    surface: 'glass',
+  const tones: Record<Tone, string> = {
+    surface: 'panel',
     sunken: 'bg-[var(--color-surface-sunken)] border-[var(--color-line)]',
-    primary: 'bg-[var(--color-primary-wash)] border-[var(--color-primary)]',
-    green: 'bg-[var(--color-green-wash)] border-[var(--color-green)]',
-    yellow: 'bg-[var(--color-yellow-wash)] border-[var(--color-yellow)]',
+    primary: 'bg-[var(--color-primary-wash)] border-[var(--color-line-strong)]',
+    green: 'bg-[var(--color-green-wash)] border-[color-mix(in_oklab,var(--color-green)_30%,transparent)]',
+    yellow: 'bg-[var(--color-yellow-wash)] border-[color-mix(in_oklab,var(--color-yellow)_30%,transparent)]',
+    // Critical keeps a full-strength edge: it must never read as subtle.
     red: 'bg-[var(--color-red-wash)] border-[var(--color-red)]',
-    info: 'bg-[var(--color-info-wash)] border-[var(--color-info)]',
+    info: 'bg-[var(--color-info-wash)] border-[color-mix(in_oklab,var(--color-info)_30%,transparent)]',
   };
   return (
     <Tag
       className={cx(
-        'border-2 p-5 sm:p-6',
+        'border p-5 sm:p-6',
         elevated
           ? 'rounded-[var(--radius-card-lg)] [box-shadow:var(--shadow-card)]'
           : 'rounded-[var(--radius-card)]',
         tones[tone],
-
         className,
       )}
       style={style}
@@ -103,15 +101,11 @@ export function Card({
 // --- type --------------------------------------------------------------------
 
 export function H1({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <h1 className={cx('text-h1 font-bold tracking-tight', className)}>
-      {children}
-    </h1>
-  );
+  return <h1 className={cx('text-h1 font-semibold tracking-tight', className)}>{children}</h1>;
 }
 
 export function H2({ children, className }: { children: ReactNode; className?: string }) {
-  return <h2 className={cx('text-h2 font-bold', className)}>{children}</h2>;
+  return <h2 className={cx('text-h2 font-semibold tracking-tight', className)}>{children}</h2>;
 }
 
 export function H3({ children, className }: { children: ReactNode; className?: string }) {
@@ -119,18 +113,88 @@ export function H3({ children, className }: { children: ReactNode; className?: s
 }
 
 export function Lead({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <p className={cx('text-lead text-[var(--color-ink-soft)]', className)}>
-      {children}
-    </p>
-  );
+  return <p className={cx('text-lead text-[var(--color-ink-soft)]', className)}>{children}</p>;
 }
 
 export function Muted({ children, className }: { children: ReactNode; className?: string }) {
+  return <p className={cx('text-small text-[var(--color-ink-faint)]', className)}>{children}</p>;
+}
+
+/** An instrument label: 10px, uppercase, wide, muted. Never an instruction. */
+export function Eyebrow({
+  children,
+  className,
+  as: Tag = 'span',
+}: {
+  children: ReactNode;
+  className?: string;
+  as?: 'span' | 'p' | 'h2' | 'h3' | 'dt';
+}) {
+  return <Tag className={cx('eyebrow', className)}>{children}</Tag>;
+}
+
+// --- status ------------------------------------------------------------------
+
+export type StatusTone = 'green' | 'yellow' | 'red' | 'info' | 'neutral' | 'primary';
+
+const statusText: Record<StatusTone, string> = {
+  green: 'text-[var(--color-green)]',
+  yellow: 'text-[var(--color-yellow)]',
+  red: 'text-[var(--color-red)]',
+  info: 'text-[var(--color-info)]',
+  neutral: 'text-[var(--color-ink-faint)]',
+  primary: 'text-[var(--color-ink)]',
+};
+
+/** A status light. `live` adds a slow ring for something happening now. */
+export function StatusDot({ tone = 'neutral', live }: { tone?: StatusTone; live?: boolean }) {
   return (
-    <p className={cx('text-small text-[var(--color-ink-faint)]', className)}>
-      {children}
-    </p>
+    <span
+      aria-hidden
+      className={cx('relative inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-current', live && 'dot-live', statusText[tone])}
+    />
+  );
+}
+
+/**
+ * A reading: a label, a monospaced value, an optional unit and status. The
+ * unit of every status grid.
+ */
+export function Metric({
+  label,
+  value,
+  unit,
+  tone,
+  sub,
+  live,
+  className,
+}: {
+  label: string;
+  value: ReactNode;
+  unit?: string;
+  tone?: StatusTone;
+  sub?: ReactNode;
+  live?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={cx('flex min-w-0 flex-col gap-2', className)}>
+      <span className="eyebrow flex items-center gap-2">
+        {tone && <StatusDot tone={tone} live={live} />}
+        {label}
+      </span>
+      <span
+        className={cx(
+          'flex items-baseline gap-1.5 text-[1.375rem] font-medium leading-none tracking-tight',
+          // Numbers read as instrument readings; words stay in the sans face.
+          typeof value === 'string' && /\d/.test(value) ? 'reading' : 'text-[var(--color-ink)]',
+        )}
+      >
+        <span className={cx('min-w-0 truncate', tone && tone !== 'neutral' && tone !== 'primary' && statusText[tone])}>{value}</span>
+        {unit && <span className="text-small text-[var(--color-ink-faint)]">{unit}</span>}
+      </span>
+      {sub && <span className="text-small text-[var(--color-ink-faint)]">{sub}</span>}
+    </div>
   );
 }
 
@@ -139,18 +203,17 @@ export function Muted({ children, className }: { children: ReactNode; className?
 type ButtonTone = 'primary' | 'secondary' | 'quiet' | 'danger';
 
 const buttonTones: Record<ButtonTone, string> = {
-  primary:
-    'btn-glow text-[var(--color-primary-ink)] border-transparent',
+  primary: 'btn-glow text-[var(--color-primary-ink)] border-transparent',
   secondary:
-    'bg-[var(--color-surface)] text-[var(--color-ink)] border-[var(--card-border)] hover:bg-[var(--color-surface-sunken)]',
+    'bg-transparent text-[var(--color-ink)] border-[var(--color-line-strong)] hover:bg-[var(--color-primary-wash)]',
   quiet:
-    'bg-transparent text-[var(--color-ink-soft)] border-transparent hover:bg-[var(--color-surface-sunken)]',
+    'bg-transparent text-[var(--color-ink-soft)] border-transparent hover:bg-[var(--color-primary-wash)] hover:text-[var(--color-ink)]',
   danger:
     'bg-[var(--color-red)] text-[var(--color-red-ink)] border-[var(--color-red)] hover:opacity-90',
 };
 
 const buttonBase =
-  'inline-flex items-center justify-center gap-3 rounded-full border-2 px-7 font-semibold min-h-[var(--size-touch)] text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+  'inline-flex items-center justify-center gap-2.5 rounded-[var(--radius-control)] border px-5 font-medium min-h-[var(--size-touch)] text-[0.9375rem] tracking-[-0.005em] disabled:opacity-40 disabled:cursor-not-allowed';
 
 export function Button({
   children,
@@ -164,10 +227,7 @@ export function Button({
   full?: boolean;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <button
-      {...rest}
-      className={cx(buttonBase, buttonTones[tone], full && 'w-full', className)}
-    >
+    <button {...rest} className={cx(buttonBase, buttonTones[tone], full && 'w-full', className)}>
       {children}
     </button>
   );
@@ -187,27 +247,25 @@ export function ButtonLink({
   className?: string;
 }) {
   return (
-    <Link
-      href={href}
-      className={cx(buttonBase, buttonTones[tone], full && 'w-full', className)}
-    >
+    <Link href={href} className={cx(buttonBase, buttonTones[tone], full && 'w-full', className)}>
       {children}
     </Link>
   );
 }
 
-/**
- * One primary action per screen, anchored at the bottom within thumb reach.
- * A 78-year-old holding a phone one-handed cannot comfortably reach the top.
- */
+/** One primary action per screen, anchored at the bottom within thumb reach. */
 export function PrimaryActionBar({ children }: { children: ReactNode }) {
   return (
-    <div className="stick-above-nav sticky -mx-5 mt-8 border-t-2 border-[var(--color-line)] bg-[var(--color-canvas)] px-5 py-4 sm:-mx-8 sm:px-8">
+    <div className="glass stick-above-nav sticky -mx-5 mt-8 border-t px-5 py-4 sm:-mx-8 sm:px-8">
       {children}
     </div>
   );
 }
 
+/**
+ * A form field. Its name is an instruction, so it is set to be read (14px),
+ * not as a 10px instrument label.
+ */
 export function Field({
   label,
   hint,
@@ -223,14 +281,15 @@ export function Field({
 }) {
   return (
     <label className="flex flex-col gap-2">
-      <span className="font-semibold">
+      <span className="text-small font-medium text-[var(--color-ink-soft)]">
         {label}
-        {required && <span className="text-[var(--color-red)]"> *</span>}
+        {required && <span className="text-[var(--color-ink-faint)]"> *</span>}
       </span>
       {hint && <span className="text-small text-[var(--color-ink-faint)]">{hint}</span>}
       {children}
       {error && (
-        <span className="text-small font-medium text-[var(--color-red)]">
+        <span className="flex items-center gap-2 text-small font-medium text-[var(--color-red)]">
+          <StatusDot tone="red" />
           {error}
         </span>
       )}
@@ -239,7 +298,7 @@ export function Field({
 }
 
 const inputBase =
-  'w-full rounded-[var(--radius-control)] border-2 border-[var(--card-border)] bg-[var(--field-bg)] px-4 py-3 min-h-[var(--size-touch)] text-base text-[var(--color-ink)] placeholder:text-[var(--color-ink-faint)] hover:border-[var(--color-ink-faint)] focus:border-[var(--color-primary)]';
+  'w-full rounded-[var(--radius-control)] border border-[var(--color-line-strong)] bg-[var(--field-bg)] px-4 py-2.5 min-h-[var(--size-touch)] text-base text-[var(--color-ink)] placeholder:text-[var(--color-ink-faint)] hover:border-[color-mix(in_oklab,var(--color-ink)_24%,transparent)] focus:border-[var(--color-ink-faint)] focus:outline-none focus:shadow-[0_0_0_4px_var(--color-primary-wash)]';
 
 // ComponentProps rather than *HTMLAttributes: in React 19 ref is an ordinary
 // prop, and the attribute types omit it, which blocks forwarding a ref.
@@ -255,8 +314,12 @@ export function Select(props: React.ComponentProps<'select'>) {
   return <select {...props} className={cx(inputBase, props.className)} />;
 }
 
-// --- status ------------------------------------------------------------------
-
+/**
+ * A status chip: a light and an uppercase reading. The words carry the
+ * meaning; the colour confirms it.
+ *
+ * Red ignores 'tonal': a critical value must never read as subtle.
+ */
 export function Badge({
   children,
   tone = 'neutral',
@@ -264,55 +327,87 @@ export function Badge({
 }: {
   children: ReactNode;
   tone?: 'neutral' | 'green' | 'yellow' | 'red' | 'info' | 'primary';
-  /**
-   * 'tonal' keeps the same wash background and full-strength text — so the
-   * contrast is identical to 'solid' — but swaps the 2px border for a 1px
-   * border at reduced strength. The border carries no meaning here; the
-   * words and colour do, so thinning it costs no legibility.
-   *
-   * Red ignores 'tonal'. A critical value is the one state that must never
-   * read as subtle, and making that a property of the component rather than
-   * a rule in a style guide means no page can accidentally mute it.
-   */
   variant?: 'solid' | 'tonal';
 }) {
   const tones: Record<string, string> = {
-    neutral:
-      'bg-[var(--color-surface-sunken)] text-[var(--color-ink-soft)] border-[var(--color-line-strong)]',
-    green: 'bg-[var(--color-green-wash)] text-[var(--color-green)] border-[var(--color-green)]',
-    yellow:
-      'bg-[var(--color-yellow-wash)] text-[var(--color-yellow)] border-[var(--color-yellow)]',
+    neutral: 'bg-[var(--color-surface-sunken)] text-[var(--color-ink-soft)] border-[var(--color-line-strong)]',
+    green: 'bg-[var(--color-green-wash)] text-[var(--color-green)] border-[color-mix(in_oklab,var(--color-green)_35%,transparent)]',
+    yellow: 'bg-[var(--color-yellow-wash)] text-[var(--color-yellow)] border-[color-mix(in_oklab,var(--color-yellow)_35%,transparent)]',
     red: 'bg-[var(--color-red-wash)] text-[var(--color-red)] border-[var(--color-red)]',
-    info: 'bg-[var(--color-info-wash)] text-[var(--color-info)] border-[var(--color-info)]',
-    primary:
-      'bg-[var(--color-primary-wash)] text-[var(--color-primary)] border-[var(--color-primary)]',
+    info: 'bg-[var(--color-info-wash)] text-[var(--color-info)] border-[color-mix(in_oklab,var(--color-info)_35%,transparent)]',
+    primary: 'bg-[var(--color-primary-wash)] text-[var(--color-ink)] border-[var(--color-line-strong)]',
   };
   const tonal = variant === 'tonal' && tone !== 'red';
   return (
     <span
       className={cx(
-        // w-fit: in a flex column the default stretch pulled chips to full width.
-        'inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-small font-semibold',
+        'inline-flex w-fit items-center gap-2 rounded-full border px-2.5 py-1 text-[0.6875rem] font-medium uppercase leading-none tracking-[0.12em]',
         tones[tone],
-        tonal
-          ? 'border [border-color:color-mix(in_oklab,currentColor_35%,transparent)]'
-          : 'border-2',
+        tonal && 'border-transparent',
       )}
     >
+      <StatusDot tone={tone === 'neutral' ? 'neutral' : tone} />
       {children}
     </span>
   );
 }
 
+// --- loading -------------------------------------------------------------------
+
 /**
- * A placeholder in the shape of the content that is coming.
- *
- * Decorative: hidden from assistive tech, which is told about the loading
- * state once by the page's loading boundary rather than once per bar.
+ * A placeholder bar in the shape of the content that is coming. `index`
+ * offsets its pulse so a column of bars reads as a stream, not a block.
  */
-export function Skeleton({ className }: { className?: string }) {
-  return <span aria-hidden className={cx('skeleton block', className)} />;
+export function Skeleton({ className, index = 0 }: { className?: string; index?: number }) {
+  return (
+    <span
+      aria-hidden
+      className={cx('skeleton block', className)}
+      style={{ ['--i' as string]: index } as React.CSSProperties}
+    />
+  );
 }
+
+/**
+ * The loading state: a status line with a ticker, then rows of bars in the
+ * shape of the screen. Announced once to assistive tech.
+ */
+export function DataStream({
+  label = 'Loading',
+  rows = 4,
+  className,
+}: {
+  label?: string;
+  rows?: number;
+  className?: string;
+}) {
+  const widths = ['w-11/12', 'w-2/3', 'w-4/5', 'w-1/2', 'w-3/4', 'w-5/6'];
+  return (
+    <div role="status" aria-live="polite" className={cx('flex flex-col gap-3', className)}>
+      <span className="eyebrow flex items-center gap-3">
+        <span className="ticker" aria-hidden>
+          <i />
+          <i />
+          <i />
+          <i />
+          <i />
+        </span>
+        {label}
+      </span>
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} className="panel flex flex-col gap-3 rounded-[var(--radius-card)] border p-5">
+          <div className="flex items-center justify-between gap-4">
+            <Skeleton className="h-2.5 w-24" index={i * 3} />
+            <Skeleton className="h-2.5 w-12" index={i * 3 + 1} />
+          </div>
+          <Skeleton className={cx('h-5', widths[i % widths.length])} index={i * 3 + 2} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// --- notices -------------------------------------------------------------------
 
 /**
  * Shown wherever an integration is running against a simulator, so nobody
@@ -320,7 +415,7 @@ export function Skeleton({ className }: { className?: string }) {
  */
 export function SimulatedChip({ what }: { what: string }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border-2 border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-sunken)] px-3 py-1 text-tiny font-semibold text-[var(--color-ink-faint)]">
+    <span className="inline-flex items-center gap-2 rounded-full border border-dashed border-[var(--color-line-strong)] px-2.5 py-1 font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
       simulated {what}
     </span>
   );
@@ -339,7 +434,10 @@ export function RefusalNotice({
   return (
     <Card tone="red">
       <Stack gap="sm">
-        <H3 className="text-[var(--color-red)]">{title}</H3>
+        <H3 className="flex items-center gap-2.5 text-[var(--color-red)]">
+          <StatusDot tone="red" />
+          {title}
+        </H3>
         <p className="font-medium">{reason}</p>
         <p className="text-[var(--color-ink-soft)]">{remedy}</p>
       </Stack>
@@ -357,7 +455,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <Card tone="sunken">
+    <Card tone="sunken" className="border-dashed">
       <Stack gap="sm">
         <H3>{title}</H3>
         <p className="text-[var(--color-ink-soft)]">{body}</p>
@@ -370,12 +468,13 @@ export function EmptyState({
 /** The disclaimer that must appear on every summary, digital or printed. */
 export function Disclaimer({ text }: { text: string }) {
   return (
-    <p className="rounded-[var(--radius-control)] border-2 border-[var(--color-line)] bg-[var(--color-surface-sunken)] p-4 text-small leading-relaxed text-[var(--color-ink-soft)]">
+    <p className="rounded-[var(--radius-control)] border border-[var(--color-line)] bg-[var(--color-surface-sunken)] p-4 text-small leading-relaxed text-[var(--color-ink-faint)]">
       {text}
     </p>
   );
 }
 
+/** A labelled reading on one line: label left, monospaced value right. */
 export function DataRow({
   label,
   value,
@@ -385,18 +484,13 @@ export function DataRow({
   value: ReactNode;
   tone?: 'green' | 'yellow' | 'red';
 }) {
-  const toneClass =
-    tone === 'green'
-      ? 'text-[var(--color-green)]'
-      : tone === 'yellow'
-        ? 'text-[var(--color-yellow)]'
-        : tone === 'red'
-          ? 'text-[var(--color-red)]'
-          : '';
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--color-line)] py-3 last:border-b-0">
-      <span className="text-[var(--color-ink-soft)]">{label}</span>
-      <span className={cx('font-semibold', toneClass)}>{value}</span>
+      <span className="eyebrow">{label}</span>
+      <span className={cx('reading flex items-center gap-2 font-medium', tone && statusText[tone])}>
+        {tone && <StatusDot tone={tone} />}
+        {value}
+      </span>
     </div>
   );
 }

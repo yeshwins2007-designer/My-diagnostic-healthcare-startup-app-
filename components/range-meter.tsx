@@ -53,50 +53,50 @@ export function RangeMeter({
   const color = MARKER[band];
 
   return (
-    <div aria-hidden className="relative h-7 w-full">
-      {/* track */}
-      <div className="absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 rounded-full bg-[var(--color-surface-sunken)]" />
-      {/* reference range: a wash, with the edges carried by the ticks below */}
+    <div aria-hidden className="relative h-6 w-full">
+      {/* track: a hairline, like a scale on an instrument */}
+      <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[var(--color-line-strong)]" />
+      {/* reference range: a solid segment, edges marked by ticks */}
       <div
-        className="absolute top-1/2 h-2 -translate-y-1/2"
+        className="absolute top-1/2 h-[3px] -translate-y-1/2 rounded-full"
         style={{
           left: `${lo}%`,
           width: `${hi - lo}%`,
-          background: 'color-mix(in oklab, var(--color-primary) 26%, var(--color-surface-sunken))',
+          background: 'color-mix(in oklab, var(--color-ink) 22%, transparent)',
         }}
       />
       {[lo, hi].map((x) => (
         <div
           key={x}
-          className="absolute top-1/2 h-4 w-[2px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--color-ink-faint)]"
+          className="absolute top-1/2 h-3 w-px -translate-x-1/2 -translate-y-1/2 bg-[var(--color-ink-faint)]"
           style={{ left: `${x}%` }}
         />
       ))}
-      {/* value */}
+      {/* value: a needle in the band's status colour */}
       {offScale ? (
         <svg
           viewBox="0 0 16 16"
-          width="18"
-          height="18"
+          width="16"
+          height="16"
           // Positioned by inline transform only. Tailwind v4 implements
           // -translate-y-1/2 with the separate CSS `translate` property, so
           // combining the two would shift the arrow twice.
           className="absolute top-1/2"
           style={{
-            left: offScale === 'high' ? 'calc(100% - 18px)' : '0',
+            left: offScale === 'high' ? 'calc(100% - 16px)' : '0',
             transform: `translateY(-50%)${offScale === 'low' ? ' scaleX(-1)' : ''}`,
           }}
         >
-          <path d="M3 2l10 6-10 6z" fill={color} stroke="var(--color-surface)" strokeWidth="2" strokeLinejoin="round" />
+          <path d="M3 2l10 6-10 6z" fill={color} stroke="var(--color-canvas)" strokeWidth="2" strokeLinejoin="round" />
         </svg>
       ) : (
         <div
-          className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          className="absolute top-1/2 h-5 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full"
           style={{
             left: `${clamped}%`,
             background: color,
-            // The surface ring keeps the marker distinct where it overlaps a tick.
-            boxShadow: '0 0 0 3px var(--color-surface)',
+            // The canvas ring keeps the needle distinct where it crosses a tick.
+            boxShadow: '0 0 0 2px var(--color-canvas)',
           }}
         />
       )}

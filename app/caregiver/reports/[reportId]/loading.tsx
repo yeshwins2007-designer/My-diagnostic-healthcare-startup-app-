@@ -1,54 +1,67 @@
-import { Card, Page, Skeleton, Stack } from '@/components/ui';
+'use client';
+
+import { useParams } from 'next/navigation';
+import { Morph } from '@/components/morph';
+import { Eyebrow, Page, Skeleton, Stack } from '@/components/ui';
 
 /**
  * Shown the instant a report is opened, while the server decrypts the values
- * and checks family membership.
+ * and checks family membership. The shape of the real page (a header with
+ * its readout strip, then result rows with a scale), so the report resolves
+ * into place. The route stays uncached, so the data is never stale.
  *
- * The skeleton is the shape of the real page — a summary, then result cards
- * with a value and a range track — so the page resolves into place rather than
- * replacing a spinner. This is the fix for "fast" on authenticated medical
- * pages: the route stays uncached, so the data is never stale, but the wait
- * no longer looks like a blank screen.
+ * The header carries the report's morph name, read from the URL: the summary
+ * card that was tapped morphs into this header at once, and this header
+ * morphs into the real one when the data arrives. Without it there would be
+ * no element to pair with while the data loads, and no morph.
  */
 export default function LoadingReport() {
+  const { reportId } = useParams<{ reportId: string }>();
   return (
     <Page>
       <div role="status" aria-live="polite">
-        <span className="sr-only">Loading the report</span>
         <Stack gap="lg">
-          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-4 w-24" />
 
-          <Card elevated>
-            <Stack gap="md">
-              <Stack gap="sm">
-                <Skeleton className="h-4 w-40" />
-                <Skeleton className="h-11 w-3/4" />
-                <Skeleton className="h-7 w-1/2" />
-              </Stack>
-              <div className="flex flex-wrap items-center gap-4 border-t border-[var(--color-line)] pt-4">
-                <Skeleton className="h-9 w-44 rounded-full" />
-                <Skeleton className="h-6 w-52" />
+          <Morph name={`report-${reportId}`}>
+            <section className="panel flex flex-col gap-5 rounded-[var(--radius-card-lg)] border p-5 sm:p-6">
+              <div className="flex items-center justify-between">
+                <Eyebrow className="flex items-center gap-3">
+                  <span className="ticker" aria-hidden>
+                    <i />
+                    <i />
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                  Decrypting report
+                </Eyebrow>
+                <Skeleton className="h-3 w-20" index={1} />
               </div>
-            </Stack>
-          </Card>
+              <Stack gap="sm">
+                <Skeleton className="h-9 w-3/4" index={2} />
+                <Skeleton className="h-4 w-1/2" index={3} />
+              </Stack>
+              <div className="grid grid-cols-3 gap-2">
+                {[4, 5, 6].map((i) => (
+                  <Skeleton key={i} className="h-14" index={i} />
+                ))}
+              </div>
+            </section>
+          </Morph>
 
-          <Skeleton className="h-9 w-36" />
-
-          <Stack gap="md">
+          <section className="panel flex flex-col overflow-hidden rounded-[var(--radius-card-lg)] border">
             {[0, 1, 2, 3].map((i) => (
-              <Card key={i} elevated>
-                <Stack gap="sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <Skeleton className="h-7 w-2/5" />
-                    <Skeleton className="h-8 w-32 rounded-full" />
-                  </div>
-                  <Skeleton className="h-9 w-28" />
-                  <Skeleton className="h-2 w-full rounded-full" />
-                  <Skeleton className="h-5 w-48" />
-                </Stack>
-              </Card>
+              <div key={i} className="flex flex-col gap-3 border-b border-[var(--color-line)] px-5 py-4 last:border-b-0">
+                <div className="flex items-center justify-between gap-3">
+                  <Skeleton className="h-4 w-2/5" index={i * 3 + 7} />
+                  <Skeleton className="h-5 w-24 rounded-full" index={i * 3 + 8} />
+                </div>
+                <Skeleton className="h-7 w-28" index={i * 3 + 9} />
+                <Skeleton className="h-1 w-full rounded-full" index={i * 3 + 9} />
+              </div>
             ))}
-          </Stack>
+          </section>
         </Stack>
       </div>
     </Page>

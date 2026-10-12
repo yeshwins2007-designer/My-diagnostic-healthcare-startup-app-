@@ -142,7 +142,7 @@ export function PasskeyManager({ passkeys }: { passkeys: PasskeyRow[] }) {
           {passkeys.map((p) => (
             <li
               key={p.id}
-              className="glass flex items-center justify-between gap-3 rounded-[var(--radius-card)] border-2 p-4"
+              className="glass flex items-center justify-between gap-3 rounded-[var(--radius-card)] border p-4"
             >
               <span className="flex items-center gap-3">
                 <span className="text-[var(--color-primary)]">
@@ -165,7 +165,7 @@ export function PasskeyManager({ passkeys }: { passkeys: PasskeyRow[] }) {
                     router.refresh();
                   })
                 }
-                className="min-h-12 shrink-0 rounded-full border-2 border-[var(--card-border)] px-4 text-small font-semibold"
+                className="min-h-12 shrink-0 rounded-full border border-[var(--card-border)] px-4 text-small font-semibold"
               >
                 Remove
               </button>

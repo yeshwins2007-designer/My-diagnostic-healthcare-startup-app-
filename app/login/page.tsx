@@ -34,8 +34,8 @@ export default async function LoginPage() {
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-8 px-5 pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
       <Link href="/" className="flex flex-col items-center gap-3 self-center text-center">
         <BrandMark
-          size={84}
-          className="rounded-[1.4rem] [filter:drop-shadow(0_0_22px_color-mix(in_oklab,var(--brand-glow)_55%,transparent))]"
+          size={64}
+          className="rounded-[1.25rem]"
         />
         <span className="text-h2 font-bold tracking-[0.12em]">{brand.name}</span>
         <span className="text-small text-[var(--color-ink-soft)]">Diagnostic healthcare at home</span>

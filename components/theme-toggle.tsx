@@ -67,7 +67,7 @@ export function ThemeToggle() {
           type="button"
           onClick={() => choose(option.value)}
           aria-pressed={theme === option.value}
-          className={`flex min-h-12 min-w-12 flex-col items-center justify-center rounded-[var(--radius-control)] border-2 px-2 leading-none ${
+          className={`flex min-h-12 min-w-12 flex-col items-center justify-center rounded-[var(--radius-control)] border px-2 leading-none ${
             theme === option.value
               ? 'border-[var(--color-primary)] bg-[var(--color-primary-wash)]'
               : 'border-[var(--color-line-strong)]'

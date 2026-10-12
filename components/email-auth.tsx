@@ -82,7 +82,7 @@ function DevCodes({ codes }: { codes: { label: string; code?: string; id: string
   const shown = codes.filter((c) => c.code);
   if (shown.length === 0) return null;
   return (
-    <div className="rounded-[var(--radius-control)] border-2 border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-sunken)] p-4">
+    <div className="rounded-[var(--radius-control)] border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-sunken)] p-4">
       <Muted>
         Nothing is really sent in this demo, so here {shown.length === 1 ? 'is the code' : 'are the codes'}:
       </Muted>

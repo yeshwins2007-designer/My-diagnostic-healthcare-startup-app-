@@ -102,7 +102,7 @@ export function LabVerificationPanel({
                   type="submit"
                   name="passed"
                   value="yes"
-                  className="min-h-[var(--size-touch)] rounded-[var(--radius-control)] border-2 border-[var(--color-green)] bg-[var(--color-green-wash)] px-5 font-semibold text-[var(--color-green)]"
+                  className="min-h-[var(--size-touch)] rounded-[var(--radius-control)] border border-[var(--color-green)] bg-[var(--color-green-wash)] px-5 font-semibold text-[var(--color-green)]"
                 >
                   Pass
                 </button>
@@ -110,7 +110,7 @@ export function LabVerificationPanel({
                   type="submit"
                   name="passed"
                   value="no"
-                  className="min-h-[var(--size-touch)] rounded-[var(--radius-control)] border-2 border-[var(--color-red)] bg-[var(--color-red-wash)] px-5 font-semibold text-[var(--color-red)]"
+                  className="min-h-[var(--size-touch)] rounded-[var(--radius-control)] border border-[var(--color-red)] bg-[var(--color-red-wash)] px-5 font-semibold text-[var(--color-red)]"
                 >
                   Fail
                 </button>
@@ -122,7 +122,7 @@ export function LabVerificationPanel({
 
       {checkState.message && <Muted>{checkState.message}</Muted>}
 
-      <div className="flex flex-wrap gap-3 border-t-2 border-[var(--color-line)] pt-4">
+      <div className="flex flex-wrap gap-3 border-t border-[var(--color-line)] pt-4">
         {status !== 'ACTIVE' && (
           <form action={activateAction}>
             <input type="hidden" name="labId" value={labId} />
@@ -140,7 +140,7 @@ export function LabVerificationPanel({
       </div>
 
       {(activateState.reason || suspendState.reason) && (
-        <div className="rounded-[var(--radius-control)] border-2 border-[var(--color-red)] bg-[var(--color-red-wash)] p-4">
+        <div className="rounded-[var(--radius-control)] border border-[var(--color-red)] bg-[var(--color-red-wash)] p-4">
           <p className="font-semibold">{activateState.reason ?? suspendState.reason}</p>
           <p className="text-small">
             {activateState.remedy ?? suspendState.remedy}

@@ -65,7 +65,7 @@ export function ElderLink({
           {live.map((d) => (
             <li
               key={d.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-control)] border-2 border-[var(--card-border)] bg-[var(--field-bg)] px-4 py-3"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-control)] border border-[var(--card-border)] bg-[var(--field-bg)] px-4 py-3"
             >
               <span className="text-small">
                 <span className="block font-semibold text-[var(--color-ink)]">Set up on {fmt(d.createdAt)}</span>
@@ -76,7 +76,7 @@ export function ElderLink({
               <button
                 type="button"
                 onClick={() => startTransition(async () => { await revokeElderAccess(d.id); router.refresh(); })}
-                className="min-h-12 rounded-full border-2 border-[var(--card-border)] px-4 text-small font-semibold"
+                className="min-h-12 rounded-full border border-[var(--card-border)] px-4 text-small font-semibold"
               >
                 Turn off
               </button>
@@ -86,14 +86,14 @@ export function ElderLink({
       )}
 
       {link ? (
-        <div className="flex flex-col gap-2 rounded-[var(--radius-control)] border-2 border-[var(--color-primary)] bg-[var(--color-primary-wash)] p-4">
+        <div className="flex flex-col gap-2 rounded-[var(--radius-control)] border border-[var(--color-primary)] bg-[var(--color-primary-wash)] p-4">
           <p className="font-semibold">Open this link on {firstName}’s phone. It works once.</p>
           <input
             readOnly
             value={link}
             aria-label="Elder Mode link"
             onFocus={(e) => e.currentTarget.select()}
-            className="min-h-12 w-full rounded-[var(--radius-control)] border-2 border-[var(--card-border)] bg-[var(--field-bg)] px-3 text-small"
+            className="min-h-12 w-full rounded-[var(--radius-control)] border border-[var(--card-border)] bg-[var(--field-bg)] px-3 text-small"
           />
           <Button type="button" tone="secondary" onClick={copy}>
             {copied ? 'Copied' : 'Copy link'}

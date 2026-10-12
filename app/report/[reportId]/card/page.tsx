@@ -100,7 +100,7 @@ export default async function StoplightCardPage({
   const { title: titleKey, body: bodyKey } = BAND_KEYS[band];
 
   return (
-    <div className="min-h-dvh bg-[var(--color-canvas)] p-5 sm:p-8">
+    <div className="elder-scale min-h-dvh bg-[var(--color-canvas)] p-5 sm:p-8">
       <div className="mx-auto max-w-xl">
         <div className="no-print mb-5 flex flex-wrap items-center justify-between gap-3">
           <a href="/elder" className="font-semibold underline">

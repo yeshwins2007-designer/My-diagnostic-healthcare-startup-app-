@@ -187,6 +187,8 @@ jobs:
               "Email sign-in: choose Email on the login screen and use "
               "`anjali.iyer@example.com` with password `monsoon-tea-garden`, or create a new "
               "account with email (the email and SMS codes both appear on screen).\n\n"
+              "Anywhere after signing in, press Ctrl+K (Cmd+K on a Mac) or tap the search "
+              "button for the command menu: jump to any screen or search the tests.\n\n"
               "Passkeys: after signing in, add one in Profile, then use Sign in with a passkey "
               "on the login screen. A passkey is tied to this preview address, so it stops "
               "working when the preview ends.\n\n"

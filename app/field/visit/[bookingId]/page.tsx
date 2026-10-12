@@ -100,7 +100,7 @@ export default async function VisitPage({
                 full-size target rather than a line of underlined text. */}
             <a
               href={`https://www.google.com/maps/dir/?api=1&destination=${booking.address.latitude},${booking.address.longitude}`}
-              className="inline-flex min-h-[var(--size-touch)] items-center justify-center rounded-[var(--radius-control)] border-2 border-[var(--color-primary)] px-5 font-semibold text-[var(--color-primary)]"
+              className="inline-flex min-h-[var(--size-touch)] items-center justify-center rounded-[var(--radius-control)] border border-[var(--color-primary)] px-5 font-semibold text-[var(--color-primary)]"
               target="_blank"
               rel="noreferrer"
             >

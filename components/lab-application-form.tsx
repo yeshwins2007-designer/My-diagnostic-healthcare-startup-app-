@@ -110,7 +110,7 @@ export function LabApplicationForm() {
                 {Discipline.values.map((discipline) => (
                   <label
                     key={discipline}
-                    className="flex min-h-[var(--size-touch)] items-center gap-3 rounded-[var(--radius-control)] border-2 border-[var(--color-line-strong)] px-4"
+                    className="flex min-h-[var(--size-touch)] items-center gap-3 rounded-[var(--radius-control)] border border-[var(--color-line-strong)] px-4"
                   >
                     <input
                       type="checkbox"

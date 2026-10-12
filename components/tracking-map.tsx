@@ -72,7 +72,7 @@ export function TrackingMap({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="overflow-hidden rounded-[var(--radius-card)] border-2 border-[var(--color-line)]">
+      <div className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-line)]">
         {apiKey ? (
           <APIProvider apiKey={apiKey}>
             <GoogleMap
@@ -102,7 +102,7 @@ export function TrackingMap({
         )}
       </div>
 
-      <div className="rounded-[var(--radius-card)] border-2 border-[var(--color-line)] bg-[var(--color-surface)] p-5">
+      <div className="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] p-5">
         {ended ? (
           <p className="font-semibold">{ended}</p>
         ) : update ? (

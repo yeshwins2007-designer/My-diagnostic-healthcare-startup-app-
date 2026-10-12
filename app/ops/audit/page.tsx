@@ -80,7 +80,7 @@ export default async function AuditPage() {
             <div className="scroll-x">
               <table className="w-full min-w-[52rem] border-collapse text-small">
                 <thead>
-                  <tr className="border-b-2 border-[var(--color-line-strong)] text-left">
+                  <tr className="border-b border-[var(--color-line-strong)] text-left">
                     <th className="py-3 pr-4">#</th>
                     <th className="py-3 pr-4">When</th>
                     <th className="py-3 pr-4">Action</th>

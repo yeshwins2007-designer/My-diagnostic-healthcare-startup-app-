@@ -20,7 +20,7 @@ function Row({ href, title, body }: { href: string; title: string; body: string 
   return (
     <Link
       href={href}
-      className="tap-surface glass flex min-h-[var(--size-touch)] items-center justify-between gap-3 rounded-[var(--radius-card)] border-2 px-5 py-4"
+      className="tap-surface glass flex min-h-[var(--size-touch)] items-center justify-between gap-3 rounded-[var(--radius-card)] border px-5 py-4"
     >
       <span>
         <span className="block font-semibold">{title}</span>
@@ -68,7 +68,7 @@ export default async function ProfilePage() {
         <div className="flex items-center gap-4">
           <span
             aria-hidden
-            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-[var(--color-primary)] bg-[var(--color-primary-wash)] text-h3 font-bold text-[var(--color-primary)] [box-shadow:var(--glow)]"
+            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-[var(--color-primary)] bg-[var(--color-primary-wash)] text-h3 font-bold text-[var(--color-primary)] [box-shadow:var(--glow)]"
           >
             {initial}
           </span>

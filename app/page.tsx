@@ -5,7 +5,6 @@ import { formatINR } from '@/lib/money';
 import { PricingSection } from '@/components/pricing-section';
 import { labForFamily, loadCatalog, loadMedwynOne } from '@/lib/queries/catalog';
 import { SiteHeader } from '@/components/site-header';
-import { BrandWaves } from '@/components/brand-mark';
 import {
   Badge,
   ButtonLink,
@@ -37,15 +36,10 @@ export default async function LandingPage() {
       <Page wide>
         <Stack gap="lg">
           {/* The positioning, stated plainly. Note what is absent: no "instant",
-              no "15 minutes", no countdown. We do not race on speed.
-
-              The hero is the one full-strength brand surface on this page: the
-              logo's turquoise only clears contrast on dark, so this is where it
-              is allowed to carry the identity. */}
+              no "15 minutes", no countdown. We do not race on speed. */}
           <section className="brand-surface rise-in -mx-5 grid gap-8 px-5 py-10 sm:-mx-8 sm:px-8 sm:py-12 lg:grid-cols-[1.2fr_1fr] lg:items-center lg:rounded-[var(--radius-card)] lg:px-12">
-            <BrandWaves />
             <Stack gap="md" className="brand-content">
-              <span className="brand-accent text-small font-semibold tracking-wide uppercase">
+              <span className="eyebrow">
                 For families with parents at home
               </span>
               <H1>
@@ -58,7 +52,7 @@ export default async function LandingPage() {
                 <ButtonLink href="/join?as=individual">Set up care for a parent</ButtonLink>
                 <a
                   href="/join?as=business"
-                  className="inline-flex min-h-[var(--size-touch)] items-center justify-center rounded-[var(--radius-control)] border-2 border-[color-mix(in_oklab,var(--brand-glow)_55%,transparent)] px-6 text-lead font-semibold text-[var(--brand-ink)]"
+                  className="inline-flex min-h-[var(--size-touch)] items-center justify-center rounded-[var(--radius-control)] border border-[var(--color-line-strong)] px-5 text-[0.9375rem] font-medium text-[var(--brand-ink)] hover:bg-[var(--color-primary-wash)]"
                 >
                   Register a diagnostic lab
                 </a>
@@ -192,7 +186,7 @@ export default async function LandingPage() {
             </Card>
           )}
 
-          <footer className="border-t-2 border-[var(--color-line)] pt-6">
+          <footer className="border-t border-[var(--color-line)] pt-6">
             <Muted>
               {brand.legalEntity} · {brand.supportPhone} · {brand.disclaimer}
             </Muted>

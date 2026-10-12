@@ -86,7 +86,7 @@ export function ElderShell({
   }
 
   return (
-    <div dir={dir} lang={locale} className="min-h-dvh bg-[var(--color-canvas)]">
+    <div dir={dir} lang={locale} className="elder-scale min-h-dvh bg-[var(--color-canvas)]">
       <header className="border-b-2 border-[var(--color-line)] bg-[var(--color-surface)] px-5 py-4">
         <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3">
           <p className="text-lead font-bold">{patientName || 'MEDWYN'}</p>

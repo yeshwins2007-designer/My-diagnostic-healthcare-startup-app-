@@ -52,7 +52,7 @@ export function MembershipJoin({
             role="radio"
             aria-checked={cycle === value}
             onClick={() => setCycle(value)}
-            className={`flex min-h-[var(--size-touch)] flex-col items-start gap-1 rounded-[var(--radius-card)] border-2 p-4 text-left ${
+            className={`flex min-h-[var(--size-touch)] flex-col items-start gap-1 rounded-[var(--radius-card)] border p-4 text-left ${
               cycle === value
                 ? 'border-[var(--color-primary)] bg-[var(--color-primary-wash)]'
                 : 'border-[var(--card-border)] bg-[var(--field-bg)]'
@@ -79,7 +79,7 @@ export function MembershipJoin({
             role="radio"
             aria-checked={method === value}
             onClick={() => setMethod(value)}
-            className={`flex min-h-[var(--size-touch)] flex-col items-start rounded-[var(--radius-control)] border-2 px-4 py-3 text-left ${
+            className={`flex min-h-[var(--size-touch)] flex-col items-start rounded-[var(--radius-control)] border px-4 py-3 text-left ${
               method === value
                 ? 'border-[var(--color-primary)] bg-[var(--color-primary-wash)]'
                 : 'border-[var(--card-border)] bg-[var(--field-bg)]'

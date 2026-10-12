@@ -26,9 +26,9 @@ export const viewport: Viewport = {
   // this every env(safe-area-inset-*) resolves to zero and the .safe-* helpers
   // in globals.css do nothing.
   viewportFit: 'cover',
-  // The night canvas is the default in every mode; light is a choice made in
-  // Profile, after the browser chrome has already been coloured.
-  themeColor: '#05161d',
+  // The obsidian canvas is the default in every mode; light is a choice made
+  // in Profile, after the browser chrome has already been coloured.
+  themeColor: '#09090b',
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -37,13 +37,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Noto Sans covers every script this product speaks, including
-            Assamese and Gurmukhi, which many default stacks render as boxes. */}
+        {/* Geist for Latin, Geist Mono for readings, and Noto Sans behind both
+            for every Indian script this product speaks, including Assamese
+            and Gurmukhi, which many default stacks render as boxes. */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&family=Noto+Sans+Bengali:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;600;700&family=Noto+Sans+Telugu:wght@400;600;700&family=Noto+Sans+Kannada:wght@400;600;700&family=Noto+Sans+Malayalam:wght@400;600;700&family=Noto+Sans+Gujarati:wght@400;600;700&family=Noto+Sans+Gurmukhi:wght@400;600;700&family=Noto+Nastaliq+Urdu:wght@400;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&family=Noto+Sans+Bengali:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;600;700&family=Noto+Sans+Telugu:wght@400;600;700&family=Noto+Sans+Kannada:wght@400;600;700&family=Noto+Sans+Malayalam:wght@400;600;700&family=Noto+Sans+Gujarati:wght@400;600;700&family=Noto+Sans+Gurmukhi:wght@400;600;700&family=Noto+Nastaliq+Urdu:wght@400;600&display=swap"
         />
         <script
           nonce={nonce}

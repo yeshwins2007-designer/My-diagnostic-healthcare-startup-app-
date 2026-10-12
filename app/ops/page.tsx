@@ -8,9 +8,9 @@ import {
   Badge,
   Card,
   DataRow,
+  Eyebrow,
   H1,
   H2,
-  H3,
   Lead,
   Muted,
   Page,
@@ -53,31 +53,29 @@ export default async function OpsHomePage() {
           {zone && <Muted>{zone.name} · {zone.radiusKm} km radius</Muted>}
         </Stack>
 
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        {/* One instrument panel: six cells divided by hairlines. */}
+        <div className="stagger panel grid gap-px overflow-hidden rounded-[var(--radius-card-lg)] border bg-[var(--color-line)] md:grid-cols-2 xl:grid-cols-3">
           {verdicts.map((v) => {
             const series = history.map((h) => Number(h[v.key as keyof typeof h] ?? 0));
             return (
-              <Card key={v.key} tone={v.health === 'BAD' ? 'red' : 'surface'}>
-                <Stack gap="sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <H3 className="text-lead">{v.label}</H3>
-                    <Badge tone={HEALTH_TONE[v.health]}>
-                      {v.health === 'NO_DATA' ? 'no data' : v.health.toLowerCase()}
-                    </Badge>
-                  </div>
+              <section
+                key={v.key}
+                className={`flex flex-col gap-3 p-5 ${v.health === 'BAD' ? 'bg-[var(--color-red-wash)]' : 'bg-[var(--color-surface)]'}`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <Eyebrow as="h3" className="pt-1">{v.label}</Eyebrow>
+                  <Badge tone={HEALTH_TONE[v.health]}>
+                    {v.health === 'NO_DATA' ? 'no data' : v.health.toLowerCase()}
+                  </Badge>
+                </div>
 
-                  <p className="text-display font-bold leading-none">
-                    {v.display}
-                  </p>
-                  <Muted>Target {v.target}</Muted>
+                <p className="reading text-[2.5rem] leading-none font-medium tracking-tight">{v.display}</p>
+                <p className="font-mono text-small text-[var(--color-ink-faint)]">Target {v.target}</p>
 
-                  {series.length > 1 && <Sparkline values={series} />}
+                {series.length > 1 && <Sparkline values={series} tone={HEALTH_TONE[v.health]} />}
 
-                  <p className="text-small leading-relaxed text-[var(--color-ink-soft)]">
-                    {v.meaning}
-                  </p>
-                </Stack>
-              </Card>
+                <p className="text-small leading-relaxed text-[var(--color-ink-faint)]">{v.meaning}</p>
+              </section>
             );
           })}
         </div>
@@ -112,39 +110,52 @@ export default async function OpsHomePage() {
   );
 }
 
-/** A dependency-free sparkline. Twelve weeks of context in 40 pixels. */
-function Sparkline({ values }: { values: number[] }) {
+const SPARK_COLOR = {
+  green: 'var(--color-green)',
+  yellow: 'var(--color-yellow)',
+  red: 'var(--color-red)',
+  neutral: 'var(--color-ink-faint)',
+} as const;
+
+/**
+ * A dependency-free sparkline: twelve weeks in 40 pixels, a faint area, the
+ * line in the metric's status colour and a dot on this week.
+ */
+function Sparkline({ values, tone }: { values: number[]; tone: keyof typeof SPARK_COLOR }) {
   const max = Math.max(...values, 1);
   const min = Math.min(...values, 0);
   const range = max - min || 1;
   const width = 240;
   const height = 40;
-
-  const points = values
-    .map((v, i) => {
-      const x = (i / Math.max(1, values.length - 1)) * width;
-      const y = height - ((v - min) / range) * height;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(' ');
+  const xy = values.map((v, i) => [
+    (i / Math.max(1, values.length - 1)) * width,
+    height - 3 - ((v - min) / range) * (height - 6),
+  ]);
+  const points = xy.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+  const color = SPARK_COLOR[tone];
+  const [lx, ly] = xy[xy.length - 1];
 
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
-      className="h-10 w-full"
+      className="h-10 w-full overflow-visible"
       role="img"
       aria-label={`Trend across the last ${values.length} weeks`}
       preserveAspectRatio="none"
     >
+      <line x1="0" x2={width} y1={height - 0.5} y2={height - 0.5} stroke="var(--color-line-strong)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+      <polygon points={`0,${height} ${points} ${width},${height}`} fill={color} fillOpacity="0.08" />
       <polyline
         points={points}
         fill="none"
-        stroke="var(--color-primary)"
-        strokeWidth="2.5"
+        stroke={color}
+        strokeWidth="1.5"
         strokeLinejoin="round"
         strokeLinecap="round"
         vectorEffect="non-scaling-stroke"
       />
+      {/* A zero-length round-capped line stays a circle under the stretched viewBox. */}
+      <line x1={lx} x2={lx} y1={ly} y2={ly} stroke={color} strokeWidth="6" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }

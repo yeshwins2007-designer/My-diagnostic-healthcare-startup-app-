@@ -68,7 +68,7 @@ export default async function JoinPage({
                 </p>
                 <a
                   href="/join?as=individual"
-                  className="mt-2 inline-flex min-h-[var(--size-touch)] items-center justify-center rounded-[var(--radius-control)] border-2 border-[var(--color-primary)] bg-[var(--color-primary)] px-6 font-semibold text-[var(--color-primary-ink)]"
+                  className="mt-2 inline-flex min-h-[var(--size-touch)] items-center justify-center rounded-[var(--radius-control)] border border-[var(--color-primary)] bg-[var(--color-primary)] px-6 font-semibold text-[var(--color-primary-ink)]"
                 >
                   Continue as an individual
                 </a>
@@ -89,7 +89,7 @@ export default async function JoinPage({
                 </Muted>
                 <a
                   href="/join?as=business"
-                  className="mt-2 inline-flex min-h-[var(--size-touch)] items-center justify-center rounded-[var(--radius-control)] border-2 border-[var(--color-line-strong)] bg-[var(--color-surface)] px-6 font-semibold"
+                  className="mt-2 inline-flex min-h-[var(--size-touch)] items-center justify-center rounded-[var(--radius-control)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-6 font-semibold"
                 >
                   Continue as a business
                 </a>
