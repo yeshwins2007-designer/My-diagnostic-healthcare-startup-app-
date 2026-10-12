@@ -13,6 +13,7 @@ import { encryptField, bookingReference } from '../lib/compliance/crypto';
 import { ageBandFor, CHECKLIST_STEPS } from '../lib/enums';
 import { paise } from '../lib/money';
 import { quote } from '../lib/pricing';
+import { hashPassword } from '../lib/auth/password';
 import { DEMO_ANCHOR, DEMO_ROUTE_POLYLINE } from '../lib/providers/maps';
 
 const db = new PrismaClient();
@@ -40,7 +41,7 @@ async function wipe() {
     'planPanel', 'plan', 'panelItem', 'panel', 'labRateCardEntry',
     'labAgreement', 'accreditationCheck', 'labAccreditation', 'labMember',
     'zone', 'lab', 'testDefinition', 'authSession', 'otpChallenge',
-    'passkeyChallenge', 'passkey', 'user',
+    'passkeyChallenge', 'passkey', 'emailChallenge', 'loginFailure', 'user',
   ] as const;
 
   for (const table of tables) {
@@ -380,9 +381,27 @@ async function main() {
     spec: (typeof familySpecs)[number];
   }[] = [];
 
+  // One family also signs in by email, to show that option in the demo.
+  const demoEmail = { phone: '+919845000101', email: 'anjali.iyer@example.com', password: 'monsoon-tea-garden' };
+  const demoPasswordHash = await hashPassword(demoEmail.password);
+
   for (const spec of familySpecs) {
+    const withEmail = spec.phone === demoEmail.phone;
     const caregiver = await db.user.create({
-      data: { phone: spec.phone, name: spec.caregiver, role: 'CAREGIVER', locale: spec.locale },
+      data: {
+        phone: spec.phone,
+        name: spec.caregiver,
+        role: 'CAREGIVER',
+        locale: spec.locale,
+        ...(withEmail
+          ? {
+              email: demoEmail.email,
+              emailVerifiedAt: new Date(),
+              passwordHash: demoPasswordHash,
+              passwordChangedAt: new Date(),
+            }
+          : {}),
+      },
     });
 
     const family = await db.family.create({
@@ -780,6 +799,7 @@ Sign in with any of these phone numbers; the OTP is printed to this console.
   Partner lab       +91 98451 00200
   Technician        +91 98450 00010  (Priya)
   Caregiver         +91 98450 00101  (Anjali Iyer — mother Lakshmi, 74)
+                    or ${demoEmail.email} / ${demoEmail.password}
 `);
 }
 

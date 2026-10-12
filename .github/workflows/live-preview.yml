@@ -133,6 +133,10 @@ jobs:
             echo '| Field technician | `+919845000010` |'
             echo '| Partner lab | `+919845100200` |'
             echo
+            echo 'Or choose **Email** on the sign-in screen: `anjali.iyer@example.com`,'
+            echo 'password `monsoon-tea-garden` (the Medwyn One family). New families can'
+            echo 'also sign up with email; both the email and SMS codes appear on screen.'
+            echo
             echo "To try it as a new family instead, sign up with any other 10-digit"
             echo "number and give the parent's pincode as **560011**. The pilot serves"
             echo "5 km around Jayanagar 4th Block; any other address is put on the"
@@ -180,6 +184,9 @@ jobs:
               "(family, pays per test), `+919845000001` (ops), "
               "`+919845000010` (field) or `+919845100200` (lab). The code is shown "
               "on screen because SMS is not configured.\n\n"
+              "Email sign-in: choose Email on the login screen and use "
+              "`anjali.iyer@example.com` with password `monsoon-tea-garden`, or create a new "
+              "account with email (the email and SMS codes both appear on screen).\n\n"
               "Passkeys: after signing in, add one in Profile, then use Sign in with a passkey "
               "on the login screen. A passkey is tied to this preview address, so it stops "
               "working when the preview ends.\n\n"

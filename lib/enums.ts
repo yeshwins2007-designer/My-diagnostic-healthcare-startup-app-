@@ -19,7 +19,8 @@ function set<const T extends readonly [string, ...string[]]>(values: T) {
 export const UserRole = set(['CAREGIVER', 'TECHNICIAN', 'LAB', 'OPS']);
 export type UserRole = (typeof UserRole.values)[number];
 
-export const OtpPurpose = set(['LOGIN', 'ABHA_LINK', 'CONSENT', 'PATIENT_VERIFY']);
+export const OtpPurpose = set(['LOGIN', 'REGISTER', 'ABHA_LINK', 'CONSENT', 'PATIENT_VERIFY']);
+export const EmailPurpose = set(['REGISTER', 'RESET']);
 export const FamilyRole = set(['PRIMARY_CAREGIVER', 'SECONDARY_CAREGIVER']);
 
 // --- patients ---------------------------------------------------------------
@@ -316,6 +317,8 @@ export const TicketStatus = set(['OPEN', 'IN_PROGRESS', 'RESOLVED']);
 
 export const AuditAction = set([
   'USER_LOGIN',
+  'EMAIL_SIGN_IN_ADDED',
+  'PASSWORD_RESET',
   'PASSKEY_ADDED',
   'PASSKEY_REMOVED',
   'CONSENT_GRANTED',

@@ -52,6 +52,10 @@ const envSchema = z.object({
   MSG91_AUTH_KEY: z.string().optional(),
   MSG91_SENDER_ID: z.string().optional(),
 
+  /** Email delivery (Resend) for email sign-up and password reset codes. */
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().default('MEDWYN <no-reply@medwyn.in>'),
+
   /** How long raw GPS pings survive before being collapsed to a summary. */
   PING_RETENTION_DAYS: z.coerce.number().int().positive().default(30),
   /** How long voice transcripts survive. */
@@ -85,6 +89,7 @@ export const providerMode = {
   voice: env.ELEVENLABS_API_KEY ? 'live' : 'simulated',
   abdm: env.ABDM_CLIENT_ID && env.ABDM_CLIENT_SECRET ? 'live' : 'simulated',
   sms: env.MSG91_AUTH_KEY ? 'live' : 'simulated',
+  email: env.RESEND_API_KEY ? 'live' : 'simulated',
 } as const;
 
 export type ProviderName = keyof typeof providerMode;
@@ -124,6 +129,16 @@ if (env.NODE_ENV === 'production' && USING_DEFAULT_SECRET) {
 
 /** A deliberate demo or preview: simulators allowed, and labelled as such. */
 export const isDemo = env.DEMO_MODE === 'true';
+
+/**
+ * Email + password sign-in is offered only where its codes can be trusted. A
+ * simulated email provider shows password-reset codes on screen, which in
+ * production would let anyone take over any account by its email address. So
+ * in production it needs a real email provider (or an explicit demo); without
+ * one, the Email option is simply not shown and phone sign-in carries on.
+ */
+export const emailAuthEnabled =
+  providerMode.email === 'live' || isDemo || env.NODE_ENV !== 'production';
 
 /**
  * Production must be real. Each condition below, left unchecked, is a way to

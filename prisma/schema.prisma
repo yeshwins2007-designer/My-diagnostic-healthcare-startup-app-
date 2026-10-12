@@ -28,7 +28,14 @@ model User {
   id        String   @id @default(cuid())
   phone     String   @unique // E.164, e.g. +919845012345
   name      String
-  email     String?
+  /// Lower-cased. Unique so it can identify an account at sign-in.
+  email     String?  @unique
+  /// Set once the address has been proved with a code. Password sign-in and
+  /// reset only ever work for a verified address.
+  emailVerifiedAt   DateTime?
+  /// scrypt, self-describing (lib/auth/password.ts). Null: no password sign-in.
+  passwordHash      String?
+  passwordChangedAt DateTime?
   /// UserRole: CAREGIVER | TECHNICIAN | LAB | OPS
   role      String
   /// BCP-47-ish locale key from lib/i18n: en | hi | bn | mr | te | ta | kn | gu | ml | pa | ur | as
@@ -96,7 +103,7 @@ model OtpChallenge {
   id          String    @id @default(cuid())
   phone       String
   codeHash    String
-  /// OtpPurpose: LOGIN | ABHA_LINK | CONSENT | PATIENT_VERIFY
+  /// OtpPurpose: LOGIN | REGISTER | ABHA_LINK | CONSENT | PATIENT_VERIFY
   purpose     String    @default("LOGIN")
   attempts    Int       @default(0)
   maxAttempts Int       @default(5)
@@ -106,6 +113,44 @@ model OtpChallenge {
 
   @@index([phone, purpose])
   @@index([expiresAt])
+}
+
+/// A code sent to an email address: proving it at sign-up, or resetting a
+/// password. Same rules as OtpChallenge: hashed, single-use, short-lived,
+/// attempt-capped, and budgeted per address in the database.
+model EmailChallenge {
+  id          String    @id @default(cuid())
+  email       String
+  /// EmailPurpose: REGISTER | RESET
+  purpose     String
+  codeHash    String
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5)
+  consumedAt  DateTime?
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+
+  /// Sign-up details held server-side until both codes are proved, so the
+  /// password never has to travel back through the browser between steps.
+  pendingName         String?
+  pendingPhone        String?
+  pendingPasswordHash String?
+  pendingLocale       String?
+
+  @@index([email, purpose])
+  @@index([expiresAt])
+}
+
+/// One wrong password. Counted per address (HMAC of it, so typed-in addresses
+/// are not kept) over a window, in the database so a lockout holds across
+/// instances and restarts - and applies equally to addresses with no account,
+/// so the lockout itself does not reveal who has one.
+model LoginFailure {
+  id        String   @id @default(cuid())
+  emailHash String
+  createdAt DateTime @default(now())
+
+  @@index([emailHash, createdAt])
 }
 
 /// JWTs are stateless, so this table exists purely so a session can be

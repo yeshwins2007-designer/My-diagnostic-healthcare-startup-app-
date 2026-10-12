@@ -104,10 +104,23 @@ async function expireAccreditations() {
   return expired.length;
 }
 
+async function purgeSignInCodes() {
+  // Spent and expired codes, and old wrong-password counts, serve no purpose
+  // once their hour-long budget windows have passed.
+  const cutoff = new Date(Date.now() - 86_400_000);
+  const [sms, email, failures] = await Promise.all([
+    db.otpChallenge.deleteMany({ where: { createdAt: { lt: cutoff } } }),
+    db.emailChallenge.deleteMany({ where: { createdAt: { lt: cutoff } } }),
+    db.loginFailure.deleteMany({ where: { createdAt: { lt: cutoff } } }),
+  ]);
+  return sms.count + email.count + failures.count;
+}
+
 async function main() {
   const pings = await purgePings();
   const transcripts = await purgeTranscripts();
   const suspended = await expireAccreditations();
+  const signInRows = await purgeSignInCodes();
 
   console.log(`
 Retention purge complete.
@@ -117,6 +130,7 @@ Retention purge complete.
   Voice transcripts ${transcripts} cleared
                     (retention: ${TRANSCRIPT_RETENTION_DAYS} days)
   Labs suspended    ${suspended} for expired accreditation
+  Sign-in codes     ${signInRows} spent codes and old wrong-password counts deleted
 `);
 }
 

@@ -1,19 +1,20 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { AuthFlow } from '@/components/auth-flow';
+import { LoginMethods } from '@/components/login-methods';
 import { PasskeySignIn } from '@/components/passkeys';
 import { BrandMark } from '@/components/brand-mark';
 import { getSessionUser } from '@/lib/auth/session';
 import { brand } from '@/lib/brand';
 import { Card, H3, Muted, Stack } from '@/components/ui';
-import { isSimulated } from '@/lib/env';
+import { emailAuthEnabled, isSimulated } from '@/lib/env';
 
 export const metadata: Metadata = { title: 'Sign in' };
 
 /**
- * Screen 01 of the reference design. Sign-in stays phone-and-code: no
- * password to forget, and the same number the technician calls.
+ * Screen 01 of the reference design. Phone and code first: no password to
+ * forget, and the same number the technician calls. Email and password is
+ * the second tab, and still proves that number at sign-up.
  */
 export default async function LoginPage() {
   const user = await getSessionUser();
@@ -45,16 +46,9 @@ export default async function LoginPage() {
         <p className="text-lead text-[var(--color-ink-soft)]">Log in to your health portal</p>
       </Stack>
 
-      <AuthFlow intent="individual" />
+      <LoginMethods emailEnabled={emailAuthEnabled} />
 
       <PasskeySignIn />
-
-      <p className="text-center text-[var(--color-ink-soft)]">
-        Don’t have an account?{' '}
-        <span className="font-semibold text-[var(--color-primary)]">
-          Enter your number above. We set one up as you sign in.
-        </span>
-      </p>
 
       {isSimulated('sms') && (
         <Card tone="sunken">
@@ -66,6 +60,11 @@ export default async function LoginPage() {
             </Muted>
             <ul className="flex flex-col gap-2 font-mono text-small">
               <li>+91 98450 00101 — Anjali Iyer, family (Medwyn One member)</li>
+              {emailAuthEnabled && (
+                <li>
+                  Email tab: anjali.iyer@example.com, password monsoon-tea-garden (Anjali again)
+                </li>
+              )}
               <li>+91 98450 00103 — Fatima Sheikh, family (pays per test)</li>
               <li>+91 98450 00001 — ops console</li>
               <li>+91 98450 00010 — Priya Nair, field technician</li>

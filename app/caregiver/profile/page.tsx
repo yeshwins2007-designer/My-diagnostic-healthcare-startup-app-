@@ -34,7 +34,7 @@ function Row({ href, title, body }: { href: string; title: string; body: string 
 export default async function ProfilePage() {
   const { session, family } = await loadFamilyContext();
   const patients = family?.patients ?? [];
-  const [membership, labChoices, passkeys, elderAccess] = await Promise.all([
+  const [membership, labChoices, passkeys, elderAccess, account] = await Promise.all([
     family ? loadMembership(family.id) : null,
     Promise.all(patients.map(async (p) => [p.id, await labChoicesForPatient(p.id)] as const)),
     listMyPasskeys(),
@@ -42,7 +42,12 @@ export default async function ProfilePage() {
       where: { patientId: { in: patients.map((p) => p.id) }, revokedAt: null },
       orderBy: { createdAt: 'desc' },
     }),
+    db.user.findUnique({
+      where: { id: session.id },
+      select: { email: true, emailVerifiedAt: true, passwordHash: true },
+    }),
   ]);
+  const emailSignIn = account?.email && account.emailVerifiedAt && account.passwordHash ? account.email : null;
   const choicesByPatient = new Map(labChoices);
   // Unopened links past their week are dead anyway; do not list them.
   const linkCutoff = Date.now() - 7 * 86_400_000;
@@ -70,6 +75,7 @@ export default async function ProfilePage() {
           <div className="min-w-0">
             <h1 className="text-h2 font-bold">{session.name}</h1>
             <p className="text-[var(--color-ink-soft)]">{session.phone}</p>
+            {emailSignIn && <p className="break-all text-small text-[var(--color-ink-soft)]">{emailSignIn}</p>}
           </div>
         </div>
 
@@ -151,6 +157,11 @@ export default async function ProfilePage() {
           <H2>Sign-in</H2>
           <Muted>
             Sign in with Face ID, Touch ID or your fingerprint instead of waiting for a code.
+          </Muted>
+          <Muted>
+            {emailSignIn
+              ? `You can also sign in with ${emailSignIn} and your password. Forgotten it? Use “Forgot password?” on the sign-in screen.`
+              : 'Prefer email and a password? On the sign-in screen choose Email, then “Create an account with email” with this same mobile number. We add it to this account.'}
           </Muted>
           <PasskeyManager
             passkeys={passkeys.map((p) => ({
