@@ -297,6 +297,7 @@ export const IncidentKind = set([
   'RESCHEDULE',
   'COLD_CHAIN_BREACH',
   'SAMPLE_CLOCK_BREACH',
+  'NO_LAB_AVAILABLE',
   'OTHER',
 ]);
 export const IncidentStatus = set(['OPEN', 'ESCALATED', 'RESOLVED']);
@@ -309,6 +310,8 @@ export const TicketCategory = set([
   'COMPLAINT',
   /** Raised automatically whenever the voice agent is asked something clinical. */
   'CLINICAL_HANDOFF',
+  /** A partner lab asking to change a rate in its agreement. */
+  'LAB_RATE_CHANGE',
 ]);
 export const TicketPriority = set(['LOW', 'NORMAL', 'HIGH', 'URGENT']);
 export const TicketStatus = set(['OPEN', 'IN_PROGRESS', 'RESOLVED']);
@@ -350,6 +353,13 @@ export const AuditAction = set([
   'LAB_ROUTING_REFUSED',
   'LAB_PREFERENCE_SET',
   'LAB_PREFERENCE_CLEARED',
+  'LAB_ORDER_ACCEPTED',
+  'LAB_ORDER_REJECTED',
+  'LAB_ORDER_REROUTED',
+  'LAB_REPORT_PDF_UPLOADED',
+  'LAB_TEST_PAUSED',
+  'LAB_TEST_RESUMED',
+  'LAB_PROFILE_UPDATED',
   'ACCREDITATION_EXPIRED',
   'PAYMENT_CAPTURED',
   'MANDATE_STATUS_CHANGED',

@@ -20,6 +20,7 @@ import { env } from '@/lib/env';
 import { brand } from '@/lib/brand';
 import { audit } from '@/lib/compliance/audit';
 import { createSession, getSessionUser, requireUser } from '@/lib/auth/session';
+import { homeFor } from '@/lib/auth/home';
 import { clientIp, rateLimit } from '@/lib/rate-limit';
 
 /**
@@ -198,8 +199,6 @@ export async function passkeyLoginOptions(): Promise<PublicKeyCredentialRequestO
   return options;
 }
 
-const HOME: Record<string, string> = { OPS: '/ops', LAB: '/lab', TECHNICIAN: '/field' };
-
 export async function verifyPasskeyLogin(response: AuthenticationResponseJSON): Promise<PasskeyResult> {
   const failed = { ok: false as const, message: 'That passkey did not work. Please sign in with your phone code.' };
   if (!(await passkeyLimit('verify')).allowed) {
@@ -251,7 +250,7 @@ export async function verifyPasskeyLogin(response: AuthenticationResponseJSON): 
     detail: { method: 'passkey', passkeyId: passkey.id },
   });
 
-  return { ok: true, redirectTo: HOME[passkey.user.role] ?? '/caregiver' };
+  return { ok: true, redirectTo: homeFor(passkey.user.role) };
 }
 
 /** For Profile: the signed-in person's passkeys. */

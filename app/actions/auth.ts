@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { db } from '@/lib/db';
 import { createSession, destroySession } from '@/lib/auth/session';
 import { createUser, requestOtp, verifyOtp, normalisePhone } from '@/lib/auth/otp';
+import { homeFor } from '@/lib/auth/home';
+import { clearPhoneProof, issuePhoneProof, readPhoneProof } from '@/lib/auth/phone-proof';
 import { audit } from '@/lib/compliance/audit';
 import { UserRole } from '@/lib/enums';
 import { LOCALE_KEYS } from '@/lib/i18n/locales';
@@ -128,7 +130,9 @@ export async function checkCode(
   }
 
   // New account: collect a name (and, for a lab, we send them to the lab
-  // application rather than a caregiver dashboard).
+  // application rather than a caregiver dashboard). The proof cookie is what
+  // lets the next step create the account for this number, and only this one.
+  await issuePhoneProof(normalisePhone(parsed.data.phone));
   return {
     step: 'PROFILE',
     phone: parsed.data.phone,
@@ -164,9 +168,25 @@ export async function completeProfile(
     };
   }
 
+  // The number must be the one this browser just proved it holds. The form's
+  // phone field alone is not evidence: anyone can post any number.
+  const phone = normalisePhone(parsed.data.phone);
+  if ((await readPhoneProof()) !== phone) {
+    return {
+      step: 'PROFILE',
+      phone: parsed.data.phone,
+      intent: parsed.data.intent,
+      error: 'Please reload the page and verify your number again. A code is good for 15 minutes.',
+    };
+  }
+  if (await db.user.findUnique({ where: { phone }, select: { id: true } })) {
+    await clearPhoneProof();
+    return { step: 'PROFILE', phone: parsed.data.phone, intent: parsed.data.intent, error: 'This number already has an account. Reload the page and sign in with it.' };
+  }
+
   const role: UserRole = parsed.data.intent === 'business' ? 'LAB' : 'CAREGIVER';
   const user = await createUser({
-    phone: parsed.data.phone,
+    phone,
     name: parsed.data.name,
     role,
     locale: parsed.data.locale,
@@ -183,6 +203,7 @@ export async function completeProfile(
     });
   }
 
+  await clearPhoneProof();
   const agent = (await headers()).get('user-agent') ?? undefined;
   await createSession(user.id, agent);
 
@@ -192,17 +213,4 @@ export async function completeProfile(
 export async function signOut() {
   await destroySession();
   redirect('/');
-}
-
-function homeFor(role: string): string {
-  switch (role) {
-    case 'OPS':
-      return '/ops';
-    case 'LAB':
-      return '/lab';
-    case 'TECHNICIAN':
-      return '/field';
-    default:
-      return '/caregiver';
-  }
 }

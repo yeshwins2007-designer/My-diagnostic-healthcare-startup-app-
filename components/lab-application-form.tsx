@@ -53,6 +53,9 @@ export function LabApplicationForm() {
             <Field label="Contact email" required>
               <Input name="contactEmail" type="email" required />
             </Field>
+            <Field label="Website" hint="Optional. Your domain, such as ananyadiagnostics.in: we use it only to show your logo on your terminal.">
+              <Input name="website" inputMode="url" autoComplete="url" placeholder="ananyadiagnostics.in" />
+            </Field>
           </Stack>
         </Card>
 

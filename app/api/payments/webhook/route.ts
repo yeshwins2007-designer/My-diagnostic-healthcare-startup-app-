@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { audit } from '@/lib/compliance/audit';
+import { openLabDecision } from '@/lib/orders/lab-orders';
 import { getPaymentsProvider } from '@/lib/providers/payments';
 
 /**
@@ -80,7 +81,8 @@ export async function POST(request: Request) {
           if (bookingPayment.booking.status === 'AWAITING_PAYMENT') {
             await db.booking.update({
               where: { id: bookingPayment.booking.id },
-              data: { status: 'SCHEDULED' },
+              // Paid: the order now reaches the lab to accept.
+              data: { status: 'SCHEDULED', ...openLabDecision(bookingPayment.booking.windowStart) },
             });
           }
           await db.ledgerEntry.create({

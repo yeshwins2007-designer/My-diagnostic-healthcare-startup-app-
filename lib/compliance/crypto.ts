@@ -61,6 +61,25 @@ export function decryptField(payload: string): string {
 }
 
 /**
+ * The same scheme for files (a lab's signed PDF): one byte buffer laid out as
+ * version byte (1), IV (12), auth tag (16), ciphertext. Tampering with any
+ * byte fails the tag check on decryption.
+ */
+export function encryptBytes(plain: Buffer): Buffer {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv(ALGORITHM, key(), iv);
+  const ciphertext = Buffer.concat([cipher.update(plain), cipher.final()]);
+  return Buffer.concat([Buffer.from([1]), iv, cipher.getAuthTag(), ciphertext]);
+}
+
+export function decryptBytes(payload: Buffer): Buffer {
+  if (payload[0] !== 1) throw new Error(`Unsupported file ciphertext version: ${payload[0]}`);
+  const decipher = crypto.createDecipheriv(ALGORITHM, key(), payload.subarray(1, 13));
+  decipher.setAuthTag(payload.subarray(13, 29));
+  return Buffer.concat([decipher.update(payload.subarray(29)), decipher.final()]);
+}
+
+/**
  * Decryption that returns a placeholder instead of throwing. Used on list
  * screens, where one unreadable value must not blank out an entire report.
  */

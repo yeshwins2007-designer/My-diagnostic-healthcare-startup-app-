@@ -9,7 +9,7 @@ import { audit } from '@/lib/compliance/audit';
 import { ageBandFor, VISIT_MINUTES_BY_MOBILITY } from '@/lib/enums';
 import { evaluateRadius, type ZoneBoundary } from '@/lib/sop/radiusGuard';
 import { evaluateRouting } from '@/lib/sop/labRouting';
-import { isRefusal } from '@/lib/sop/types';
+import { isRefusal, refuse } from '@/lib/sop/types';
 import { getMapsProvider } from '@/lib/providers/maps';
 import { quote } from '@/lib/pricing';
 import { loadMembership, membershipTerms } from '@/lib/queries/catalog';
@@ -288,6 +288,23 @@ export async function createBooking(
       },
       routingTests,
     );
+    // A test the lab has paused (analyser down, reagent out) cannot go there.
+    if (!isRefusal(check)) {
+      const paused = await db.labRateCardEntry.findFirst({
+        where: { labId: lab.id, testId: { in: allTests.map((t) => t.id) }, isPaused: true },
+        include: { test: true },
+      });
+      if (paused) {
+        return {
+          lab,
+          check: refuse(
+            `${lab.name} has paused ${paused.test.name} for now${paused.pausedReason ? ` (${paused.pausedReason})` : ''}.`,
+            'Choose another laboratory in Profile, or book this test again later.',
+            { labId: lab.id, pausedTest: paused.test.code },
+          ),
+        };
+      }
+    }
     return { lab, check };
   };
 

@@ -34,7 +34,7 @@ async function wipe() {
     'supportTicket', 'incident', 'followUpCall', 'criticalValueAlert',
     'reportParameter', 'report', 'consentRecord', 'visitRouteSummary',
     'locationPing', 'trackingSession', 'custodyHandoff', 'coldChainLog',
-    'specimen', 'visitChecklistStep', 'bookingItem', 'ledgerEntry', 'payment',
+    'specimen', 'visitChecklistStep', 'reportDocument', 'bookingItem', 'ledgerEntry', 'payment',
     'paymentMandate', 'booking', 'subscription', 'route', 'fhirBundle',
     'careContext', 'abdmConsentArtefact', 'abhaAccount', 'elderAccess', 'patientAddress',
     'patient', 'familyMember', 'family', 'technician', 'waitlistEntry',
@@ -307,6 +307,18 @@ async function main() {
       role: 'LAB',
       locale: 'en',
       labMemberships: { create: [{ labId: anchorLab.id, role: 'OWNER' }] },
+    },
+  });
+
+  // The intake desk: can accept orders and receive samples, but cannot turn
+  // an order down or sign results. Shows the partner roles in the demo.
+  await db.user.create({
+    data: {
+      phone: '+919845100201',
+      name: 'Ravi Shetty',
+      role: 'LAB',
+      locale: 'en',
+      labMemberships: { create: [{ labId: anchorLab.id, role: 'INTAKE_DESK' }] },
     },
   });
 
@@ -745,6 +757,53 @@ async function main() {
     });
   }
 
+  // --- partner terminal ------------------------------------------------------
+  // Two paid orders waiting for the lab to accept or reject, one sample
+  // handed over at the intake desk, and one being processed and waiting for
+  // its results: every column of /lab has something real in it.
+  const pendingOrders = await db.booking.findMany({
+    where: { labId: anchorLab.id, status: 'SCHEDULED', windowStart: { gt: at(3, 0, 0) } },
+    orderBy: { windowStart: 'asc' },
+    take: 2,
+  });
+  for (const [i, b] of pendingOrders.entries()) {
+    await db.booking.update({
+      where: { id: b.id },
+      data: { labDecision: 'PENDING', labDecisionDeadline: new Date(Date.now() + (25 - i * 8) * 60_000) },
+    });
+  }
+  for (const [index, status, barcode] of [
+    [8, 'AT_LAB', 'SPC-240002'],
+    [9, 'PROCESSING', 'SPC-240003'],
+  ] as const) {
+    const made = await makeBooking({ index, status, windowStartHour: 6, dayOffset: 0, arrived: true, lateMinutes: 4, panelId: baselinePanel.id, fastingHours: 10 });
+    const specimen = await db.specimen.create({
+      data: {
+        bookingId: made.booking.id,
+        barcode,
+        tubeType: 'Lavender (EDTA)',
+        identifier1: made.c.patient.name,
+        identifier2: `Age ${made.c.spec.age} · ${made.booking.reference}`,
+        labelledAtBedside: true,
+        collectedAt: at(0, 6, 48),
+        clockStartsAt: at(0, 6, 48),
+        intakeAt: at(0, 7, 52),
+        status: status === 'AT_LAB' ? 'RECEIVED' : 'PROCESSED',
+      },
+    });
+    await db.custodyHandoff.create({
+      data: {
+        specimenId: specimen.id,
+        technicianId: made.c.tech.id,
+        labId: anchorLab.id,
+        receivedByName: 'Latha (intake desk)',
+        elapsedMinutes: 64,
+        isBreach: false,
+        handedOverAt: at(0, 7, 52),
+      },
+    });
+  }
+
   // --- waitlist -------------------------------------------------------------
   await db.waitlistEntry.createMany({
     data: [
@@ -796,7 +855,8 @@ Seed complete.
 Sign in with any of these phone numbers; the OTP is printed to this console.
 
   Ops / founder     +91 98450 00001
-  Partner lab       +91 98451 00200
+  Partner lab       +91 98451 00200  (owner; partner sign-in: /lab/login)
+                    +91 98451 00201  (intake desk: accepts and receives, cannot reject or sign)
   Technician        +91 98450 00010  (Priya)
   Caregiver         +91 98450 00101  (Anjali Iyer — mother Lakshmi, 74)
                     or ${demoEmail.email} / ${demoEmail.password}

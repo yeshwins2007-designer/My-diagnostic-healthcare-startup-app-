@@ -10,7 +10,9 @@ import { encryptField } from '@/lib/compliance/crypto';
 import { validateCertificateNumber } from '@/lib/sop/labRouting';
 import { isRefusal } from '@/lib/sop/types';
 import { dueBy } from '@/lib/sop/followUp';
-import { Discipline, type StoplightBand } from '@/lib/enums';
+import { Discipline } from '@/lib/enums';
+import { parseResultValues, testsOfOrder } from '@/lib/orders/results';
+import { acceptOrder, rejectOrder, REJECT_REASONS } from '@/lib/orders/lab-orders';
 import { getMapsProvider } from '@/lib/providers/maps';
 import { publishReportToAbha } from './abha';
 
@@ -27,6 +29,7 @@ const applicationSchema = z.object({
   contactName: z.string().min(2).max(120),
   contactPhone: z.string().min(10).max(15),
   contactEmail: z.string().email(),
+  website: z.string().max(120).optional(),
   addressLine: z.string().min(5).max(300),
   city: z.string().min(2).max(80),
   state: z.string().min(2).max(80),
@@ -119,6 +122,8 @@ export async function submitLabApplication(
       contactName: input.contactName,
       contactPhone: input.contactPhone,
       contactEmail: input.contactEmail,
+      // Only a well-formed domain is kept: it is used to fetch the lab's logo.
+      website: /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(domainOf(input.website ?? '')) ? domainOf(input.website ?? '') : '',
       addressLine: input.addressLine,
       city: input.city,
       state: input.state,
@@ -159,57 +164,135 @@ export async function submitLabApplication(
   redirect('/lab?submitted=1');
 }
 
+// --- who may act ----------------------------------------------------------------
+
+type LabContext =
+  | { ok: true; user: Awaited<ReturnType<typeof requireRole>>; membership: { labId: string; role: string; lab: { status: string; name: string } } }
+  | { ok: false; message: string };
+
+/**
+ * Every lab action starts here: a LAB session, a membership, and (for
+ * anything that touches samples or orders) an ACTIVE lab. A suspended lab's
+ * open tab must not keep signing reports. `roles` narrows who may act:
+ * signing results and turning orders down are for owners and managers, not
+ * the intake desk.
+ */
+async function labContext(opts: { active?: boolean; roles?: string[] } = {}): Promise<LabContext> {
+  const user = await requireRole('LAB');
+  const membership = await db.labMember.findFirst({
+    where: { userId: user.id },
+    include: { lab: { select: { status: true, name: true } } },
+  });
+  if (!membership) return { ok: false, message: 'No laboratory is linked to this account.' };
+  if (opts.active && membership.lab.status !== 'ACTIVE') {
+    return { ok: false, message: `${membership.lab.name} is not active, so it cannot handle samples or orders right now.` };
+  }
+  if (opts.roles && !opts.roles.includes(membership.role)) {
+    return { ok: false, message: 'Only an owner or a manager of the laboratory can do this.' };
+  }
+  return { ok: true, user, membership };
+}
+
+const SIGNERS = ['OWNER', 'MANAGER'];
+
+// --- orders ------------------------------------------------------------------------
+
+export async function acceptLabOrder(bookingId: string): Promise<LabActionState> {
+  const ctx = await labContext({ active: true });
+  if (!ctx.ok) return ctx;
+  const result = await acceptOrder({ bookingId, labId: ctx.membership.labId, userId: ctx.user.id });
+  revalidatePath('/lab');
+  return result;
+}
+
+export async function rejectLabOrder(_prev: LabActionState, formData: FormData): Promise<LabActionState> {
+  const ctx = await labContext({ active: true, roles: SIGNERS });
+  if (!ctx.ok) return ctx;
+  const reason = String(formData.get('reason') ?? '');
+  const note = String(formData.get('note') ?? '').trim();
+  if (!(REJECT_REASONS as readonly string[]).includes(reason)) {
+    return { ok: false, message: 'Choose a reason for rejecting the order.' };
+  }
+  if (reason === 'Other' && note.length < 5) {
+    return { ok: false, message: 'Say briefly why, so our team can follow up.' };
+  }
+  const result = await rejectOrder({
+    bookingId: String(formData.get('bookingId') ?? ''),
+    labId: ctx.membership.labId,
+    userId: ctx.user.id,
+    reason: note ? `${reason}: ${note}` : reason,
+  });
+  revalidatePath('/lab');
+  return result;
+}
+
 // --- intake ------------------------------------------------------------------
 
+/**
+ * Accepting a sample for processing at the intake desk. Only a sample whose
+ * handover the technician has recorded (RECEIVED) can be accepted: that is
+ * the chain-of-custody step and the two-hour clock check, and skipping it
+ * used to leave the clock running forever.
+ */
 export async function receiveSpecimen(barcode: string): Promise<LabActionState> {
-  const user = await requireRole('LAB');
-
-  const membership = await db.labMember.findFirst({ where: { userId: user.id } });
-  if (!membership) return { ok: false, message: 'No laboratory is linked to this account.' };
+  const ctx = await labContext({ active: true });
+  if (!ctx.ok) return ctx;
 
   // Scoped to this lab's own bookings: a barcode alone must not let one lab
   // move another lab's sample through the pipeline.
+  const code = barcode.trim().toUpperCase();
   const specimen = await db.specimen.findFirst({
-    where: { barcode: barcode.trim().toUpperCase(), booking: { labId: membership.labId } },
+    where: { barcode: code, booking: { labId: ctx.membership.labId } },
     include: { booking: true },
   });
-  if (!specimen) return { ok: false, message: `No specimen with barcode ${barcode} for your laboratory.` };
+  if (!specimen) return { ok: false, message: `No specimen with barcode ${code} for your laboratory.` };
+  if (specimen.status === 'COLLECTED' || specimen.status === 'IN_TRANSIT') {
+    return {
+      ok: false,
+      message: `${code} has not been handed over yet. Ask the technician to record the handover in their app, then scan it again.`,
+    };
+  }
+  if (specimen.status !== 'RECEIVED') {
+    return { ok: false, message: `${code} is ${specimen.status.toLowerCase()} and cannot be accepted again.` };
+  }
 
   await db.specimen.update({
     where: { id: specimen.id },
-    data: { status: 'PROCESSED' },
+    data: { status: 'PROCESSED', intakeAt: specimen.intakeAt ?? new Date() },
   });
-  await db.booking.update({
-    where: { id: specimen.bookingId },
+  await db.booking.updateMany({
+    where: { id: specimen.bookingId, status: { in: ['AT_LAB', 'IN_TRANSIT', 'COLLECTED'] } },
     data: { status: 'PROCESSING' },
   });
 
   revalidatePath('/lab');
-  return { ok: true, message: `${specimen.barcode} marked as being processed.` };
+  return { ok: true, message: `${specimen.barcode} accepted for processing.` };
 }
 
+/** Rejecting a sample, by the barcode printed on it. */
 export async function rejectSpecimen(
   _prev: LabActionState,
   formData: FormData,
 ): Promise<LabActionState> {
-  const user = await requireRole('LAB');
-  const specimenId = String(formData.get('specimenId') ?? '');
+  const ctx = await labContext({ active: true });
+  if (!ctx.ok) return ctx;
+  const code = String(formData.get('barcode') ?? formData.get('specimenId') ?? '').trim().toUpperCase();
   const reason = String(formData.get('reason') ?? '').trim();
 
   if (reason.length < 5) {
     return { ok: false, message: 'Give the reason for rejecting the sample.' };
   }
 
-  const membership = await db.labMember.findFirst({ where: { userId: user.id } });
-  if (!membership) return { ok: false, message: 'No laboratory is linked to this account.' };
-
   // Only this lab's own samples: a rejection triggers a recollection visit
   // and a critical incident, so it must not be callable on another lab's.
   const owned = await db.specimen.findFirst({
-    where: { id: specimenId, booking: { labId: membership.labId } },
-    select: { id: true },
+    where: { OR: [{ barcode: code }, { id: code }], booking: { labId: ctx.membership.labId } },
+    include: { booking: { select: { status: true } } },
   });
-  if (!owned) return { ok: false, message: 'That sample is not with your laboratory.' };
+  if (!owned) return { ok: false, message: `No sample ${code} is with your laboratory.` };
+  if (!['RECEIVED', 'PROCESSED'].includes(owned.status) || ['REPORTED', 'CLOSED'].includes(owned.booking.status)) {
+    return { ok: false, message: `${owned.barcode} cannot be rejected now: it is ${owned.status.toLowerCase()} and its order is ${owned.booking.status.toLowerCase()}.` };
+  }
 
   const specimen = await db.specimen.update({
     where: { id: owned.id },
@@ -236,7 +319,7 @@ export async function rejectSpecimen(
     action: 'SPECIMEN_REJECTED',
     entityType: 'Specimen',
     entityId: specimen.id,
-    actorUserId: user.id,
+    actorUserId: ctx.user.id,
     actorRole: 'LAB',
     detail: { reason },
   });
@@ -253,139 +336,203 @@ export async function rejectSpecimen(
 
 const resultSchema = z.object({
   bookingId: z.string().min(1),
-  pathologistName: z.string().min(2),
-  pathologistReg: z.string().min(3),
-  values: z.string().min(2),
+  pathologistName: z.string().trim().min(2),
+  pathologistReg: z.string().trim().min(3),
+  values: z.string().trim().min(2),
 });
 
 /**
  * Uploading results.
  *
- * The report is created as PATHOLOGIST_SIGNED, not RELEASED. Nothing reaches a
- * family until a human at MEDWYN has verified that the structure of the
- * report matches the physical patient identifiers — and that gate is permanent,
- * not an early-stage precaution.
+ * The report is created as SUMMARY_PENDING_REVIEW, not RELEASED. Nothing
+ * reaches a family until a human at MEDWYN has verified that the structure of
+ * the report matches the physical patient identifiers — and that gate is
+ * permanent, not an early-stage precaution.
+ *
+ * Every test in the order, panel or single, must have a value, and nothing
+ * is stored unless all of them parse (lib/orders/results.ts). One report per
+ * order: the order is claimed (PROCESSING to REPORTED) before the report is
+ * written, so a double submit cannot create two.
  */
 export async function uploadResults(
   _prev: LabActionState,
   formData: FormData,
 ): Promise<LabActionState> {
-  const user = await requireRole('LAB');
+  const ctx = await labContext({ active: true, roles: SIGNERS });
+  if (!ctx.ok) return ctx;
 
   const parsed = resultSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, message: 'Please fill in the signing details.' };
-
-  const membership = await db.labMember.findFirst({ where: { userId: user.id } });
-  if (!membership) return { ok: false, message: 'No laboratory linked to this account.' };
+  if (!parsed.success) return { ok: false, message: 'Please fill in the values and the signing details.' };
 
   const booking = await db.booking.findFirst({
-    where: { id: parsed.data.bookingId, labId: membership.labId },
+    where: { id: parsed.data.bookingId, labId: ctx.membership.labId },
     include: {
-      items: { include: { panel: { include: { items: { include: { test: true } } } } } },
+      items: { include: { test: true, panel: { include: { items: { include: { test: true } } } } } },
     },
   });
   if (!booking) return { ok: false, message: 'That booking is not routed to your laboratory.' };
-
-  // values arrives as "HBA1C=9.4|GLU_F=186|CBC=12.9"
-  const entries = parsed.data.values
-    .split('|')
-    .map((pair) => pair.split('='))
-    .filter((parts) => parts.length === 2)
-    .map(([code, value]) => ({ code: code.trim().toUpperCase(), value: value.trim() }));
-
-  if (entries.length === 0) {
-    return { ok: false, message: 'No values were provided.' };
+  if (booking.status !== 'PROCESSING') {
+    return { ok: false, message: `Results can be entered only for an order being processed; ${booking.reference} is ${booking.status.toLowerCase()}.` };
   }
 
-  const tests = booking.items.flatMap((i) => i.panel?.items.map((pi) => pi.test) ?? []);
+  const tests = testsOfOrder(booking.items);
+  const result = parseResultValues(parsed.data.values, tests);
+  if (!result.ok) {
+    return { ok: false, reason: 'Nothing was saved.', remedy: result.errors.join(' ') };
+  }
 
-  const parameters = entries
-    .map((entry) => {
-      const test = tests.find((t) => t.code === entry.code);
-      if (!test) return null;
+  const claimed = await db.booking.updateMany({
+    where: { id: booking.id, status: 'PROCESSING' },
+    data: { status: 'REPORTED' },
+  });
+  if (claimed.count === 0) return { ok: false, message: 'These results were just submitted from another screen.' };
 
-      const numeric = Number(entry.value);
-      const { refLow, refHigh, unit } = REFERENCE_RANGES[test.code] ?? {
-        refLow: null,
-        refHigh: null,
-        unit: '',
-      };
-
-      // Banding is arithmetic against a stored reference range, never a model's
-      // opinion. Anything outside a range is at minimum YELLOW.
-      let band: StoplightBand = 'GREEN';
-      let isCritical = false;
-      if (Number.isFinite(numeric) && refLow !== null && refHigh !== null) {
-        if (numeric < refLow || numeric > refHigh) band = 'YELLOW';
-        const criticalLow = refLow - (refHigh - refLow) * 0.5;
-        const criticalHigh = refHigh + (refHigh - refLow) * 0.5;
-        if (numeric < criticalLow || numeric > criticalHigh) {
-          band = 'RED';
-          isCritical = true;
-        }
-      }
-
-      return {
-        testId: test.id,
-        valueEncrypted: encryptField(entry.value),
-        unit,
-        refLow,
-        refHigh,
-        band,
-        isCritical,
-      };
-    })
-    .filter(Boolean) as {
-    testId: string;
-    valueEncrypted: string;
-    unit: string;
-    refLow: number | null;
-    refHigh: number | null;
-    band: StoplightBand;
-    isCritical: boolean;
-  }[];
-
-  const overall: StoplightBand = parameters.some((p) => p.band === 'RED')
-    ? 'RED'
-    : parameters.some((p) => p.band === 'YELLOW')
-      ? 'YELLOW'
-      : 'GREEN';
-
+  const now = new Date();
   const report = await db.report.create({
     data: {
       bookingId: booking.id,
       patientId: booking.patientId,
-      labId: membership.labId,
+      labId: ctx.membership.labId,
       // Signed, not released. The human verification gate is next.
       status: 'SUMMARY_PENDING_REVIEW',
-      overallBand: overall,
+      overallBand: result.overall,
       pathologistName: parsed.data.pathologistName,
       pathologistReg: parsed.data.pathologistReg,
-      signedAt: new Date(),
-      parameters: { create: parameters },
+      signedAt: now,
+      parameters: {
+        create: result.parameters.map((p) => ({
+          testId: p.testId,
+          valueEncrypted: encryptField(p.value),
+          unit: p.unit,
+          refLow: p.refLow,
+          refHigh: p.refHigh,
+          band: p.band,
+          isCritical: p.isCritical,
+        })),
+      },
     },
   });
-
-  await db.booking.update({ where: { id: booking.id }, data: { status: 'REPORTED' } });
+  // Step 9 of the visit checklist is the lab's, and this is it.
+  await db.visitChecklistStep.updateMany({
+    where: { bookingId: booking.id, stepKey: 'LAB_PROCESSED_AND_SIGNED', completedAt: null },
+    data: { completedAt: now },
+  });
 
   await audit({
     action: 'REPORT_SIGNED',
     entityType: 'Report',
     entityId: report.id,
-    actorUserId: user.id,
+    actorUserId: ctx.user.id,
     actorRole: 'LAB',
     detail: {
       pathologist: parsed.data.pathologistName,
-      parameterCount: parameters.length,
-      overallBand: overall,
+      parameterCount: result.parameters.length,
+      overallBand: result.overall,
     },
   });
 
   revalidatePath('/lab');
   return {
     ok: true,
-    message: `Report signed. It will reach the family once a MEDWYN coordinator has verified the identifiers.${overall === 'RED' ? ' A critical value has been flagged and will be called immediately.' : ''}`,
+    message: `Report signed. It will reach the family once a MEDWYN coordinator has verified the identifiers.${result.overall === 'RED' ? ' A critical value has been flagged and will be called immediately.' : ''}`,
   };
+}
+
+// --- catalogue and profile -----------------------------------------------------
+
+/**
+ * Pausing a test the lab cannot run today (analyser down, reagent out). A
+ * paused test is not routed to this lab and is not offered to families whose
+ * lab this is, until resumed. Prices are not the lab's to change alone: they
+ * are in the signed agreement, so a change is a request (below).
+ */
+export async function setTestPaused(testId: string, paused: boolean, reason = ''): Promise<LabActionState> {
+  const ctx = await labContext({ roles: SIGNERS });
+  if (!ctx.ok) return ctx;
+  const entry = await db.labRateCardEntry.findFirst({ where: { labId: ctx.membership.labId, testId }, include: { test: true } });
+  if (!entry) return { ok: false, message: 'That test is not on your rate card.' };
+  if (paused && reason.trim().length < 3) return { ok: false, message: 'Say why the test is paused, for example “analyser under service”.' };
+  await db.labRateCardEntry.update({
+    where: { id: entry.id },
+    data: { isPaused: paused, pausedReason: paused ? reason.trim() : '' },
+  });
+  await audit({
+    action: paused ? 'LAB_TEST_PAUSED' : 'LAB_TEST_RESUMED',
+    entityType: 'Lab',
+    entityId: ctx.membership.labId,
+    actorUserId: ctx.user.id,
+    actorRole: 'LAB',
+    detail: { test: entry.test.code, reason: reason.trim() },
+  });
+  revalidatePath('/lab/catalog');
+  return { ok: true, message: `${entry.test.name} ${paused ? 'paused' : 'resumed'}.` };
+}
+
+export async function requestRateChange(_prev: LabActionState, formData: FormData): Promise<LabActionState> {
+  const ctx = await labContext({ roles: SIGNERS });
+  if (!ctx.ok) return ctx;
+  const testId = String(formData.get('testId') ?? '');
+  const rupees = Number(formData.get('rupees'));
+  const why = String(formData.get('why') ?? '').trim();
+  const entry = await db.labRateCardEntry.findFirst({ where: { labId: ctx.membership.labId, testId }, include: { test: true } });
+  if (!entry) return { ok: false, message: 'Choose a test from your rate card.' };
+  if (!Number.isInteger(rupees) || rupees < 1 || rupees > 100_000) return { ok: false, message: 'Enter the new rate in whole rupees.' };
+  if (why.length < 10) return { ok: false, message: 'Explain the change in a sentence or two.' };
+  await db.supportTicket.create({
+    data: {
+      raisedByUserId: ctx.user.id,
+      source: 'APP',
+      category: 'LAB_RATE_CHANGE',
+      subject: `${ctx.membership.lab.name}: ${entry.test.code} from ₹${entry.costPaise / 100} to ₹${rupees}`,
+      body: why,
+      priority: 'NORMAL',
+    },
+  });
+  revalidatePath('/lab/catalog');
+  return { ok: true, message: 'Sent to our partnerships team. The current rate applies until the agreement is updated.' };
+}
+
+const profileSchema = z.object({
+  contactName: z.string().trim().min(2).max(120),
+  contactPhone: z.string().trim().regex(/^\+?\d[\d\s-]{8,16}$/, 'Enter a valid phone number.'),
+  contactEmail: z.email('Enter a valid email address.').max(254),
+  website: z.string().trim().max(120),
+});
+
+/** The domain alone, e.g. "https://www.ananya.in/about" becomes "ananya.in". */
+function domainOf(input: string): string {
+  const raw = input.trim().toLowerCase();
+  if (!raw) return '';
+  try {
+    const url = new URL(raw.includes('://') ? raw : `https://${raw}`);
+    return url.hostname.replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+}
+
+export async function updateLabProfile(_prev: LabActionState, formData: FormData): Promise<LabActionState> {
+  const ctx = await labContext({ roles: ['OWNER'] });
+  if (!ctx.ok) return { ok: false, message: ctx.message.replace('an owner or a manager', 'the owner') };
+  const parsed = profileSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? 'Please check the details.' };
+  const website = domainOf(parsed.data.website);
+  if (parsed.data.website && !/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(website)) {
+    return { ok: false, message: 'Enter your website as a domain, such as ananyadiagnostics.in.' };
+  }
+  await db.lab.update({
+    where: { id: ctx.membership.labId },
+    data: { contactName: parsed.data.contactName, contactPhone: parsed.data.contactPhone, contactEmail: parsed.data.contactEmail, website },
+  });
+  await audit({
+    action: 'LAB_PROFILE_UPDATED',
+    entityType: 'Lab',
+    entityId: ctx.membership.labId,
+    actorUserId: ctx.user.id,
+    actorRole: 'LAB',
+  });
+  revalidatePath('/lab/profile');
+  return { ok: true, message: 'Saved.' };
 }
 
 /**
@@ -465,28 +612,3 @@ export async function verifyAndReleaseReport(reportId: string): Promise<LabActio
     message: `Released to the family.${published?.ok ? ' Also published to their ABHA health account.' : ''}`,
   };
 }
-
-/**
- * Clinically verified reference ranges, hardcoded.
- *
- * The banding layer is grounded strictly against these — the model is never
- * asked what is normal, because the answer must be the same every time and
- * traceable to a source.
- */
-const REFERENCE_RANGES: Record<
-  string,
-  { refLow: number | null; refHigh: number | null; unit: string }
-> = {
-  HBA1C: { refLow: 4.0, refHigh: 5.7, unit: '%' },
-  GLU_F: { refLow: 70, refHigh: 100, unit: 'mg/dL' },
-  LIPID: { refLow: 0, refHigh: 200, unit: 'mg/dL' },
-  CREAT: { refLow: 0.6, refHigh: 1.3, unit: 'mg/dL' },
-  UREA: { refLow: 15, refHigh: 45, unit: 'mg/dL' },
-  ELEC: { refLow: 135, refHigh: 145, unit: 'mmol/L' },
-  CBC: { refLow: 12, refHigh: 16, unit: 'g/dL' },
-  TSH: { refLow: 0.4, refHigh: 4.5, unit: 'µIU/mL' },
-  VITD: { refLow: 30, refHigh: 100, unit: 'ng/mL' },
-  B12: { refLow: 200, refHigh: 900, unit: 'pg/mL' },
-  URINE_R: { refLow: null, refHigh: null, unit: '' },
-  URINE_CS: { refLow: null, refHigh: null, unit: '' },
-};

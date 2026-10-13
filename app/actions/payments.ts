@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { db } from '@/lib/db';
 import { requireRole } from '@/lib/auth/session';
 import { audit } from '@/lib/compliance/audit';
+import { openLabDecision } from '@/lib/orders/lab-orders';
 import { redirect } from 'next/navigation';
 import {
   getPaymentsProvider,
@@ -216,7 +217,11 @@ export async function payForBooking(
         idempotencyKey: `cash_${booking.id}`,
       },
     });
-    await db.booking.update({ where: { id: booking.id }, data: { status: 'SCHEDULED' } });
+    // Confirmed (cash is collected at the door): the order now reaches the lab to accept.
+    await db.booking.update({
+      where: { id: booking.id },
+      data: { status: 'SCHEDULED', ...openLabDecision(booking.windowStart) },
+    });
     await audit({
       action: 'BOOKING_CREATED',
       entityType: 'Booking',
@@ -306,7 +311,14 @@ export async function confirmBookingPayment(input: {
     where: { id: payment.id },
     data: { status: 'CAPTURED', providerPaymentId: input.paymentId, capturedAt: now },
   });
-  await db.booking.update({ where: { id: payment.booking.id }, data: { status: 'SCHEDULED' } });
+  await db.booking.update({
+    where: { id: payment.booking.id },
+    data: {
+      status: 'SCHEDULED',
+      // Paid: the order now reaches the lab to accept, once.
+      ...(payment.booking.status === 'AWAITING_PAYMENT' ? openLabDecision(payment.booking.windowStart, now) : {}),
+    },
+  });
   await db.ledgerEntry.create({
     data: {
       paymentId: payment.id,

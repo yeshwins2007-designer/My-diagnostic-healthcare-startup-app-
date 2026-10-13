@@ -15,6 +15,7 @@ import { db } from '../db';
 import { env } from '../env';
 import { randomToken } from '../compliance/crypto';
 import type { UserRole } from '../enums';
+import { homeFor, signInFor } from './home';
 
 // __Host- in production: the browser then refuses the cookie unless it is
 // Secure, host-only and path=/, so no subdomain can plant or override it.
@@ -168,7 +169,9 @@ export async function requireRole(...roles: UserRole[]): Promise<SessionUser> {
  */
 export async function requirePageRole(...roles: UserRole[]): Promise<SessionUser> {
   const user = await getSessionUser();
-  if (!user) redirect('/login');
-  if (!roles.includes(user.role)) redirect('/');
+  // Partners sign in at their own door; everyone else at the family one.
+  if (!user) redirect(signInFor(roles.length === 1 && roles[0] === 'LAB' ? 'lab' : 'family'));
+  // Signed in, but this is not their area: send them to their own home.
+  if (!roles.includes(user.role)) redirect(homeFor(user.role));
   return user;
 }

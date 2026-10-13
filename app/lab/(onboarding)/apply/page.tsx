@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { requireRole } from '@/lib/auth/session';
+import { requirePageRole } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import { LabApplicationForm } from '@/components/lab-application-form';
 import { Card, H1, H3, Lead, Muted, Page, Stack } from '@/components/ui';
@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: 'Register your laboratory' };
 export const dynamic = 'force-dynamic';
 
 export default async function LabApplyPage() {
-  const user = await requireRole('LAB');
+  const user = await requirePageRole('LAB');
 
   const existing = await db.labMember.findFirst({ where: { userId: user.id } });
   if (existing) redirect('/lab');

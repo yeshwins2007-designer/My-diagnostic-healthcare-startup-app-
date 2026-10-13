@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { after } from 'next/server';
 import { createSession } from '@/lib/auth/session';
+import { homeFor } from '@/lib/auth/home';
 import {
   completeEmailRegistration,
   completePasswordReset,
@@ -35,8 +36,6 @@ async function senderLimit(scope: string, limit: number) {
     ? null
     : `Too many attempts. Please wait ${Math.ceil(result.retryAfterSeconds / 60)} minutes, or sign in with your phone.`;
 }
-
-const HOME: Record<string, string> = { OPS: '/ops', LAB: '/lab', TECHNICIAN: '/field' };
 
 async function signInAs(userId: string, role: string, method: string) {
   await createSession(userId, (await headers()).get('user-agent') ?? undefined);
@@ -71,7 +70,7 @@ export async function signInWithEmail(_prev: EmailSignInState, formData: FormDat
   if (!result.ok) return { error: result.message, email };
 
   await signInAs(result.userId, result.role, 'password');
-  redirect(HOME[result.role] ?? '/caregiver');
+  redirect(homeFor(result.role));
 }
 
 // --- sign up -------------------------------------------------------------------
@@ -191,5 +190,5 @@ export async function setNewPassword(_prev: PasswordResetState, formData: FormDa
   if (!result.ok) return { ...current, error: result.message, field: result.field };
 
   await signInAs(result.userId, result.role, 'password_reset');
-  redirect(HOME[result.role] ?? '/caregiver');
+  redirect(homeFor(result.role));
 }

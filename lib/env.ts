@@ -56,6 +56,22 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().default('MEDWYN <no-reply@medwyn.in>'),
 
+  /**
+   * Brandfetch Logo Link client ID (free, from developers.brandfetch.com).
+   * Shows each partner lab's own logo, found from its website domain. Unset,
+   * labs get a monogram instead. Public by design: it is sent with every
+   * logo request, and Brandfetch ties it to your allowed domains.
+   */
+  NEXT_PUBLIC_BRANDFETCH_CLIENT_ID: z.string().optional(),
+
+  /**
+   * The partner app's own host name, e.g. partners.medwyn.in. Requests to it
+   * are served the lab portal at the root (/ is the terminal, /login the
+   * partner sign-in), the way restaurants use a separate partner app. Unset,
+   * the portal is at /lab on the main host, as it always is.
+   */
+  PARTNER_HOST: z.string().optional(),
+
   /** How long raw GPS pings survive before being collapsed to a summary. */
   PING_RETENTION_DAYS: z.coerce.number().int().positive().default(30),
   /** How long voice transcripts survive. */

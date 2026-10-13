@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { requireRole } from '@/lib/auth/session';
+import { requirePageRole } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import {
   Badge,
@@ -66,7 +66,7 @@ const CLAUSE_GUIDANCE: { key: string; title: string; why: string }[] = [
 ];
 
 export default async function AgreementPage() {
-  const user = await requireRole('LAB');
+  const user = await requirePageRole('LAB');
 
   const membership = await db.labMember.findFirst({
     where: { userId: user.id },

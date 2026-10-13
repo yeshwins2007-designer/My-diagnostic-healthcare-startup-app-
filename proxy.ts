@@ -11,8 +11,8 @@ import { NextResponse, type NextRequest } from 'next/server';
  * its own scripts; app/layout.tsx attaches it to the one inline script.
  *
  * Third parties are named, each for what it actually loads: Razorpay's
- * checkout (payment iframe), Google Maps (tiles, workers), ElevenLabs (voice)
- * and Google Fonts. Styles allow 'unsafe-inline' because React style
+ * checkout (payment iframe), Google Maps (tiles, workers), ElevenLabs (voice),
+ * Google Fonts and Brandfetch (partner labs' logos, images only). Styles allow 'unsafe-inline' because React style
  * attributes need it; a nonce on style-src would silently disable that.
  */
 export function proxy(request: NextRequest) {
@@ -24,7 +24,7 @@ export function proxy(request: NextRequest) {
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' blob:${isDev ? ` 'unsafe-eval'` : ''}`,
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     `font-src 'self' https://fonts.gstatic.com data:`,
-    `img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.google.com https://*.googleusercontent.com https://cdn.razorpay.com`,
+    `img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.google.com https://*.googleusercontent.com https://cdn.razorpay.com https://cdn.brandfetch.io`,
     `connect-src 'self' https://*.googleapis.com https://*.gstatic.com https://api.razorpay.com https://lumberjack.razorpay.com https://*.elevenlabs.io wss://*.elevenlabs.io${isDev ? ' ws: wss:' : ''}`,
     `frame-src https://api.razorpay.com https://checkout.razorpay.com https://*.google.com`,
     `worker-src 'self' blob:`,
@@ -40,9 +40,33 @@ export function proxy(request: NextRequest) {
   requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('Content-Security-Policy', policy);
 
-  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  const partnerPath = partnerRewrite(request);
+  const response = partnerPath
+    ? NextResponse.rewrite(new URL(partnerPath + request.nextUrl.search, request.url), { request: { headers: requestHeaders } })
+    : NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set('Content-Security-Policy', policy);
   return response;
+}
+
+/**
+ * The partner app on its own host (PARTNER_HOST, e.g. partners.medwyn.in),
+ * the way a restaurant partner app is separate from the ordering app. On
+ * that host the portal is served at the root: / is the order terminal,
+ * /login the partner sign-in, /earnings the earnings, and so on. It is a
+ * rewrite, not a copy: the same pages under app/lab answer, with the same
+ * guards, and /lab/... keeps working on both hosts. Everything else (the
+ * API, other areas a signed-in person is sent to) passes through untouched.
+ */
+const PARTNER_PATHS = new Set(['/', '/login', '/register', '/apply', '/agreement', '/earnings', '/catalog', '/profile']);
+
+function partnerRewrite(request: NextRequest): string | null {
+  const partnerHost = process.env.PARTNER_HOST?.trim().toLowerCase();
+  if (!partnerHost) return null;
+  const host = (request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? '').split(':')[0].toLowerCase();
+  if (host !== partnerHost) return null;
+  const path = request.nextUrl.pathname.replace(/\/+$/, '') || '/';
+  if (!PARTNER_PATHS.has(path)) return null;
+  return path === '/' ? '/lab' : `/lab${path}`;
 }
 
 export const config = {

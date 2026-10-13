@@ -1,12 +1,18 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth/session';
+import { homeFor, signInFor } from '@/lib/auth/home';
 import { signOut } from '@/app/actions/auth';
 
-export default async function LabLayout({ children }: { children: React.ReactNode }) {
+/**
+ * The frame for a partner who has signed up but not yet applied: just the
+ * application, without the terminal's sections, which mean nothing until a
+ * laboratory exists.
+ */
+export default async function LabOnboardingLayout({ children }: { children: React.ReactNode }) {
   const user = await getSessionUser();
-  if (!user) redirect('/login');
-  if (user.role !== 'LAB') redirect('/');
+  if (!user) redirect(signInFor('lab'));
+  if (user.role !== 'LAB') redirect(homeFor(user.role));
 
   return (
     <div className="min-h-dvh bg-[var(--color-canvas)]">
@@ -19,12 +25,6 @@ export default async function LabLayout({ children }: { children: React.ReactNod
             Partner laboratory
           </Link>
           <div className="flex flex-wrap items-center gap-4">
-            <Link
-              href="/lab/agreement"
-              className="inline-flex min-h-12 items-center font-semibold underline"
-            >
-              Agreement
-            </Link>
             <form action={signOut}>
               <button type="submit" className="px-2 py-3 font-semibold underline">
                 Sign out

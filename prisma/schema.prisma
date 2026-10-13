@@ -470,6 +470,9 @@ model Lab {
   /// Written permission to name the lab in our marketing ("Processed at X,
   /// NABL-accredited"). The trust page will not render the line without it.
   brandingConsent Boolean @default(false)
+  /// The lab's own website domain, e.g. "ananyadiagnostics.in". Used only to
+  /// show the lab's logo (Brandfetch) in its partner terminal.
+  website       String   @default("")
   submittedAt   DateTime?
   activatedAt   DateTime?
   createdAt     DateTime @default(now())
@@ -588,6 +591,10 @@ model LabRateCardEntry {
   test      TestDefinition @relation(fields: [testId], references: [id])
   /// What the lab charges us, in paise. Retail pricing lives on Panel/Plan.
   costPaise Int
+  /// Paused by the lab (analyser down, reagent out): not routed here, and not
+  /// offered to families whose lab this is, until resumed.
+  isPaused     Boolean  @default(false)
+  pausedReason String   @default("")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -916,9 +923,24 @@ model Booking {
 
   cancelledAt   DateTime?
   cancelReason  String    @default("")
+
+  /// The partner lab's answer to this order. LabDecision: PENDING | ACCEPTED |
+  /// UNROUTED. Opens as PENDING when payment completes; a lab can reject only
+  /// before the deadline, after which the order counts as accepted (the
+  /// agreement already commits the lab's capacity). Defaults to ACCEPTED so
+  /// orders that predate the partner terminal behave as before.
+  labDecision         String    @default("ACCEPTED")
+  labDecisionDeadline DateTime?
+  labDecisionAt       DateTime?
+  labDecisionReason   String    @default("")
+  /// Labs that have turned this order down, comma-separated, so re-routing
+  /// never offers it back to them.
+  rejectedLabIds      String    @default("")
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  documents      ReportDocument[]
   items          BookingItem[]
   checklistSteps VisitChecklistStep[]
   specimens      Specimen[]
@@ -934,6 +956,25 @@ model Booking {
   @@index([status])
   @@index([windowStart])
   @@index([technicianId])
+  @@index([labId, labDecision])
+}
+
+/// The lab's signed report as a PDF: the legal document, alongside the
+/// structured values that drive the family's summary and critical alerts.
+/// Stored encrypted (AES-256-GCM, FIELD_ENCRYPTION_KEY). One current file per
+/// booking; replacing it keeps nothing of the old one.
+model ReportDocument {
+  id          String   @id @default(cuid())
+  bookingId   String   @unique
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  labId       String
+  fileName    String
+  sizeBytes   Int
+  sha256      String
+  cipher      Bytes
+  uploadedByUserId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model BookingItem {

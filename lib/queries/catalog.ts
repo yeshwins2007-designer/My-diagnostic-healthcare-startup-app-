@@ -27,7 +27,8 @@ export interface CatalogItem {
 export async function loadCatalog(labId: string | null): Promise<CatalogItem[]> {
   const rated = labId
     ? new Set(
-        (await db.labRateCardEntry.findMany({ where: { labId }, select: { testId: true } })).map(
+        // A test the lab has paused (analyser down) is not offered until resumed.
+        (await db.labRateCardEntry.findMany({ where: { labId, isPaused: false }, select: { testId: true } })).map(
           (r) => r.testId,
         ),
       )

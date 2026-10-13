@@ -116,6 +116,42 @@ NABL publishes no verification API, so this is deliberately *structured evidence
 human sign-off plus automated expiry*. The code does not pretend a machine checked
 something a machine cannot check.
 
+### The partner app
+
+Partners have their own door and their own app, the way a restaurant partner app is
+separate from the ordering app. After any sign-in, one table decides where each
+account lands (`lib/auth/home.ts`): a family goes to `/caregiver`, a lab to `/lab`.
+
+| Path | What | Files |
+|---|---|---|
+| `/lab/login`, `/lab/register` | Partner sign-in and registration | `app/lab/(auth)/` |
+| `/lab/apply` | The application, before a lab exists | `app/lab/(onboarding)/` |
+| `/lab` | Order terminal: live feed, board, scanner | `app/lab/(console)/` |
+| `/lab/earnings`, `/lab/catalog`, `/lab/profile` | Earnings, rate card, lab details | `app/lab/(console)/` |
+
+The parenthesised folders are route groups: they never appear in a URL, and each has
+its own layout and guard, so nothing in the family app (`app/caregiver`) renders in
+the partner app or the other way round. Set `PARTNER_HOST` (e.g.
+`partners.medwyn.in`) to serve the same pages at the root of their own host.
+
+**Orders.** A paid order rings on the lab's terminal. The lab accepts, or rejects
+with a reason, within 30 minutes, and never within 3 hours of the visit; after that
+it counts as accepted, because the agreement already commits the lab's capacity. A
+rejection re-routes the order through the same gate as a booking (accredited scope,
+capacity, nothing paused, nearest first) at the family's original price, and never
+back to a lab that turned it down. If no lab can take it, it becomes an incident for
+ops. (`lib/orders/lab-orders.ts`)
+
+**Results.** One field per test in the order; nothing is saved unless every test has
+a valid value (`lib/orders/results.ts`). The signed PDF is uploaded beside it, checked
+to really be a PDF, stored encrypted, and served sandboxed.
+
+**Roles.** Owner: everything. Manager: orders, results, catalog. Intake desk: accept
+orders and receive or reject samples, but not reject orders or sign results.
+
+**Logos.** With `NEXT_PUBLIC_BRANDFETCH_CLIENT_ID` set, each lab's own logo is shown
+from its website domain via Brandfetch's Logo Link CDN; otherwise a monogram.
+
 ---
 
 ## ABHA / ABDM
@@ -203,14 +239,16 @@ OTP codes print to the server console.
 | `+91 98450 00001` | Yeshwin, founder | `/ops` |
 | `+91 98450 00101` | Anjali Iyer, caregiver | `/caregiver` |
 | `+91 98450 00010` | Priya Nair, technician | `/field` |
-| `+91 98451 00200` | Dr. Sudha Rao, lab | `/lab` |
+| `+91 98451 00200` | Dr. Sudha Rao, lab owner | `/lab/login` → `/lab` |
+| `+91 98451 00201` | Ravi Shetty, lab intake desk | `/lab/login` → `/lab` |
 
 ### The walkthrough that proves the loop
 
 1. Sign in as Anjali → link or **skip** ABHA → subscribe to Suraksha via the
    simulated UPI Autopay sheet
 2. Add a parent at a Whitefield address → **`radiusGuard` refuses into the waitlist**
-3. As Dr. Rao → upload results → report is `SUMMARY_PENDING_REVIEW`, **not** released
+3. As Dr. Rao at `/lab/login` → accept or reject the new orders → scan `SPC-240002` →
+   enter results and attach the PDF → report is `SUMMARY_PENDING_REVIEW`, **not** released
 4. As ops → verify and release → the 24-hour call task and critical-value alert
    appear automatically
 5. `/ops/critical` → the fixed non-interpretive script; the alert refuses to close
