@@ -20,9 +20,7 @@ export default async function LabApplyPage() {
         <Stack gap="sm">
           <H1>Register your laboratory</H1>
           <Lead>
-            Home-collected samples from families in your neighbourhood, processed by you. You
-            keep your own patients and your own referring doctors — we simply bring you more
-            volume into idle capacity.
+            Home-collected samples from families in your neighbourhood, processed by you. You keep your own patients and referring doctors. We just send you more work for the capacity you already have.
           </Lead>
         </Stack>
 
@@ -38,8 +36,7 @@ export default async function LabApplyPage() {
               signed service agreement, and your supervising pathologist’s council registration.
             </p>
             <Muted>
-              We do this because the alternative — a self-serve signup that routes blood to
-              whoever fills in a form — is indefensible. It usually takes two working days.
+              We won’t send blood samples to anyone who simply fills in a form. It usually takes two working days.
             </Muted>
           </Stack>
         </Card>

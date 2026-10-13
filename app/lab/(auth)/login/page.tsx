@@ -55,8 +55,8 @@ export default async function PartnerLoginPage() {
             <H3>Demo partner accounts</H3>
             <Muted>No SMS gateway is configured, so the code appears on screen.</Muted>
             <ul className="flex flex-col gap-2 font-mono text-small">
-              <li>+91 98451 00200 — Dr. Sudha Rao, owner, Ananya Diagnostics</li>
-              <li>+91 98451 00201 — Ravi Shetty, intake desk (cannot reject or sign)</li>
+              <li>+91 98451 00200: Dr. Sudha Rao, owner, Ananya Diagnostics</li>
+              <li>+91 98451 00201: Ravi Shetty, intake desk (cannot reject or sign)</li>
             </ul>
           </Stack>
         </Card>

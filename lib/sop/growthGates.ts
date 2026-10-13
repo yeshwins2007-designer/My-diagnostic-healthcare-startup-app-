@@ -96,7 +96,7 @@ export function evaluateZoneTwoUnlock(input: GateInputs): GateResult {
     passed,
     criteria,
     guidance: passed
-      ? 'Zone one runs without you. Repeat the identical playbook in an adjacent zone — same radius logic, one anchor lab per zone.'
+      ? 'Zone one runs without you. Repeat the identical playbook in an adjacent zone: same radius logic, one anchor lab per zone.'
       : 'Geography compounds only when the previous zone runs without you in it. Keep out-of-zone families on the waitlist; that list is the evidence for opening zone two, not a reason to break the radius today.',
   };
 }
@@ -150,8 +150,8 @@ export function evaluateMarketplaceUnlock(input: GateInputs): GateResult {
     passed,
     criteria,
     guidance: passed
-      ? 'Demand is proven and the playbook is written. Open lab applications — every one still passes the seven-point NABL verification before it can receive a single sample.'
-      : 'Until this passes, run on the ops console, WhatsApp and the phone. If referral share is near zero, the service is not remarkable enough yet — fix the experience before spending on acquisition or on more software.',
+      ? 'Demand is proven and the playbook is written. Open lab applications. Every one still passes the seven-point NABL verification before it can receive a single sample.'
+      : 'Until this passes, run on the ops console, WhatsApp and the phone. If referral share is near zero, the service is not remarkable enough yet. Fix the experience before spending on acquisition or on more software.',
   };
 }
 
@@ -183,7 +183,7 @@ export function evaluateSecondTechnician(input: GateInputs): GateResult {
     passed,
     criteria,
     guidance: passed
-      ? 'Density supports a second route. Cross-train immediately — key-person dependency on one technician is a major risk.'
+      ? 'Density supports a second route. Cross-train someone now: depending on one technician is a major risk.'
       : input.technicianCount > 1
         ? 'You already have more than one technician. Watch visits per morning: adding people before density exists is what makes margin negative.'
         : 'One technician is enough at this stage. Two is a mistake until the first is consistently doing six or more morning visits.',

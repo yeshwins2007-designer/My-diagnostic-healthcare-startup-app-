@@ -212,8 +212,10 @@ const buttonTones: Record<ButtonTone, string> = {
     'bg-[var(--color-red)] text-[var(--color-red-ink)] border-[var(--color-red)] hover:opacity-90',
 };
 
+// `btn` styles nothing by itself; app/apple.css uses it to make buttons capsules
+// on Apple devices.
 const buttonBase =
-  'inline-flex items-center justify-center gap-2.5 rounded-[var(--radius-control)] border px-5 font-medium min-h-[var(--size-touch)] text-[0.9375rem] tracking-[-0.005em] disabled:opacity-40 disabled:cursor-not-allowed';
+  'btn inline-flex items-center justify-center gap-2.5 rounded-[var(--radius-control)] border px-5 font-medium min-h-[var(--size-touch)] text-[0.9375rem] tracking-[-0.005em] disabled:opacity-40 disabled:cursor-not-allowed';
 
 export function Button({
   children,

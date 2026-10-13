@@ -144,9 +144,11 @@ jobs:
             echo 'also sign up with email; both the email and SMS codes appear on screen.'
             echo
             echo "To try it as a new family instead, sign up with any other 10-digit"
-            echo "number and give the parent's pincode as **560011**. The pilot serves"
-            echo "5 km around Jayanagar 4th Block; any other address is put on the"
-            echo "waitlist, by design."
+            echo "number and give the parent's pincode as **560011**. That is the sample"
+            echo "service area in the demo data; other pincodes go on the waitlist."
+            echo
+            echo "On an iPhone, iPad or Mac the app uses Apple's look (system font, glass"
+            echo "tab bar, iOS colours). Android looks exactly as before."
           } >> "$GITHUB_STEP_SUMMARY"
 
           echo "PREVIEW URL: $URL"
@@ -204,10 +206,12 @@ jobs:
               "on the login screen. A passkey is tied to this preview address, so it stops "
               "working when the preview ends.\n\n"
               "To try it as a new family instead, sign up with any other 10-digit number "
-              "and give the parent's pincode as **560011**. The pilot serves 5 km around "
-              "Jayanagar 4th Block; any other address is put on the waitlist, by design.\n\n"
+              "and give the parent's pincode as **560011**. That is the sample service area "
+              "in the demo data; other pincodes go on the waitlist.\n\n"
+              "On an iPhone, iPad or Mac the app uses Apple's look (system font, glass tab "
+              "bar, iOS colours). Android looks exactly as before.\n\n"
               "Sign-in is rate limited to 10 codes per 10 minutes per IP, so if you "
-              "switch roles repeatedly you will be asked to wait a few minutes — that "
+              "switch roles repeatedly you will be asked to wait a few minutes. That "
               "is the limiter working, not a fault. The tunnel dies with the job."
           )
           req = urllib.request.Request(

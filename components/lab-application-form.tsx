@@ -107,7 +107,7 @@ export function LabApplicationForm() {
             <Field
               label="Accredited scope"
               required
-              hint="Tick every discipline on your certificate. We match the discipline of each test against this list before routing — so leaving one out means less work sent to you, not more."
+              hint="Tick every discipline on your certificate. We match the discipline of each test against this list before routing, so leaving one out means less work for you, not more."
             >
               <div className="grid gap-3 sm:grid-cols-2">
                 {Discipline.values.map((discipline) => (
@@ -171,7 +171,7 @@ export function LabApplicationForm() {
             <Field
               label="ABDM publishing"
               required
-              hint="If you already push reports to ABDM yourself, say so — we will not publish on your behalf, because double-publishing creates duplicate records in the patient's own health account."
+              hint="If you already send reports to ABDM yourself, tell us. We won’t publish on your behalf, because double-publishing creates duplicate records in the patient's own health account."
             >
               <Select name="abdmMode" required defaultValue="NONE">
                 <option value="NONE">We do not publish to ABDM</option>

@@ -59,6 +59,7 @@ export function ThemeToggle() {
     <div
       role="group"
       aria-label="Screen brightness"
+      data-segmented
       className="flex items-center gap-1"
     >
       {OPTIONS.map((option) => (

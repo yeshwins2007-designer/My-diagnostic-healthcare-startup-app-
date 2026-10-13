@@ -222,8 +222,7 @@ export default async function ReportDetailPage({
                 Please contact {firstName}’s doctor today.
               </p>
               <p>
-                If they are unwell right now — chest pain, breathlessness, confusion, or you
-                cannot wake them — call {brand.emergencyNumber} or go to the nearest hospital.
+                If they feel unwell right now (chest pain, trouble breathing, confusion, or you can’t wake them), call {brand.emergencyNumber} or go to the nearest hospital.
               </p>
               <Muted>
                 We cannot tell you what the value means. Only a doctor can, and we would be
@@ -325,7 +324,7 @@ export default async function ReportDetailPage({
               <H3>Reading this</H3>
               <p>
                 The bands come from comparing each value against the laboratory’s own reference
-                range — nothing more. A value outside its range is not a diagnosis, and a value
+                range, and nothing else. A value outside its range is not a diagnosis, and a value
                 inside one is not a clean bill of health.
               </p>
               <Muted>

@@ -222,7 +222,7 @@ function reportGoogleStatus(api: string, status: string, message?: string) {
   console.error(
     `[maps] Google ${api} returned ${status}${message ? `: ${message}` : ''}. ` +
       'REQUEST_DENIED usually means the key is referrer-restricted and cannot ' +
-      'be used server-side — set GOOGLE_MAPS_SERVER_KEY to an IP-restricted key.',
+      'be used server-side. Set GOOGLE_MAPS_SERVER_KEY to an IP-restricted key.',
   );
 }
 

@@ -140,8 +140,8 @@ export async function POST(request: Request) {
         source: 'VOICE_AGENT',
         category: 'CLINICAL_HANDOFF',
         subject: guard.isEmergency
-          ? 'URGENT — caller described a possible medical emergency'
-          : 'Caller asked something clinical — coordinator callback needed',
+          ? 'URGENT: caller described a possible medical emergency'
+          : 'Caller asked something clinical, coordinator callback needed',
         body: utterance,
         priority: guard.isEmergency ? 'URGENT' : 'HIGH',
       },

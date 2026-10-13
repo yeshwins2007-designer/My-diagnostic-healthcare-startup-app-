@@ -173,7 +173,7 @@ const SCRIPTED_INTENTS: { intent: string; patterns: RegExp[]; reply: string }[] 
     intent: 'complaint',
     patterns: [/complain|late|rude|unhappy|problem/i, /शिकायत|देर\s*हो/],
     reply:
-      'I am sorry — that should not have happened. I am opening a ticket and a coordinator will call you back today. Can you tell me briefly what went wrong, so I can put it in the ticket in your words?',
+      'I’m sorry, that shouldn’t have happened. I am opening a ticket and a coordinator will call you back today. Can you tell me briefly what went wrong, so I can put it in the ticket in your words?',
   },
 ];
 

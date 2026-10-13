@@ -74,7 +74,7 @@ export function evaluateRadius(
     return {
       decision: refuse(
         `This address is ${nearest.distanceKm.toFixed(1)} km from ${nearest.zone.name}, outside the ${nearest.zone.radiusKm} km service radius.`,
-        'Add the family to the waitlist. Out-of-zone demand is the evidence that justifies opening the next zone — serving them today destroys route density for everyone already inside it.',
+        'Add the family to the waitlist. Out-of-zone demand is the evidence for opening the next zone. Serving them today destroys route density for everyone already inside it.',
         { nearestZoneId: nearest.zone.id, distanceKm: nearest.distanceKm },
       ),
       distanceKm: nearest.distanceKm,

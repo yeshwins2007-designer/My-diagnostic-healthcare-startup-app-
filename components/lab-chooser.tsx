@@ -64,9 +64,7 @@ export function LabChooser({
         <Stack gap="sm">
           <H3>Which laboratory should test {patientName}’s samples?</H3>
           <Muted>
-            Every laboratory below is NABL-accredited for each test in the {panelName}. We
-            check that before offering it — a result produced outside a laboratory’s
-            accredited scope is not a valid result.
+            Every laboratory below is NABL-accredited for each test in the {panelName}. We check this before offering it, because a result from outside a lab’s accredited scope isn’t valid.
           </Muted>
         </Stack>
 

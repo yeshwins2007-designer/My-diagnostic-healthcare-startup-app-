@@ -68,7 +68,7 @@ export function VoiceLauncher() {
         ...t,
         {
           role: 'agent',
-          text: 'Sorry — I could not reach our system just now. Please call us on the number at the top of the screen.',
+          text: 'Sorry, I couldn’t reach our system just now. Please call us on the number at the top of the screen.',
         },
       ]);
     } finally {
@@ -163,7 +163,7 @@ export function VoiceLauncher() {
           >
             {LOCALES.map((l) => (
               <option key={l.key} value={l.key}>
-                {l.native} — {l.english}
+                {l.native} ({l.english})
               </option>
             ))}
           </select>
@@ -178,8 +178,7 @@ export function VoiceLauncher() {
               visit, or a booking.
             </p>
             <p>
-              I cannot explain what results mean, or advise on medicines — those go straight to
-              a coordinator who calls you back.
+              I can’t explain results or give advice on medicines. For those, a coordinator will call you back.
             </p>
           </div>
         ) : (

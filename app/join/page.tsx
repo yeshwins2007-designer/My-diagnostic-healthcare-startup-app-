@@ -35,7 +35,7 @@ export default async function JoinPage({
               </H1>
               <Lead>
                 {intent === 'business'
-                  ? 'We will ask for your NABL certificate, your accredited scope and your capacity. Registering is an application — a person reviews every one before a single sample is routed to you.'
+                  ? 'We will ask for your NABL certificate, your accredited scope and your capacity. Registering is an application. A person reviews every one before a single sample is routed to you.'
                   : 'We will send a six-digit code to your mobile. You will add your parent’s details next; nothing is charged until you book and pay for tests.'}
               </Lead>
             </Stack>
@@ -81,7 +81,7 @@ export default async function JoinPage({
                 <H3>I run a diagnostic laboratory</H3>
                 <p className="text-[var(--color-ink-soft)]">
                   Receive a steady stream of home-collected samples from families in your
-                  neighbourhood. You keep your own patients; we simply bring you more.
+                  neighbourhood. You keep your own patients, and we send you more.
                 </p>
                 <Muted>
                   Requires a current NABL medical laboratory accreditation (MC-XXXX) and a named

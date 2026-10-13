@@ -107,7 +107,7 @@ export function CommandMenu({
         type="button"
         onClick={open}
         aria-label="Search and go to (Command K)"
-        className="inline-flex h-12 min-w-12 items-center justify-center gap-3 rounded-[var(--radius-control)] border border-[var(--color-line-strong)] px-3 text-[var(--color-ink-faint)] hover:text-[var(--color-ink)] sm:min-w-56 sm:justify-between"
+        className="icon-btn inline-flex h-12 min-w-12 items-center justify-center gap-3 rounded-[var(--radius-control)] border border-[var(--color-line-strong)] px-3 text-[var(--color-ink-faint)] hover:text-[var(--color-ink)] sm:min-w-56 sm:justify-between"
       >
         <span className="inline-flex items-center gap-2.5">
           <svg aria-hidden viewBox="0 0 24 24" width="18" height="18">

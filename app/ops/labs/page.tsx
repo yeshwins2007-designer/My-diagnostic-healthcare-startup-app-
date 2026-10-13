@@ -169,8 +169,7 @@ export default async function OpsLabsPage() {
                             </div>
                             <Muted>
                               Every booking checks the discipline of each test against this
-                              list. It is what stops an HbA1c — Clinical Biochemistry — being
-                              routed to a laboratory accredited only for Microbiology.
+                              list. It is what stops an HbA1c (Clinical Biochemistry) being routed to a laboratory accredited only for Microbiology.
                             </Muted>
                           </Stack>
                         </div>

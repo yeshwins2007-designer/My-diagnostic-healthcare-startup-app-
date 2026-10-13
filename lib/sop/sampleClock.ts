@@ -61,7 +61,7 @@ export function readClock(input: {
       fraction,
       label:
         elapsed > budget
-          ? `Delivered late — ${elapsed} min (budget ${budget})`
+          ? `Delivered late: ${elapsed} min (budget ${budget})`
           : `Delivered in ${elapsed} min`,
     };
   }
@@ -84,7 +84,7 @@ export function readClock(input: {
       remainingMinutes: remaining,
       budgetMinutes: budget,
       fraction,
-      label: `${remaining} min left — go straight to the lab`,
+      label: `${remaining} min left, go straight to the lab`,
     };
   }
 
@@ -122,7 +122,7 @@ export function evaluateIntake(reading: ClockReading): Decision {
     );
   }
   if (reading.state === 'AMBER') {
-    return warn(`Intake at ${reading.elapsedMinutes} minutes — inside the limit but close.`);
+    return warn(`Intake at ${reading.elapsedMinutes} minutes, inside the limit but close.`);
   }
   return allow();
 }

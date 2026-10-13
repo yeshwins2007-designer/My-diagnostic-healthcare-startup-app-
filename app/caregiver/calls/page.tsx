@@ -40,8 +40,7 @@ export default async function CallsPage() {
         <Stack gap="sm">
           <H1>Our calls to you</H1>
           <Lead>
-            We call within 24 hours of every report. Every time. Here is the record — including
-            any we owe you.
+            We call within 24 hours of every report. Here’s every call, including any we still owe you.
           </Lead>
         </Stack>
 
@@ -61,8 +60,7 @@ export default async function CallsPage() {
                     </div>
                     {u.level === 'OVERDUE' && (
                       <Muted>
-                        We are late on this one. That is our failure, not a queue you need to
-                        join — a coordinator will call, and you can always call us first.
+                        We’re late with this one, and that’s on us. A coordinator will call you, or you can call us any time.
                       </Muted>
                     )}
                   </Stack>
@@ -78,7 +76,7 @@ export default async function CallsPage() {
               <H3>Calls we missed</H3>
               <Muted>
                 {missed.length} call{missed.length === 1 ? '' : 's'} passed the 24-hour window
-                without being made. We show these rather than quietly closing them.
+                without being made. We keep them here so you can see them.
               </Muted>
             </Stack>
           </Card>

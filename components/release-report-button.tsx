@@ -61,7 +61,7 @@ export function ReleaseReportButton({ reportId }: { reportId: string }) {
             })
           }
         >
-          {pending ? 'Releasing…' : 'Yes — release it'}
+          {pending ? 'Releasing…' : 'Yes, release it'}
         </Button>
         <Button tone="secondary" onClick={() => setConfirming(false)} disabled={pending}>
           Not yet

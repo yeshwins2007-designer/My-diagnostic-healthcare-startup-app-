@@ -85,7 +85,7 @@ export function LabVerificationPanel({
                 <Muted>
                   {check.passed ? 'Passed' : 'Failed'} by {check.checkedBy} on{' '}
                   {check.checkedAt ? new Date(check.checkedAt).toLocaleString('en-IN') : ''}
-                  {check.note && ` — ${check.note}`}
+                  {check.note && ` · ${check.note}`}
                 </Muted>
               )}
 

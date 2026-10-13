@@ -358,7 +358,7 @@ export async function publishReportToAbha(reportId: string): Promise<AbhaActionS
   if (!report.patient.abhaAccount?.abhaAddress) {
     return {
       ok: false,
-      error: 'This patient has no linked health account — which is fine, it is optional.',
+      error: 'This patient doesn’t have a linked health account. That’s fine, it’s optional.',
     };
   }
 
@@ -377,7 +377,7 @@ export async function publishReportToAbha(reportId: string): Promise<AbhaActionS
       abhaAccountId: report.patient.abhaAccount.id,
       bookingId: report.bookingId,
       referenceNumber: report.booking.reference,
-      display: `Home collection — ${report.booking.windowStart.toLocaleDateString('en-IN')}`,
+      display: `Home collection, ${report.booking.windowStart.toLocaleDateString('en-IN')}`,
     },
     update: {},
   });

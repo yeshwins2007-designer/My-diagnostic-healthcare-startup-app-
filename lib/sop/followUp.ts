@@ -59,7 +59,7 @@ export function evaluateCompletion(input: {
   if (input.whatWorriedYou.trim().length < 3 || input.whatWouldImprove.trim().length < 3) {
     return refuse(
       'Both questions need an answer before this call can be marked done.',
-      'Ask: "What worried you?" and "What would make you do this every month?" — then write down what they actually said. If they said "nothing", write "nothing".',
+      'Ask: "What worried you?" and "What would make you do this every month?" Then write down what they actually said. If they said "nothing", write "nothing".',
     );
   }
   return allow();

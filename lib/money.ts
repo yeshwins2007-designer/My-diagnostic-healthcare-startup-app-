@@ -66,9 +66,9 @@ export function numberToWordsIN(paiseAmount: number): string {
   return `${parts.join(' ').replace(/\s+/g, ' ').trim()} rupees`;
 }
 
-/** "₹1,799 — one thousand seven hundred ninety nine rupees" */
+/** "₹1,799 (one thousand seven hundred ninety nine rupees)" */
 export function formatINRWithWords(paiseAmount: number): string {
-  return `${formatINR(paiseAmount)} — ${numberToWordsIN(paiseAmount)}`;
+  return `${formatINR(paiseAmount)} (${numberToWordsIN(paiseAmount)})`;
 }
 
 /**

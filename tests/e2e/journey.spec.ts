@@ -104,6 +104,8 @@ test.describe('a new family', () => {
     await page.getByLabel(/^Age/).fill('76');
     await page.getByLabel(/house number/i).fill('14, 11th Main, 4th Block');
     await page.getByLabel(/landmark/i).fill('Near Jayanagar Shopping Complex');
+    await page.getByLabel(/^City/).fill('Bengaluru');
+    await page.getByLabel(/^State/).fill('Karnataka');
     await page.getByLabel(/pincode/i).fill('560011'); // the zone's own centre
     await page.getByRole('button', { name: /add and book tests/i }).click();
 
@@ -206,12 +208,14 @@ test.describe('the radius rule', () => {
     await page.getByLabel(/^Age/).fill('78');
     await page.getByLabel(/house number/i).fill('12, Palm Meadows');
     await page.getByLabel(/landmark/i).fill('Near the ITPL gate');
+    await page.getByLabel(/^City/).fill('Bengaluru');
+    await page.getByLabel(/^State/).fill('Karnataka');
     // Whitefield — roughly 17 km from the Jayanagar anchor.
     await page.getByLabel(/pincode/i).fill('560066');
 
     await page.getByRole('button', { name: /add and book tests/i }).click();
 
-    await expect(page.getByText(/cannot serve this address well yet/i)).toBeVisible();
+    await expect(page.getByText(/we don’t visit this area yet/i)).toBeVisible();
     await expect(page.getByText(/waitlist/i).first()).toBeVisible();
     // It must not silently take the booking.
     await expect(page).toHaveURL(/onboarding/);

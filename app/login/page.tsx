@@ -59,16 +59,16 @@ export default async function LoginPage() {
               numbers work, or any new number to sign up:
             </Muted>
             <ul className="flex flex-col gap-2 font-mono text-small">
-              <li>+91 98450 00101 — Anjali Iyer, family (Medwyn One member)</li>
+              <li>+91 98450 00101: Anjali Iyer, family (Medwyn One member)</li>
               {emailAuthEnabled && (
                 <li>
                   Email tab: anjali.iyer@example.com, password monsoon-tea-garden (Anjali again)
                 </li>
               )}
-              <li>+91 98450 00103 — Fatima Sheikh, family (pays per test)</li>
-              <li>+91 98450 00001 — ops console</li>
-              <li>+91 98450 00010 — Priya Nair, field technician</li>
-              <li>+91 98451 00200 — Dr. Sudha Rao, partner laboratory</li>
+              <li>+91 98450 00103: Fatima Sheikh, family (pays per test)</li>
+              <li>+91 98450 00001: ops console</li>
+              <li>+91 98450 00010: Priya Nair, field technician</li>
+              <li>+91 98451 00200: Dr. Sudha Rao, partner laboratory</li>
             </ul>
           </Stack>
         </Card>

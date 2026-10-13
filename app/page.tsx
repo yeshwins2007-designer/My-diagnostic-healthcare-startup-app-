@@ -19,14 +19,13 @@ import {
 } from '@/components/ui';
 
 export default async function LandingPage() {
-  const [catalog, plan, anchorLab, zone] = await Promise.all([
+  const [catalog, plan, anchorLab] = await Promise.all([
     labForFamily(null).then(loadCatalog),
     loadMedwynOne(),
     db.lab.findFirst({
       where: { status: 'ACTIVE', brandingConsent: true },
       include: { accreditation: true },
     }),
-    db.zone.findFirst({ where: { isActive: true }, orderBy: { sequence: 'asc' } }),
   ]);
 
   return (
@@ -62,14 +61,14 @@ export default async function LandingPage() {
 
             <Card tone="primary" className="text-[var(--color-ink)]">
               <Stack gap="sm">
-                <H3>What you actually get</H3>
+                <H3>What you get</H3>
                 <ul className="flex flex-col gap-3">
                   {[
-                    'The same trained person visits, every month.',
-                    'A sixty-minute window we tell you in writing — and a call before it, if we are going to be late.',
-                    'Results explained in plain language, in your language.',
-                    'A phone call from us within 24 hours of every report. Every time.',
-                    'An immediate call if the laboratory flags anything urgent.',
+                    'The same trained person visits every month.',
+                    'A one-hour visit window, sent to you in writing. If we’re running late, we call first.',
+                    'Results explained in plain words, in your language.',
+                    'A call from us within 24 hours of every report.',
+                    'A call straight away if the lab flags anything urgent.',
                   ].map((line) => (
                     <li key={line} className="flex gap-3">
                       <span aria-hidden className="text-[var(--color-primary)]">
@@ -105,27 +104,26 @@ export default async function LandingPage() {
               pretending the app is for the patient. */}
           <section>
             <Stack gap="md">
-              <H2>There are two people in this decision</H2>
+              <H2>Who this is for</H2>
               <div className="grid gap-5 md:grid-cols-2">
                 <Card>
                   <Stack gap="sm">
                     <Badge>Who pays</Badge>
-                    <H3>You — the son or daughter</H3>
+                    <H3>You, the son or daughter</H3>
                     <p className="text-[var(--color-ink-soft)]">
-                      Usually 32 to 55, often in another city or another country. You handle
-                      the booking, the payment and the tracking. You get the call after every
-                      report, so you stop wondering whether they are okay.
+                      Often living in another city, or another country. You book, you pay,
+                      and you can follow the visit on your phone. We call you after every
+                      report, so you don’t have to wonder how they’re doing.
                     </p>
                   </Stack>
                 </Card>
                 <Card>
                   <Stack gap="sm">
                     <Badge>Who is served</Badge>
-                    <H3>Your parent — at home</H3>
+                    <H3>Your parent, at home</H3>
                     <p className="text-[var(--color-ink-soft)]">
-                      They never have to log in to anything. A person they recognise arrives
-                      at the door, and leaves a large-print summary card they can read without
-                      their glasses.{' '}
+                      They never need to log in to anything. Someone they know comes to the
+                      door, and leaves a large-print card they can read without glasses.{' '}
                       <Link href="/elder" className="font-semibold underline">
                         See what they see
                       </Link>
@@ -146,7 +144,7 @@ export default async function LandingPage() {
           {anchorLab?.accreditation && (
             <Card tone="sunken">
               <Stack gap="sm">
-                <H3>Who actually runs your tests</H3>
+                <H3>Who runs your tests</H3>
                 <p>
                   Processed at <strong>{anchorLab.name}</strong>, NABL-accredited{' '}
                   <strong>{anchorLab.accreditation.certificateNumber}</strong>, valid until{' '}
@@ -168,23 +166,20 @@ export default async function LandingPage() {
             </Card>
           )}
 
-          {zone && (
-            <Card>
-              <Stack gap="sm">
-                <H3>Where we work</H3>
-                <p>
-                  {zone.name}, {zone.city} — a {zone.radiusKm} km radius around our partner
-                  laboratory.
-                </p>
-                <Muted>
-                  The radius is not caution, it is biology: every sample has to reach the lab
-                  within two hours, and the same technician has to be able to keep visiting the
-                  same families. If you are outside it we will put you on the waitlist rather
-                  than promise something we cannot do well.
-                </Muted>
-              </Stack>
-            </Card>
-          )}
+          <Card>
+            <Stack gap="sm">
+              <H3>Where we visit</H3>
+              <p>
+                We only cover a small area around each partner lab. A blood sample has to reach
+                the lab within two hours, and it lets the same technician keep coming to your
+                parent.
+              </p>
+              <Muted>
+                Add your parent’s address and we’ll tell you right away if we can visit. If not
+                yet, we’ll put you on the waitlist and call you when we reach your area.
+              </Muted>
+            </Stack>
+          </Card>
 
           <footer className="border-t border-[var(--color-line)] pt-6">
             <Muted>

@@ -9,7 +9,6 @@ import {
   Field,
   H3,
   Input,
-  Muted,
   PrimaryActionBar,
   Select,
   Stack,
@@ -56,7 +55,7 @@ export function AddPatientForm() {
 
             <Field
               label="Ongoing conditions"
-              hint="Diabetes, blood pressure, thyroid, kidney — whatever the doctor is monitoring."
+              hint="Diabetes, blood pressure, thyroid, kidneys: anything their doctor keeps an eye on."
             >
               <Input name="conditions" placeholder="Type 2 diabetes, hypertension" />
             </Field>
@@ -74,18 +73,18 @@ export function AddPatientForm() {
             <Field
               label="How mobile are they?"
               required
-              hint="This sets how long we book for the visit. Nobody should feel rushed."
+              hint="We use this to decide how long to book, so nobody feels rushed."
             >
               <Select name="mobility" required defaultValue="INDEPENDENT">
-                <option value="INDEPENDENT">Independent — moves around on their own</option>
-                <option value="ASSISTED">Needs some help — slower, may need support</option>
-                <option value="HOUSEBOUND">Housebound — frail, longer visit needed</option>
+                <option value="INDEPENDENT">Gets around on their own</option>
+                <option value="ASSISTED">Needs some help moving around</option>
+                <option value="HOUSEBOUND">Rarely leaves home, needs a longer visit</option>
               </Select>
             </Field>
 
             <Field
               label="Anything the technician should know"
-              hint="“Hard of hearing, speak on the left.” “Has dementia — greet slowly and re-introduce yourself.” “Veins are fragile, please warm the arm first.”"
+              hint="For example: “Hard of hearing, please speak on his left side” or “Her veins are fragile, warm the arm first.”"
             >
               <Textarea name="careNotes" className="min-h-28" />
             </Field>
@@ -97,10 +96,10 @@ export function AddPatientForm() {
                 className="mt-1 h-12 w-12 shrink-0 accent-[var(--color-primary)]"
               />
               <span>
-                They cannot give consent themselves and I am authorised to give it for them.
+                They can’t give consent themselves, and I’m allowed to give it for them.
                 <span className="block text-small text-[var(--color-ink-faint)]">
-                  Tick this only if it is genuinely true — the technician will record family
-                  authorisation at every visit instead of asking them directly.
+                  Only tick this if it’s true. At each visit, the technician will ask the family
+                  for permission instead of asking your parent.
                 </span>
               </span>
             </label>
@@ -117,17 +116,17 @@ export function AddPatientForm() {
 
             <Field
               label="Landmark"
-              hint="This matters more than the address. “Opposite the park gate.” “Last house on the lane, green door.”"
+              hint="This often helps more than the address. Something like “opposite the park gate” or “last house on the lane, green door”."
             >
               <Input name="landmark" />
             </Field>
 
             <div className="grid gap-5 sm:grid-cols-3">
               <Field label="City" required>
-                <Input name="city" defaultValue="Bengaluru" required />
+                <Input name="city" required autoComplete="address-level2" />
               </Field>
               <Field label="State" required>
-                <Input name="state" defaultValue="Karnataka" required />
+                <Input name="state" required autoComplete="address-level1" />
               </Field>
               <Field label="Pincode" required>
                 <Input name="pincode" inputMode="numeric" pattern="\d{6}" maxLength={6} required />
@@ -139,13 +138,8 @@ export function AddPatientForm() {
         {state.waitlisted && (
           <Card tone="yellow">
             <Stack gap="sm">
-              <H3>We cannot serve this address well yet</H3>
-              <p>{state.reason}</p>
+              <H3>{state.reason}</H3>
               <p>{state.remedy}</p>
-              <Muted>
-                We will not take your money for a service we would deliver badly. You are on the
-                waitlist and we will call you.
-              </Muted>
             </Stack>
           </Card>
         )}

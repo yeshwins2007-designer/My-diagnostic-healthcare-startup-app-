@@ -59,12 +59,11 @@ export default async function FollowUpsPage() {
         <Stack gap="sm">
           <H1>Follow-up calls</H1>
           <Lead>
-            Within 24 hours of every report. Every time. This single step drives most of your
-            retention — there is no acceptable completion rate below 100%.
+            Within 24 hours of every report. This one step drives most of your retention, so the only acceptable completion rate is 100%.
           </Lead>
           {overdue.length > 0 && (
             <Badge tone="red">
-              {overdue.length} overdue — call {overdue.length === 1 ? 'it' : 'them'} before
+              {overdue.length} overdue. Call {overdue.length === 1 ? 'it' : 'them'} before
               anything else on this page
             </Badge>
           )}

@@ -119,8 +119,7 @@ export default async function CaregiverHome() {
                 again to check that you reached someone.
               </p>
               <p className="text-small text-[var(--color-ink-soft)]">
-                We cannot explain what the result means — only a doctor can. The signed report
-                is below.
+                We can’t tell you what the result means. Only a doctor can do that. The signed report is below.
               </p>
               <ButtonLink href={`/caregiver/reports/${openCritical.id}`} tone="danger">
                 Open the report
@@ -272,7 +271,7 @@ export default async function CaregiverHome() {
               {next.technician && (
                 <p className="text-[var(--color-ink-soft)]">
                   <strong className="font-medium text-[var(--color-ink)]">{next.technician.user.name}</strong> is coming
-                  {sameTechnicianAsLastTime ? ' — the same technician as last time.' : '.'}
+                  {sameTechnicianAsLastTime ? ' again.' : '.'}
                 </p>
               )}
               {next.fastingRequired && (

@@ -1,6 +1,6 @@
 /**
  * Product identity in one place. Rename the business here and it changes
- * everywhere — page titles, the voice agent's introduction, printed cards.
+ * everywhere: page titles, the voice agent's introduction, printed cards.
  */
 export const brand = {
   name: 'MEDWYN',
@@ -11,12 +11,11 @@ export const brand = {
    * at a doorstep and the sentence the voice agent opens with.
    */
   oneLiner:
-    'We look after the regular blood tests and health monitoring of elderly parents at home — the same trained person visits every month, results are explained in plain language, and the family gets a call the moment anything looks wrong.',
+    'We take care of regular blood tests for elderly parents at home. The same trained person visits each month, we explain the results in plain language, and we call the family as soon as anything looks wrong.',
   supportPhone: '+91 80 4718 2200',
   supportWhatsApp: '+91 80 4718 2200',
   emergencyNumber: '108',
   legalEntity: 'SwasthaSetu Health Services Pvt. Ltd.',
-  city: 'Bengaluru',
 
   /**
    * What we are, and what we are not. This is not decoration: it defines what
@@ -30,10 +29,10 @@ export const brand = {
     'A source of new patients for our partner labs',
   ],
   weAreNot: [
-    'A pathology lab — our NABL-accredited partner lab is',
-    'An on-demand transactional test-booking app',
-    'Accountable for diagnostic accuracy — that sits with the accredited lab and its pathologist',
-    'A price-comparison marketplace — families may choose between our accredited partner laboratories, but we do not rank them on price or bid them against each other',
+    'A pathology lab. Our NABL-accredited partner lab runs the tests',
+    'An on-demand test-booking app',
+    'Responsible for how accurate a result is. That sits with the accredited lab and its pathologist',
+    'A price-comparison site. Families can choose between our accredited partner labs, but we don’t rank them on price or make them bid against each other',
   ],
 
   /**

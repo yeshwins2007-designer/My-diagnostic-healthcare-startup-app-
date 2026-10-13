@@ -61,7 +61,7 @@ export default async function AuditPage() {
                 : `The chain breaks at entry ${verification.brokenAtSequence}. ${verification.reason}`}
             </p>
             <Muted>
-              Recomputed live on every page load — this is not a stored flag that could itself
+              Recomputed live on every page load. This is not a stored flag that could itself
               be edited.
             </Muted>
           </Stack>

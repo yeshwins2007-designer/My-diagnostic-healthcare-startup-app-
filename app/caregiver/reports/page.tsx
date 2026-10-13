@@ -22,7 +22,7 @@ export const dynamic = 'force-dynamic';
 const BAND_TONE = { GREEN: 'green', YELLOW: 'yellow', RED: 'red' } as const;
 const BAND_LABEL = {
   GREEN: 'All within normal limits',
-  YELLOW: 'Small changes — discuss at the next appointment',
+  YELLOW: 'Small changes, worth raising at the next appointment',
   RED: 'Needs medical attention',
 } as const;
 
@@ -86,8 +86,7 @@ export default async function ReportsPage() {
 
                       {openCritical && (
                         <p className="font-medium text-[var(--color-red)]">
-                          The laboratory flagged something urgent. Please contact their doctor
-                          today — we have already called you.
+                          The laboratory flagged something urgent. Please contact their doctor today. We’ve already called you about it.
                         </p>
                       )}
 

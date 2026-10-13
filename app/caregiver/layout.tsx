@@ -32,7 +32,7 @@ const COMMANDS: CommandItem[] = [
 ];
 
 const iconButton =
-  'inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--radius-control)] border border-[var(--color-line-strong)] text-[var(--color-ink-faint)] hover:text-[var(--color-ink)]';
+  'icon-btn inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--radius-control)] border border-[var(--color-line-strong)] text-[var(--color-ink-faint)] hover:text-[var(--color-ink)]';
 
 export default async function CaregiverLayout({
   children,

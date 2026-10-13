@@ -175,7 +175,7 @@ export function fastingInstruction(
   return [
     `${days === 1 ? 'Tomorrow’s' : 'These'} tests need ${fastingHours} hours of fasting.`,
     `Please finish dinner by ${by}.`,
-    'After that, plain water is fine — please keep drinking water.',
+    'After that, plain water is fine. Please keep drinking water.',
     medicine,
   ].join(' ');
 }

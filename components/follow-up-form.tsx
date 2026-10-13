@@ -9,7 +9,7 @@ function Submit() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending} full>
-      {pending ? 'Saving…' : 'Call made — record it'}
+      {pending ? 'Saving…' : 'Record the call'}
     </Button>
   );
 }

@@ -50,7 +50,7 @@ export function SampleJourney({ status }: { status: string }) {
 
   /*
     Vertical, not a horizontal stepper. Five labels across a phone leave about
-    60px each, and the reader-size control scales text up to 1.32x — so any
+    60px each, and the reader-size control scales text up to 1.32x, so any
     horizontal layout that fits at the default size collides for exactly the
     people who asked for bigger text. A vertical list never runs out of width.
   */

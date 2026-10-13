@@ -141,8 +141,7 @@ export default async function OpsBookingPage({
           <Card tone="yellow">
             <Muted>
               The family was warned about a delay at{' '}
-              {booking.delayNotifiedAt.toLocaleTimeString('en-IN')} — before the window closed,
-              which is the rule.
+              {booking.delayNotifiedAt.toLocaleTimeString('en-IN')}, before the window closed, as the rule requires.
             </Muted>
           </Card>
         )}
@@ -288,7 +287,7 @@ export default async function OpsBookingPage({
               )}
               {gaps.length > 0 && (
                 <Muted>
-                  {gaps.length} logging gap{gaps.length === 1 ? '' : 's'} — longest{' '}
+                  {gaps.length} logging gap{gaps.length === 1 ? '' : 's'}, the longest{' '}
                   {Math.max(...gaps.map((g) => g.gapMinutes))} minutes.
                 </Muted>
               )}

@@ -122,7 +122,7 @@ export default async function AbhaPage({
                   {history.map((record) => (
                     <DataRow
                       key={record.careContextReference}
-                      label={`${record.display} — ${record.source}`}
+                      label={`${record.display} · ${record.source}`}
                       value={new Date(record.date).toLocaleDateString('en-IN')}
                     />
                   ))}
@@ -142,7 +142,7 @@ export default async function AbhaPage({
                 </p>
                 <Muted>
                   Adding one is useful if {patient.name} sees several doctors or has been in
-                  hospital — it puts those records in one place.
+                  hospital. It keeps those records in one place.
                 </Muted>
               </Stack>
             </Card>
@@ -150,7 +150,7 @@ export default async function AbhaPage({
             <AbhaFlow patientId={patient.id} patientName={patient.name} mode="NONE" consents={[]} />
 
             <ButtonLink href="/caregiver" tone="secondary" full>
-              Skip for now — I can add this later
+              Skip for now, I’ll add it later
             </ButtonLink>
           </Stack>
         )}
@@ -161,8 +161,7 @@ export default async function AbhaPage({
             <Muted>
               Your ABDM consent controls which health records move between providers, through the
               national consent manager. It is entirely separate from the permission you give us
-              to collect a sample, store it and share the report with you — we never treat one as
-              covering the other, and you can withdraw either without affecting the other.
+              to collect a sample, store it and share the report with you. One never covers the other, and you can withdraw either one on its own.
             </Muted>
           </Stack>
         </Card>

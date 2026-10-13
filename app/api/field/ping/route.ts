@@ -105,7 +105,7 @@ export async function POST(request: Request) {
       if (family) {
         await getSmsProvider().sendWhatsApp(
           family.user.phone,
-          `We are running about ${check.minutesLate} minutes behind for this morning's visit. We are sorry — we wanted to tell you before your slot ended rather than after. Your technician is on the way.`,
+          `We are running about ${check.minutesLate} minutes behind for this morning's visit. Sorry about this. We wanted to tell you now, not after your slot. Your technician is on the way.`,
         );
       }
 

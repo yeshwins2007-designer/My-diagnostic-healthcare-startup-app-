@@ -93,8 +93,7 @@ export default async function OpsHomePage() {
               tone={sheet.contributionMarginPaise > 0 ? 'green' : 'red'}
             />
             <Muted>
-              Two levers decide whether this works: route density — how many visits one
-              technician completes in a small radius — and retention. Density is a geography
+              Two levers decide whether this works: route density (how many visits one technician completes in a small radius) and retention. Density is a geography
               problem, solved by refusing to expand too early. Retention is a relationship
               problem, solved by the same technician, the follow-up call, and never missing a
               slot.{' '}

@@ -221,7 +221,7 @@ export async function recordCollection(
       ok: false,
       reason: 'The vial has not been confirmed as labelled at the bedside.',
       remedy:
-        'Label it now, in front of the patient, with two identifiers. Labelling afterwards — in the lift, on the bike — is how samples get swapped.',
+        'Label it now, in front of the patient, with two identifiers. Labelling later, in the lift or on the bike, is how samples get swapped.',
     };
   }
 

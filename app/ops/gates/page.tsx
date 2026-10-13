@@ -88,8 +88,7 @@ export default async function GrowthGatesPage() {
               the service radius.
             </p>
             <Muted>
-              That list is the evidence that justifies opening zone two. It is not a queue to
-              start serving early — a technician doing three visits a morning instead of eight
+              That list is the evidence that justifies opening zone two. It is not a queue to start serving early. A technician doing three visits a morning instead of eight
               triples labour cost per visit and turns contribution margin negative. Enforce the
               radius; waitlist out-of-zone families rather than serving them.
             </Muted>

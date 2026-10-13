@@ -73,7 +73,7 @@ export default async function SimulatedCheckoutPage({
           <Muted>
             No Razorpay key is configured, so this stands in for the UPI Autopay approval screen
             your bank app would show. Approving here signs the same callback the real webhook
-            verifies — the verification path is not bypassed.
+            verifies, so nothing is skipped.
           </Muted>
         </Stack>
 

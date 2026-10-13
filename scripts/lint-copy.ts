@@ -18,6 +18,10 @@ import path from 'node:path';
 interface Rule {
   pattern: RegExp;
   why: string;
+  /** Style rules are not claims, so "not" in front of them excuses nothing. */
+  negatable?: boolean;
+  /** Paths the rule does not govern (text no person ever reads). */
+  except?: string[];
 }
 
 const BANNED: Rule[] = [
@@ -62,6 +66,17 @@ const BANNED: Rule[] = [
   {
     pattern: /\bour\s+(?:nabl\s+)?accreditation\b/i,
     why: 'The accreditation is our partner laboratory’s, never ours.',
+  },
+  // House style. Copy is written the way a person talks to a worried family:
+  // short sentences, full stops and commas. An em dash between words is the
+  // most recognisable sign of machine-written text, so prose never uses one.
+  // A lone "—" standing for an empty value is not prose and is allowed.
+  {
+    pattern: /[^\s'"`{(>]\s*—\s*[^\s'"`})<]/,
+    why: 'No em dashes in copy. Use a full stop, a comma or a colon.',
+    negatable: false,
+    // Instructions to the voice model; never shown or spoken to anyone.
+    except: ['lib/providers/voice/prompt.ts'],
   },
 ];
 
@@ -174,13 +189,16 @@ function main() {
         return;
       }
 
-      const scannable = stripComments(line);
+      // Trailing `// ...` comments explain code; they are not copy either.
+      const scannable = stripComments(line).replace(/\s\/\/\s.*$/, '');
+      const rel = path.relative(process.cwd(), file);
 
       for (const rule of BANNED) {
+        if (rule.except?.some((ex) => rel.startsWith(ex))) continue;
         const match = scannable.match(rule.pattern);
         if (!match || match.index === undefined) continue;
         // A banned word that is being forbidden is not a violation.
-        if (isNegated(scannable, match.index)) continue;
+        if (rule.negatable !== false && isNegated(scannable, match.index)) continue;
 
         findings.push({
           file: path.relative(process.cwd(), file),
@@ -195,7 +213,7 @@ function main() {
 
   if (findings.length === 0) {
     console.log(`
-Copy lint passed — ${files.length} files checked.
+Copy lint passed: ${files.length} files checked.
 
 No speed claims, no manufactured urgency, no clinical overreach.
 `);

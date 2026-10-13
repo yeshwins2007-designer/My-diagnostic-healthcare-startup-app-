@@ -269,7 +269,7 @@ function SignUp({ onSignIn }: { onSignIn: () => void }) {
               <Select name="locale" defaultValue={state.locale ?? 'en'}>
                 {LOCALES.map((l) => (
                   <option key={l.key} value={l.key}>
-                    {l.native} — {l.english}
+                    {l.native} ({l.english})
                   </option>
                 ))}
               </Select>

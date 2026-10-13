@@ -37,6 +37,7 @@ export function BottomNav({ items }: { items: BottomNavItem[] }) {
   return (
     <nav
       aria-label="Main"
+      data-tabbar
       className="glass fixed inset-x-0 bottom-0 z-30 border-t pb-[env(safe-area-inset-bottom)] sm:hidden"
     >
       <ul className="mx-auto grid max-w-lg grid-cols-4 px-1">
@@ -85,6 +86,7 @@ export function TopNav({ items, scroll }: { items: { href: string; label: string
   return (
     <nav
       aria-label="Main"
+      data-segmented
       className={`items-center gap-1 rounded-[var(--radius-control)] border border-[var(--color-line)] p-1 ${
         scroll ? 'scroll-x flex w-full whitespace-nowrap' : 'hidden sm:flex'
       }`}

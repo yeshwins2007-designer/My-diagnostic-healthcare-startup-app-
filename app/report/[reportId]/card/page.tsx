@@ -175,9 +175,8 @@ export default async function StoplightCardPage({
         </article>
 
         <p className="no-print mt-5 text-small text-[var(--color-ink-faint)]">
-          This card deliberately carries no numbers. The full signed report, with every value and
-          its reference range, is in the family’s account — and the person to go through it with
-          is the treating doctor.
+          This card has no numbers on purpose. The full signed report, with every value and
+          its reference range, is in the family’s account. The right person to go through it with is their doctor.
         </p>
       </div>
     </div>

@@ -210,7 +210,7 @@ class SimulatedAbdmProvider implements AbdmProvider {
     return [
       {
         careContextReference: 'sim-cc-001',
-        display: 'Diabetic panel — quarterly monitoring',
+        display: 'Diabetic panel, quarterly check',
         date: monthsAgo(3),
         hiType: 'DiagnosticReport',
         source: 'Ananya Diagnostics (simulated)',

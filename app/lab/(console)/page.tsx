@@ -22,7 +22,7 @@ export const dynamic = 'force-dynamic';
 const STATUS_COPY: Record<string, { tone: 'green' | 'yellow' | 'red' | 'info'; text: string }> = {
   SUBMITTED: {
     tone: 'info',
-    text: 'Your application is with our team. A person checks every certificate against the NABL public directory before any sample is routed to you — usually within two working days.',
+    text: 'Your application is with our team. A person checks every certificate against the NABL public directory before any sample is routed to you. It usually takes two working days.',
   },
   UNDER_REVIEW: {
     tone: 'info',
@@ -349,8 +349,7 @@ function NotActive({ lab, submitted }: { lab: PartnerLab; submitted: boolean }) 
             <Stack gap="sm">
               <H3>Application received</H3>
               <p>
-                Thank you. Registering is an application, not an activation — that is deliberate.
-                A person verifies your certificate, your scope and your address against the NABL
+                Thank you. Registering is an application, not an activation. A person verifies your certificate, your scope and your address against the NABL
                 directory before we send you a single human sample.
               </p>
             </Stack>
@@ -376,8 +375,7 @@ function NotActive({ lab, submitted }: { lab: PartnerLab; submitted: boolean }) 
               </div>
               <Muted>
                 We only route tests whose discipline appears here. If your certificate covers more
-                than this list, tell us — an incomplete scope means less work routed to you, not
-                more.
+                than this list, tell us. A missing discipline means less work for you, not more.
               </Muted>
               <DataRow
                 label="Supervising pathologist"

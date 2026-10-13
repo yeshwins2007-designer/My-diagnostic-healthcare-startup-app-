@@ -22,7 +22,7 @@ export async function SiteHeader() {
           <span className="flex flex-col leading-tight">
             <span className="font-mono text-[0.8125rem] font-medium tracking-[0.2em]">{brand.name}</span>
             <span className="text-tiny text-[var(--color-ink-faint)]">
-              {brand.city}
+              Blood tests at home
             </span>
           </span>
         </Link>

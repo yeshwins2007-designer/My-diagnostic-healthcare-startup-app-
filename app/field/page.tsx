@@ -81,7 +81,7 @@ export default async function FieldHome() {
           )}
           <Muted>
             Routes are fixed before {ROUTE_FIX_DEADLINE_HOUR === 6.5 ? '6:30' : ROUTE_FIX_DEADLINE_HOUR}{' '}
-            AM — shortest path, densest cluster first.
+            AM, shortest path and densest cluster first.
           </Muted>
         </Stack>
 
@@ -174,7 +174,7 @@ export default async function FieldHome() {
 
                       {booking.address.pinnedManually && (
                         <Badge tone="yellow">
-                          location pinned by hand — call ahead if unsure
+                          Pin dropped by hand. Call ahead if unsure
                         </Badge>
                       )}
 
@@ -187,7 +187,7 @@ export default async function FieldHome() {
                       <Muted>
                         {booking.items.map((i) => i.panel?.name).filter(Boolean).join(', ')}
                         {booking.patient.mobility !== 'INDEPENDENT' &&
-                          ` · ${booking.patient.mobility.toLowerCase()} — allow extra time`}
+                          ` · ${booking.patient.mobility.toLowerCase()}, allow extra time`}
                       </Muted>
                     </Stack>
                   </Card>

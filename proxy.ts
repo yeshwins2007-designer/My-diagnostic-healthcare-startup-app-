@@ -73,7 +73,7 @@ export const config = {
   matcher: [
     {
       // Pages only: API routes return data, and static assets carry no script.
-      source: '/((?!api|_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|manifest.webmanifest).*)',
+      source: '/((?!api|_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|apple-touch-icon.png|manifest.webmanifest).*)',
       missing: [
         { type: 'header', key: 'next-router-prefetch' },
         { type: 'header', key: 'purpose', value: 'prefetch' },

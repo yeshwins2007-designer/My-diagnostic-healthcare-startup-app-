@@ -140,7 +140,7 @@ export function AbhaFlow({
 
             {initState.simulated && (
               <Muted>
-                ABDM is running in simulated mode — any four to six digits will be accepted.
+                ABDM is in demo mode, so any four to six digits will work.
               </Muted>
             )}
 
@@ -265,8 +265,7 @@ export function AbhaFlow({
               <Card tone="sunken" className="p-4">
                 <Muted>
                   Create this only if {patientName} wants it. Where they can answer for
-                  themselves, the code should go to their phone and they should tell you it —
-                  an account in someone’s name should be created by someone holding their phone.
+                  themselves, the code should go to their phone and they should read it out to you. An account in someone’s name should be made by the person holding their phone.
                 </Muted>
               </Card>
 

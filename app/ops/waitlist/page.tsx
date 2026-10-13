@@ -48,7 +48,7 @@ export default async function WaitlistPage() {
           <H1>Waitlist</H1>
           <Lead>
             {waiting.length} famil{waiting.length === 1 ? 'y' : 'ies'} outside the service
-            radius. Do not serve them — that is how route density collapses. Call them the day
+            radius. Don’t serve them yet. That is how route density collapses. Call them the day
             the next zone opens.
           </Lead>
         </Stack>
@@ -60,7 +60,7 @@ export default async function WaitlistPage() {
               <div className="flex flex-wrap gap-2">
                 {clusters.map(([area, count]) => (
                   <Badge key={area} tone="info">
-                    {area} — {count}
+                    {area} · {count}
                   </Badge>
                 ))}
               </div>

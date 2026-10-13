@@ -36,8 +36,8 @@ const addPatientSchema = z.object({
   line1: z.string().min(3).max(200),
   landmark: z.string().max(200).default(''),
   pincode: z.string().regex(/^\d{6}$/, 'A pincode is six digits.'),
-  city: z.string().min(2).default('Bengaluru'),
-  state: z.string().min(2).default('Karnataka'),
+  city: z.string().trim().min(2, 'Please enter the city.'),
+  state: z.string().trim().min(2, 'Please enter the state.'),
   /** Present when the caregiver dropped a pin by hand. */
   latitude: z.coerce.number().optional(),
   longitude: z.coerce.number().optional(),
@@ -66,8 +66,8 @@ export async function addPatient(
   const membership = await db.familyMember.findFirst({ where: { userId: user.id } });
   if (!membership) return { ok: false, message: 'No family account found for you.' };
 
-  // Geocode, unless the caregiver dropped a pin themselves. Old Bengaluru
-  // colonies frequently have no accurate geocode, which is exactly why the
+  // Geocode, unless the caregiver dropped a pin themselves. Older
+  // neighbourhoods frequently have no accurate geocode, which is exactly why the
   // manual pin and the landmark field exist.
   const maps = getMapsProvider();
   let position = { lat: input.latitude ?? 0, lng: input.longitude ?? 0 };
@@ -81,9 +81,8 @@ export async function addPatient(
     if (!geocoded) {
       return {
         ok: false,
-        reason: 'We could not find that address on the map.',
-        remedy:
-          'Add a landmark, or drop a pin on the map so the technician knows exactly which door to knock on.',
+        reason: 'We couldn’t find that address on the map.',
+        remedy: 'Add a landmark, or drop a pin on the map, so the technician finds the right door.',
       };
     }
     position = geocoded.position;
@@ -134,9 +133,10 @@ export async function addPatient(
       ok: false,
       waitlisted: true,
       distanceKm: check.distanceKm,
-      reason: check.decision.reason,
-      remedy:
-        'We have added you to the waitlist and will call the moment we open a zone near you. We would rather tell you that than promise a service we cannot keep well.',
+      // The family hears what it means for them, not our zone names and
+      // distances (ops sees those on the waitlist).
+      reason: 'We don’t visit this area yet',
+      remedy: 'We’ve put you on our waitlist and we’ll call you as soon as we start visiting your area.',
     };
   }
 

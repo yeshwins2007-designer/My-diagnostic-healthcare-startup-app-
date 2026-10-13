@@ -66,7 +66,7 @@ export function AuthFlow({ intent }: { intent: 'individual' | 'business' }) {
               <Select name="locale" defaultValue="en">
                 {LOCALES.map((l) => (
                   <option key={l.key} value={l.key}>
-                    {l.native} — {l.english}
+                    {l.native} ({l.english})
                   </option>
                 ))}
               </Select>

@@ -34,9 +34,9 @@ export function buildCriticalCallScript(input: {
     lines: [
       `Good morning / good evening, is that ${input.caregiverName}?`,
       `This is ${input.coordinatorName} from ${brand.name}. I am calling about ${input.patientName}'s test from today.`,
-      `One of the results — the ${input.parameterName} — has been flagged by the laboratory as needing urgent medical attention.`,
+      `The laboratory has flagged one of the results, the ${input.parameterName}, as needing urgent medical attention.`,
       `I am not able to explain what the result means; only a doctor can do that.`,
-      `Please contact ${input.patientName}'s physician today. If ${input.patientName} is unwell right now — chest pain, breathlessness, confusion, or unable to be woken — please call ${brand.emergencyNumber} or go to the nearest hospital immediately.`,
+      `Please contact ${input.patientName}'s physician today. If ${input.patientName} feels unwell right now (chest pain, trouble breathing, confusion, or can’t be woken), please call ${brand.emergencyNumber} or go to the nearest hospital immediately.`,
       `The laboratory's pathologist is also following their own process to reach you or the doctor.`,
       `I will send you this in writing straight after this call, and I will call again tomorrow to check that you reached someone.`,
       `Is there anything about the appointment or the report delivery I can help with?`,

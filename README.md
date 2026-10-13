@@ -182,11 +182,28 @@ Rules, encoded as tokens in `app/globals.css` rather than described in a style g
 - One primary action per screen, bottom-anchored in thumb reach
 - Max four choices per screen; no hamburger menus, no nested navigation
 - Every icon carries a text label; contrast targets **WCAG AAA**
-- Prices in digits *and* words — `₹1,799 — one thousand seven hundred ninety nine rupees`
+- Prices in digits *and* words: `₹1,799 (one thousand seven hundred ninety nine rupees)`
 - Confirmation screens repeat back what will happen, before it happens
 - **Zero urgency patterns.** No timers, no "2 slots left", no countdown. Enforced by
   the copy lint.
 - **12 languages**, switchable on every screen, in native script
+
+**Copy reads like a person wrote it.** Short sentences, plain words, contractions
+where people would use them, and no em dashes between words: the copy lint fails
+the build on one (a lone "—" for an empty value is fine).
+
+### On Apple devices
+
+On an iPhone, iPad or Mac the app switches to Apple's look (`app/apple.css`): San
+Francisco, iOS system colours, Liquid Glass on everything that floats, a floating
+glass tab bar with the iOS scroll-edge fade, capsule buttons, round bar buttons,
+segmented controls, and the text size chosen in iOS Settings (Dynamic Type, clamped
+so layouts hold). Reduce Transparency and Increase Contrast turn the glass solid.
+iOS gets a PNG Home Screen icon.
+
+A script in `app/layout.tsx` sets `data-platform="apple"` before first paint, and
+every rule in `app/apple.css` is scoped to it, so **Android and other platforms are
+unchanged**. `tests/e2e/platform.spec.ts` checks both halves.
 
 **Elder Mode** (`/elder`) is deliberately thin: four tiles, no login, read-aloud on
 every screen, and it cannot take a payment or change a plan. The elderly patient's

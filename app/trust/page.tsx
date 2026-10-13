@@ -43,8 +43,7 @@ export default async function TrustPage() {
           <Stack gap="sm">
             <H1>Trust &amp; safety</H1>
             <Lead>
-              The honest version: what we are accountable for, what we are not, and how you can
-              check.
+              What we’re responsible for, what we’re not, and how you can check for yourself.
             </Lead>
           </Stack>
 
@@ -146,9 +145,7 @@ export default async function TrustPage() {
                 </p>
                 <p>
                   The software then enforces it continuously. A booking checks the discipline of
-                  every test against that laboratory’s accredited scope — so a blood sugar test
-                  cannot be routed to a laboratory accredited only for microbiology — and a
-                  laboratory is suspended automatically the day its accreditation lapses.
+                  every test against that laboratory’s accredited scope, so a blood sugar test can’t go to a laboratory accredited only for microbiology. A laboratory is also suspended automatically the day its accreditation lapses.
                 </p>
                 <Muted>
                   NABL does not publish a verification API, so we do not pretend a machine
@@ -183,9 +180,7 @@ export default async function TrustPage() {
                   value="Logged in a tamper-evident, hash-chained audit trail"
                 />
                 <Muted>
-                  Consent is asked for each purpose separately — collection, storage, and sharing
-                  the report with a named family member — and you can withdraw any of them
-                  without affecting the others. If you link an ABHA health account, that consent
+                  We ask for consent for each thing separately: collecting the sample, storing it, and sharing the report with a family member you name. You can withdraw any of them without affecting the others. If you link an ABHA health account, that consent
                   is separate again, held by the national consent manager, and revoking it there
                   stops us fetching records immediately.
                 </Muted>
@@ -221,8 +216,7 @@ export default async function TrustPage() {
                 the founder. There is no argument about whose fault it was.
               </p>
               <p>
-                If the laboratory flags a result as urgent, we phone you immediately — whatever
-                the hour — tell you plainly that it needs medical attention, and follow up in
+                If the laboratory flags a result as urgent, we phone you straight away, whatever the time. We tell you plainly that it needs medical attention, and follow up in
                 writing. We will not tell you what it means, because that is your doctor’s to
                 say.
               </p>

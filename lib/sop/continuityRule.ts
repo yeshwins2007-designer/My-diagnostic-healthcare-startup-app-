@@ -48,7 +48,7 @@ export function evaluateContinuity(ctx: ContinuityContext): Decision {
   if (!ctx.reason) {
     return refuse(
       'This family is promised the same technician every month, and this is a different person.',
-      'Pick the assigned technician, or select a substitution reason — the family will be sent a personal message explaining the change before the visit.',
+      'Pick the assigned technician, or choose a reason for the change. The family will be sent a personal message explaining the change before the visit.',
       { assignedTechnicianId: ctx.assignedTechnicianId },
     );
   }

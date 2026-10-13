@@ -199,8 +199,8 @@ function firstMatch(text: string, patterns: RegExp[]): string | null {
 export const EMERGENCY_SCRIPT = `If this is happening right now, please call ${brand.emergencyNumber} immediately, or take them to the nearest hospital. I am not able to give medical advice. I am also alerting our coordinator to call you straight away.`;
 
 export const DEFLECTION_SCRIPTS: Record<Exclude<GuardCategory, 'EMERGENCY'>, string> = {
-  CLINICAL_INTERPRETATION: `I'm not able to explain what results mean — only a doctor can do that, and it would be wrong of me to guess. Please show the report to your physician. I'm opening a ticket now so one of our coordinators calls you back, and I can help with the appointment, the report delivery or the plan in the meantime.`,
-  MEDICATION_ADVICE: `I can't advise on any medicine or dose — that has to come from the treating doctor. Please don't change anything without speaking to them. I'm asking a coordinator to call you back, and I can help with scheduling or billing right now.`,
+  CLINICAL_INTERPRETATION: `I'm not able to explain what results mean. Only a doctor can do that, and it wouldn't be right for me to guess. Please show the report to your physician. I'm opening a ticket now so one of our coordinators calls you back, and I can help with the appointment, the report delivery or the plan in the meantime.`,
+  MEDICATION_ADVICE: `I can't advise on any medicine or dose. That has to come from the treating doctor. Please don't change anything without speaking to them. I'm asking a coordinator to call you back, and I can help with scheduling or billing right now.`,
   DIAGNOSIS_REQUEST: `I can't tell you whether someone has a condition. ${brand.name} arranges the collection and the delivery of the report; the diagnosis is the doctor's, working from the signed laboratory report. I'm arranging a callback from our coordinator.`,
   // Every deflection must end somewhere a person is waiting. A refusal with no
   // route to a human is a wall, and this one was one until a test caught it.

@@ -147,7 +147,7 @@ export async function verifyOtp(
   });
 
   if (!challenge) {
-    return { ok: false, message: 'Ask for a new code — this one is no longer valid.' };
+    return { ok: false, message: 'That code can’t be used any more. Please ask for a new one.' };
   }
   if (challenge.expiresAt < new Date()) {
     return { ok: false, message: 'That code has expired. Please ask for a new one.' };
@@ -188,7 +188,7 @@ export async function verifyOtp(
     data: { consumedAt: new Date(), attempts: { decrement: 1 } },
   });
   if (consumed.count === 0) {
-    return { ok: false, message: 'Ask for a new code — this one is no longer valid.' };
+    return { ok: false, message: 'That code can’t be used any more. Please ask for a new one.' };
   }
 
   const existing = await db.user.findUnique({ where: { phone } });

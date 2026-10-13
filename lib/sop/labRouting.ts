@@ -131,7 +131,7 @@ export function evaluateRouting(
   if (lab.todayVolume >= lab.capacityCeiling) {
     return refuse(
       `${lab.name} is at its agreed daily ceiling of ${lab.capacityCeiling} samples.`,
-      'Give the lab advance notice before exceeding the ceiling, or route to another active lab. Overwhelming a partner’s operation is how the relationship — and the turnaround time — breaks.',
+      'Give the lab advance notice before exceeding the ceiling, or route to another active lab. Overloading a partner breaks the relationship, and the turnaround time with it.',
       { labId: lab.id, todayVolume: lab.todayVolume, ceiling: lab.capacityCeiling },
     );
   }
@@ -184,7 +184,7 @@ export function selectLab(
       'No accredited lab in range can process this order.',
       rejections.length
         ? `Every candidate was rejected: ${rejections.map((r) => r.reason).join(' ')}`
-        : 'No lab candidates were supplied at all — check the zone’s anchor lab.',
+        : 'No lab candidates were supplied at all. Check the zone’s anchor lab.',
       { rejections },
     ),
     rejections,

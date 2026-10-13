@@ -26,7 +26,7 @@ const CLAUSE_GUIDANCE: { key: string; title: string; why: string }[] = [
   {
     key: 'rateCardNote',
     title: 'Rate card',
-    why: 'A fixed per-test processing rate for this volume, reviewed every six months. A discount to retail is normal in exchange for guaranteed volume — agree the number, do not leave it implied.',
+    why: 'A fixed per-test processing rate for this volume, reviewed every six months. A discount to retail is normal in exchange for guaranteed volume. Agree the number; don’t leave it implied.',
   },
   {
     key: 'paymentTerms',
@@ -56,7 +56,7 @@ const CLAUSE_GUIDANCE: { key: string; title: string; why: string }[] = [
   {
     key: 'brandingNote',
     title: 'Branding',
-    why: 'How the lab is named in our materials. "Processed at [Lab], NABL-accredited" is our credibility line — it needs written permission.',
+    why: 'How the lab is named in our materials. "Processed at [Lab], NABL-accredited" is our credibility line, so it needs written permission.',
   },
   {
     key: 'exitNote',
@@ -83,8 +83,7 @@ export default async function AgreementPage() {
         <Stack gap="sm">
           <H1>Service agreement</H1>
           <Lead>
-            Eight clauses, agreed in writing before the first sample moves — and versioned, so
-            neither side is relying on what someone remembers from a conversation.
+            Eight clauses, agreed in writing before the first sample moves. Each version is kept, so nobody has to rely on what someone remembers from a call.
           </Lead>
           {agreement && (
             <div className="flex flex-wrap gap-2">

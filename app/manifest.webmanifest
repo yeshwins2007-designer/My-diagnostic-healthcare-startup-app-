@@ -1,7 +1,7 @@
 {
-  "name": "MEDWYN — doorstep diagnostics",
+  "name": "MEDWYN · Blood tests at home",
   "short_name": "MEDWYN",
-  "description": "The same trusted person, at your parents' door, every month.",
+  "description": "The same trusted person at your parents’ door, every month.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

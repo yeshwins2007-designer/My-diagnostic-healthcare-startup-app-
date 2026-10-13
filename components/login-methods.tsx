@@ -42,6 +42,7 @@ export function LoginMethods({ emailEnabled }: { emailEnabled: boolean }) {
       <div
         role="tablist"
         aria-label="Sign in with"
+        data-segmented
         onKeyDown={onKeyDown}
         className="glass grid grid-cols-2 gap-1 rounded-full border p-1"
       >

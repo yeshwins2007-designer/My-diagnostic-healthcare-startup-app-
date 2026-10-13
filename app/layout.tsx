@@ -2,10 +2,24 @@ import { headers } from 'next/headers';
 import type { Metadata, Viewport } from 'next';
 import { brand } from '@/lib/brand';
 import './globals.css';
+import './apple.css';
+
+/** iPhone, iPad and Mac. iPadOS reports itself as a Mac, so both count. */
+const APPLE_UA = /iPhone|iPad|iPod|Macintosh/;
+
+/**
+ * Runs before first paint, so nothing flashes:
+ * - the reader text size and theme the person chose earlier;
+ * - on Apple devices, data-platform="apple", which switches on app/apple.css
+ *   (and nothing else: Android and other platforms never get the attribute);
+ * - on iPhone and iPad, the text size set in iOS Settings (Dynamic Type),
+ *   measured from -apple-system-body and clamped so layouts still hold.
+ */
+const BOOT_SCRIPT = `(function(){var d=document.documentElement;try{var r=localStorage.getItem('ss_reader');if(r)d.setAttribute('data-reader',r);var t=localStorage.getItem('ss_theme');if(t)d.setAttribute('data-theme',t);}catch(e){}try{var u=navigator.userAgent,ios=/iPhone|iPad|iPod/.test(u)||(/Macintosh/.test(u)&&navigator.maxTouchPoints>1);if(ios||/Macintosh/.test(u)){d.setAttribute('data-platform','apple');d.setAttribute('data-apple',ios?'ios':'mac');if(ios){var p=document.createElement('span');p.style.cssText='font:-apple-system-body;position:absolute;visibility:hidden';d.appendChild(p);var px=parseFloat(getComputedStyle(p).fontSize)||17;d.removeChild(p);d.style.setProperty('--dynamic-type',String(Math.min(1.35,Math.max(0.9,px/17))));}}}catch(e){}})();`;
 
 export const metadata: Metadata = {
   title: {
-    default: `${brand.name} — doorstep diagnostics for elderly parents`,
+    default: `${brand.name} · Blood tests at home for elderly parents`,
     template: `%s · ${brand.name}`,
   },
   description: brand.oneLiner,
@@ -33,7 +47,9 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Set by proxy.ts per request; the inline script below runs only with it.
-  const nonce = (await headers()).get('x-nonce') ?? undefined;
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get('x-nonce') ?? undefined;
+  const isApple = APPLE_UA.test(requestHeaders.get('user-agent') ?? '');
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -46,13 +62,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&family=Noto+Sans+Bengali:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;600;700&family=Noto+Sans+Telugu:wght@400;600;700&family=Noto+Sans+Kannada:wght@400;600;700&family=Noto+Sans+Malayalam:wght@400;600;700&family=Noto+Sans+Gujarati:wght@400;600;700&family=Noto+Sans+Gurmukhi:wght@400;600;700&family=Noto+Nastaliq+Urdu:wght@400;600&display=swap"
         />
+        {/* The Home Screen icon (iOS takes a PNG, not the SVG). Apple devices
+            only, so Android's install icon stays exactly as it was. */}
+        {isApple && <link rel="apple-touch-icon" href="/apple-touch-icon.png" />}
         <script
           nonce={nonce}
-          // Applies the saved reader text size and theme before first paint, so
-          // an elderly user who chose "largest" never sees a flash of small text.
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var r=localStorage.getItem('ss_reader');if(r)document.documentElement.setAttribute('data-reader',r);var t=localStorage.getItem('ss_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`,
-          }}
+          // An elderly user who chose "largest" never sees a flash of small text.
+          dangerouslySetInnerHTML={{ __html: BOOT_SCRIPT }}
         />
       </head>
       <body>{children}</body>

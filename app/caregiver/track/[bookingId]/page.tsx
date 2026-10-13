@@ -76,7 +76,7 @@ export default async function TrackPage({
             <H3>About this link</H3>
             <Muted>
               This tracking view works only during today’s visit and stops shortly after it. We
-              do not keep a running record of where our technicians are — their positions are
+              do not keep a running record of where our technicians are. Their positions are
               recorded only between starting and ending a morning route, and the detailed
               records are erased after {env.PING_RETENTION_DAYS} days.
             </Muted>

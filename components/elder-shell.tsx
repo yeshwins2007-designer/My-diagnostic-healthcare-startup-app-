@@ -115,7 +115,7 @@ export function ElderShell({
       </header>
 
       {/* The read-aloud bar is sticky, so the last tile needs room to clear it
-          when scrolled to the bottom — otherwise it sits under the bar, which
+          when scrolled to the bottom. Otherwise it sits under the bar, which
           is exactly the tile an elderly user is most likely to be reaching for. */}
       <main id="elder-main" className="mx-auto max-w-2xl px-5 pt-8 pb-28">
         {screen === 'HOME' && (
