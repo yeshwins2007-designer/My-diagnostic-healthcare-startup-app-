@@ -131,7 +131,13 @@ jobs:
             echo '| Family, pays per test | `+919845000103` |'
             echo '| Ops console | `+919845000001` |'
             echo '| Field technician | `+919845000010` |'
-            echo '| Partner lab | `+919845100200` |'
+            echo '| Partner lab owner (sign in at `/lab/login`) | `+919845100200` |'
+            echo '| Partner lab intake desk (sign in at `/lab/login`) | `+919845100201` |'
+            echo
+            echo 'Partner labs have their own sign-in at **/lab/login** (and **/lab/register**).'
+            echo 'The owner lands on the order terminal with two new orders waiting: turn on'
+            echo 'order alerts, accept or reject them, scan `SPC-240002` to receive a sample,'
+            echo 'then enter results and attach a PDF for the order already in processing.'
             echo
             echo 'Or choose **Email** on the sign-in screen: `anjali.iyer@example.com`,'
             echo 'password `monsoon-tea-garden` (the Medwyn One family). New families can'
@@ -184,6 +190,11 @@ jobs:
               "(family, pays per test), `+919845000001` (ops), "
               "`+919845000010` (field) or `+919845100200` (lab). The code is shown "
               "on screen because SMS is not configured.\n\n"
+              "Partner labs sign in at **/lab/login**: `+919845100200` (owner) or "
+              "`+919845100201` (intake desk, which cannot reject orders or sign results). "
+              "The owner lands on the order terminal with two new orders waiting: turn on "
+              "order alerts, accept or reject them, scan `SPC-240002` to receive a sample, "
+              "then enter results and attach a PDF for the order already in processing.\n\n"
               "Email sign-in: choose Email on the login screen and use "
               "`anjali.iyer@example.com` with password `monsoon-tea-garden`, or create a new "
               "account with email (the email and SMS codes both appear on screen).\n\n"
