@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { rankLabChoices } from '@/lib/sop/labRouting';
+import { MAX_LAB_DISTANCE_KM, rankLabChoices } from '@/lib/sop/labRouting';
 import { haversineKm } from '@/lib/geo';
 
 const NEXT_YEAR = new Date(Date.now() + 300 * 86_400_000);
@@ -96,5 +96,19 @@ describe('rankLabChoices', () => {
     const out = rankLabChoices([a, b], PANEL, { zoneAnchorLabId: 'b' });
     expect(out[0].id).toBe('b');
     expect(out[0].isZoneAnchor).toBe(true);
+  });
+
+  it('never offers a lab too far for the sample to reach it in time', () => {
+    // Whitefield, about 18 km from a Jayanagar home.
+    const far = lab({ id: 'far', name: 'Far Labs', latitude: 12.9698, longitude: 77.75 });
+    const [c] = rankLabChoices([far], PANEL, { from: HOME, distanceKm: haversineKm, maxDistanceKm: MAX_LAB_DISTANCE_KM });
+    expect(c.eligible).toBe(false);
+    expect(c.distanceKm).toBeGreaterThan(MAX_LAB_DISTANCE_KM);
+    expect(c.reason).toMatch(/too far for a sample to reach the lab within two hours/);
+  });
+
+  it('keeps a near lab eligible under the same cap', () => {
+    const [c] = rankLabChoices([lab()], PANEL, { from: HOME, distanceKm: haversineKm, maxDistanceKm: MAX_LAB_DISTANCE_KM });
+    expect(c.eligible).toBe(true);
   });
 });

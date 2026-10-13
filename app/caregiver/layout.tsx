@@ -24,6 +24,7 @@ const COMMANDS: CommandItem[] = [
   { group: 'Go to', label: 'Medwyn One', href: '/caregiver/membership', keywords: 'membership plan subscription discount' },
   { group: 'Go to', label: 'Our calls to you', href: '/caregiver/calls', keywords: 'follow-up phone' },
   { group: 'Go to', label: 'Profile', href: '/caregiver/profile', keywords: 'account parents elder mode passkey theme' },
+  { group: 'Book', label: 'Find a lab', href: '/caregiver/labs', keywords: 'laboratory near me nearby location choose' },
   { group: 'Book', label: 'Book tests', href: '/caregiver/book', keywords: 'home visit collection' },
   { group: 'Book', label: 'Health packages', href: '/caregiver/book?kind=panel', keywords: 'panel baseline comprehensive' },
   { group: 'Book', label: 'Blood tests', href: '/caregiver/book?kind=test', keywords: 'single test' },

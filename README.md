@@ -149,6 +149,22 @@ to really be a PDF, stored encrypted, and served sandboxed.
 **Roles.** Owner: everything. Manager: orders, results, catalog. Intake desk: accept
 orders and receive or reject samples, but not reject orders or sign results.
 
+### Finding a lab
+
+The family home screen's search bar opens **Find a lab** (`/caregiver/labs`). Labs
+are sorted by distance from the **parent's home**, because that is where the sample
+is taken and the person searching is often in another city. "Use my current
+location" (or the pin in the search bar) re-sorts the list by the phone's position
+**on the phone**: the position is never sent to the server.
+
+A lab can be chosen only if it is active, its NABL accreditation is current, it
+offers tests right now, and it is within **15 km of the home**
+(`MAX_LAB_DISTANCE_KM`): further than that, a sample cannot reach it within two
+hours. The same cap applies at booking and when a rejected order is re-routed.
+Labs that fail are listed with the reason, never ranked by price. "Book with this
+lab" re-checks all of it on the server, saves it as that parent's lab, and opens
+booking with that lab's tests.
+
 **Logos.** With `NEXT_PUBLIC_BRANDFETCH_CLIENT_ID` set, each lab's own logo is shown
 from its website domain via Brandfetch's Logo Link CDN; otherwise a monogram.
 

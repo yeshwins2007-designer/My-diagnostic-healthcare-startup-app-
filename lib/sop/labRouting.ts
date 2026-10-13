@@ -192,6 +192,22 @@ export function selectLab(
 }
 
 /**
+ * How far a lab may be from the patient's home and still take their sample.
+ *
+ * A sample has two hours from the needle to the lab's intake desk, and the
+ * technician has other homes on the same morning route. Fifteen kilometres
+ * of city traffic is already most of that budget, so a lab further than this
+ * is never offered, never chosen, and never re-routed to, however good it is.
+ * Straight-line distance, which understates the road: the cap is generous
+ * to no one.
+ */
+export const MAX_LAB_DISTANCE_KM = 15;
+
+export function tooFarReason(distanceKm: number): string {
+  return `About ${Math.round(distanceKm)} km from home: too far for a sample to reach the lab within two hours.`;
+}
+
+/**
  * The labs a family may legitimately choose between.
  *
  * Choice is offered inside the routing gate, never around it. Every candidate
@@ -228,28 +244,32 @@ export function rankLabChoices(
     zoneAnchorLabId?: string | null;
     now?: Date;
     distanceKm?: (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => number;
+    /** Labs further than this from `from` are ineligible (MAX_LAB_DISTANCE_KM). */
+    maxDistanceKm?: number;
   } = {},
 ): LabChoice[] {
-  const { from = null, zoneAnchorLabId = null, now = new Date(), distanceKm } = options;
+  const { from = null, zoneAnchorLabId = null, now = new Date(), distanceKm, maxDistanceKm } = options;
 
   const choices = labs.map((lab): LabChoice => {
     const decision = evaluateRouting(lab, tests, now);
-    const refused = isRefusal(decision);
     const hasPoint =
       from != null &&
       typeof lab.latitude === 'number' &&
       typeof lab.longitude === 'number';
+    const km =
+      hasPoint && distanceKm
+        ? Math.round(distanceKm(from, { lat: lab.latitude as number, lng: lab.longitude as number }) * 10) / 10
+        : null;
+    const tooFar = maxDistanceKm !== undefined && km !== null && km > maxDistanceKm;
+    const refused = isRefusal(decision);
 
     return {
       id: lab.id,
       name: lab.name,
-      eligible: !refused,
-      distanceKm:
-        hasPoint && distanceKm
-          ? Math.round(distanceKm(from, { lat: lab.latitude as number, lng: lab.longitude as number }) * 10) / 10
-          : null,
+      eligible: !refused && !tooFar,
+      distanceKm: km,
       certificateNumber: lab.accreditation?.certificateNumber ?? null,
-      reason: refused ? decision.reason : undefined,
+      reason: refused ? decision.reason : tooFar ? tooFarReason(km) : undefined,
       isZoneAnchor: lab.id === zoneAnchorLabId,
     };
   });

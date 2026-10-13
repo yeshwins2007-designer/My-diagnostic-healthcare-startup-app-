@@ -165,9 +165,11 @@ export default async function CaregiverHome() {
           />
         </section>
 
-        <form action="/caregiver/book" role="search" className="relative">
+        {/* Finds labs for the parent's home; a test name gets a link to tests too.
+            The pin asks for the phone's location, which stays on the phone. */}
+        <form action="/caregiver/labs" role="search" className="relative">
           <label htmlFor="home-search" className="sr-only">
-            Search tests and packages
+            Search labs near you
           </label>
           <svg
             aria-hidden
@@ -182,9 +184,19 @@ export default async function CaregiverHome() {
             id="home-search"
             name="q"
             type="search"
-            placeholder="Search tests, packages…"
-            className="min-h-[var(--size-touch)] w-full rounded-[var(--radius-control)] border border-[var(--color-line-strong)] bg-[var(--field-bg)] pr-4 pl-11 text-base placeholder:text-[var(--color-ink-faint)] focus:border-[var(--color-ink-faint)] focus:outline-none"
+            placeholder="Search labs near you…"
+            enterKeyHint="search"
+            className="min-h-[var(--size-touch)] w-full rounded-[var(--radius-control)] border border-[var(--color-line-strong)] bg-[var(--field-bg)] pr-16 pl-11 text-base placeholder:text-[var(--color-ink-faint)] focus:border-[var(--color-ink-faint)] focus:outline-none"
           />
+          <Link
+            href="/caregiver/labs?near=1"
+            aria-label="Labs near my current location"
+            className="absolute top-1/2 right-1 inline-flex h-11 w-12 -translate-y-1/2 items-center justify-center rounded-[var(--radius-control)] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
+          >
+            <svg aria-hidden viewBox="0 0 24 24" width="20" height="20">
+              <path d="M12 21s-7-6.2-7-11.5a7 7 0 1 1 14 0C19 14.8 12 21 12 21z M12 12.2a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+            </svg>
+          </Link>
         </form>
 
         <nav aria-label="Shortcuts" className="grid grid-cols-3 gap-2.5">

@@ -25,7 +25,14 @@ export default async function BookPage({
 }) {
   const params = await searchParams;
   const { family } = await loadFamilyContext();
-  const labId = await labForFamily(family?.id ?? null);
+  // The parent being booked for decides the lab, and so the catalogue: after
+  // "Book with this lab" it must be that lab's tests on offer.
+  const forParent = family?.patients.find((p) => p.id === params.patient);
+  const forParentZone = forParent?.addresses.find((a) => a.isPrimary)?.zoneId ?? forParent?.addresses[0]?.zoneId;
+  const labId =
+    forParent?.preferredLabId ??
+    (forParentZone ? (await db.zone.findUnique({ where: { id: forParentZone } }))?.anchorLabId : null) ??
+    (await labForFamily(family?.id ?? null));
 
   const [catalog, membership, labs] = await Promise.all([
     loadCatalog(labId),

@@ -57,8 +57,8 @@ test.describe('partner laboratory portal', () => {
     await expect(page.getByRole('status').filter({ hasText: `Accepted ${first}.` })).toBeVisible();
     await expect(pending).toHaveCount(1);
 
-    // Reject the other. No other lab in the seed can do biochemistry, so
-    // it goes to operations rather than to another lab.
+    // Reject the other. It goes to the next nearest lab that can do every
+    // test (Vruksha Diagnostics in the seed), at the family's price.
     const second = pending.first();
     const ref = await second.getAttribute('data-order');
     await second.getByRole('button', { name: 'Reject order' }).click();

@@ -228,8 +228,10 @@ describe('accepting and rejecting orders', () => {
     labs = {
       anchor: await makeLab('Anchor Labs', 12.93, 77.58),
       near: await makeLab('Near Labs', 12.94, 77.59),
-      far: await makeLab('Far Labs', 13.1, 77.7),
+      far: await makeLab('Far Labs', 12.99, 77.62),
     };
+    // About 18 km away: accredited and active, but too far to ever be chosen.
+    await makeLab('Whitefield Labs', 12.9698, 77.75);
   });
 
   beforeEach(async () => {
@@ -273,6 +275,7 @@ describe('accepting and rejecting orders', () => {
   });
 
   it('never offers an order back to a lab that rejected it, and hands it to ops when no lab is left', async () => {
+    // Whitefield Labs could do the tests, but is too far for the sample.
     const order = await makeOrder(labs.anchor);
     await orders.rejectOrder({ bookingId: order.id, labId: labs.anchor, userId: u, reason: 'At capacity for that day' });
     await orders.rejectOrder({ bookingId: order.id, labId: labs.near, userId: u, reason: 'At capacity for that day' });

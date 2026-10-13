@@ -8,7 +8,8 @@ import { requireRole } from '@/lib/auth/session';
 import { audit } from '@/lib/compliance/audit';
 import { ageBandFor, VISIT_MINUTES_BY_MOBILITY } from '@/lib/enums';
 import { evaluateRadius, type ZoneBoundary } from '@/lib/sop/radiusGuard';
-import { evaluateRouting } from '@/lib/sop/labRouting';
+import { evaluateRouting, MAX_LAB_DISTANCE_KM, tooFarReason } from '@/lib/sop/labRouting';
+import { haversineKm } from '@/lib/geo';
 import { isRefusal, refuse } from '@/lib/sop/types';
 import { getMapsProvider } from '@/lib/providers/maps';
 import { quote } from '@/lib/pricing';
@@ -271,6 +272,11 @@ export async function createBooking(
   const routable = async (labId: string) => {
     const lab = await db.lab.findUnique({ where: { id: labId }, include: { accreditation: true } });
     if (!lab) return null;
+    // The sample has two hours to reach the lab: a far lab cannot take it.
+    const km = haversineKm({ lat: address.latitude, lng: address.longitude }, { lat: lab.latitude, lng: lab.longitude });
+    if (km > MAX_LAB_DISTANCE_KM) {
+      return { lab, check: refuse(tooFarReason(km), 'Choose a laboratory nearer home.', { labId: lab.id, distanceKm: km }) };
+    }
     const check = evaluateRouting(
       {
         id: lab.id,
@@ -507,7 +513,7 @@ export async function labChoicesForPatient(patientId: string, panelId?: string) 
   });
   const volumeFor = new Map(volumes.map((v) => [v.labId, v._count._all]));
 
-  const { rankLabChoices } = await import('@/lib/sop/labRouting');
+  const { rankLabChoices, MAX_LAB_DISTANCE_KM } = await import('@/lib/sop/labRouting');
   const { haversineKm } = await import('@/lib/geo');
 
   const choices = rankLabChoices(
@@ -539,6 +545,7 @@ export async function labChoicesForPatient(patientId: string, panelId?: string) 
           : null,
       zoneAnchorLabId: zone?.anchorLabId ?? null,
       distanceKm: haversineKm,
+      maxDistanceKm: MAX_LAB_DISTANCE_KM,
     },
   );
 
@@ -608,4 +615,41 @@ export async function setPreferredLab(
   });
   revalidatePath('/caregiver');
   return { ok: true, message: `Samples will be sent to ${chosen.name}.` };
+}
+
+/**
+ * "Book with this lab", from Find a lab.
+ *
+ * The lab becomes the parent's chosen lab and the family goes straight to
+ * booking. Nothing from the browser is trusted: the lab is checked again
+ * here against the same rules the search applied (active, accreditation
+ * current, offering tests, near enough to the parent's home), and booking
+ * checks it once more for the exact tests and day.
+ */
+export async function chooseLabForBooking(
+  _prev: CaregiverActionState,
+  formData: FormData,
+): Promise<CaregiverActionState> {
+  const user = await requireRole('CAREGIVER');
+  const patientId = String(formData.get('patientId') ?? '');
+  const labId = String(formData.get('labId') ?? '');
+
+  const { labsForParent } = await import('@/lib/queries/lab-search');
+  const labs = await labsForParent(user.id, patientId);
+  if (!labs) return { ok: false, message: 'Add your parent’s home address first.' };
+  const lab = labs.find((l) => l.id === labId);
+  if (!lab) return { ok: false, message: 'That lab isn’t available.' };
+  if (!lab.eligible) return { ok: false, message: lab.reason ?? `${lab.name} can’t take this sample.` };
+
+  await db.patient.update({ where: { id: patientId }, data: { preferredLabId: lab.id } });
+  await audit({
+    action: 'LAB_PREFERENCE_SET',
+    entityType: 'Patient',
+    entityId: patientId,
+    actorUserId: user.id,
+    actorRole: 'CAREGIVER',
+    detail: { labId: lab.id, labName: lab.name, via: 'find_a_lab', distanceKm: lab.distanceFromHomeKm },
+  });
+  revalidatePath('/caregiver');
+  redirect(`/caregiver/book?patient=${encodeURIComponent(patientId)}`);
 }

@@ -274,6 +274,50 @@ async function main() {
     });
   }
 
+  // Two more demo labs, so "Find a lab" has a real choice to show: one a few
+  // kilometres away, and one across the city, active and accredited but too
+  // far for a sample to reach in two hours (it is listed, and cannot be chosen).
+  for (const demo of [
+    { name: 'Vruksha Diagnostics', legal: 'Vruksha Diagnostics Pvt Ltd', line: '18, Bull Temple Road, Basavanagudi', pincode: '560004', lat: 12.9416, lng: 77.5738, cert: 'MC-4471', phone: '+919845100500' },
+    { name: 'Kaveri Clinical Labs', legal: 'Kaveri Clinical Laboratories LLP', line: '7, ITPL Main Road, Whitefield', pincode: '560066', lat: 12.9698, lng: 77.75, cert: 'MC-6130', phone: '+919845100600' },
+  ]) {
+    const lab = await db.lab.create({
+      data: {
+        name: demo.name,
+        legalName: demo.legal,
+        contactName: 'Lab manager',
+        contactPhone: demo.phone,
+        contactEmail: `contact@${demo.name.split(' ')[0].toLowerCase()}.example`,
+        addressLine: demo.line,
+        city: 'Bengaluru',
+        state: 'Karnataka',
+        pincode: demo.pincode,
+        latitude: demo.lat,
+        longitude: demo.lng,
+        status: 'ACTIVE',
+        capacityCeiling: 30,
+        abdmMode: 'NONE',
+        brandingConsent: false,
+        activatedAt: at(-30, 12),
+        accreditation: {
+          create: {
+            certificateNumber: demo.cert,
+            scope: 'CLINICAL_BIOCHEMISTRY,HAEMATOLOGY,CLINICAL_PATHOLOGY,IMMUNOASSAY',
+            validFrom: at(-300, 0),
+            validUntil: at(400, 0),
+            supervisingPathologistName: 'Dr. Kavya Bhat',
+            supervisingPathologistReg: `KMC/2014/${demo.cert.slice(3)}`,
+            verificationState: 'PASSED',
+          },
+        },
+      },
+    });
+    for (const [code, rupees] of Object.entries(labCosts)) {
+      if (code === 'URINE_CS') continue; // microbiology is outside their scope
+      await db.labRateCardEntry.create({ data: { labId: lab.id, testId: tests[code].id, costPaise: paise(rupees) } });
+    }
+  }
+
   // --- zone -----------------------------------------------------------------
   const zone = await db.zone.create({
     data: {
@@ -846,8 +890,10 @@ Seed complete.
 
   Zone            ${zone.name} (${zone.radiusKm} km radius)
   Partner labs    ${anchorLab.name} MC-2417 (ACTIVE, biochem/haem/path/immuno)
-                  ${microLab.name} MC-3902 (ACTIVE, MICROBIOLOGY only — for the routing refusal demo)
-                  Nele Path Labs MC-5518 (SUBMITTED — sitting in the verification queue)
+                  ${microLab.name} MC-3902 (ACTIVE, MICROBIOLOGY only, for the routing refusal demo)
+                  Vruksha Diagnostics MC-4471 (ACTIVE, about 2 km away: a real choice in Find a lab)
+                  Kaveri Clinical Labs MC-6130 (ACTIVE, about 18 km away: listed, too far to choose)
+                  Nele Path Labs MC-5518 (SUBMITTED, sitting in the verification queue)
   Technicians     Priya Nair, Ramesh Gowda
   Families        ${created.length}
   Live booking    ${enRoute.booking.reference} — en route now, on Priya's route

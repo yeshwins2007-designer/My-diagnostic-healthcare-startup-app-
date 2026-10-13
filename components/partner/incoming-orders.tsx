@@ -88,12 +88,23 @@ export function IncomingOrders({
     };
   }, [router, pollSeconds]);
 
-  // The count in the tab title.
+  // The count in the tab title. Next.js sets the page title itself, and can
+  // do so after this runs (metadata arrives with the stream, and again on
+  // every refresh), which used to wipe the count. So the count is re-applied
+  // whenever the head changes; writing the same title again is a no-op, so
+  // this cannot loop.
   useEffect(() => {
-    const base = document.title.replace(/^\(\d+\)\s+/, '');
-    document.title = orders.length > 0 ? `(${orders.length}) ${base}` : base;
+    const strip = (t: string) => t.replace(/^\(\d+\)\s+/, '');
+    const apply = () => {
+      const want = orders.length > 0 ? `(${orders.length}) ${strip(document.title)}` : strip(document.title);
+      if (document.title !== want) document.title = want;
+    };
+    apply();
+    const observer = new MutationObserver(apply);
+    observer.observe(document.head, { childList: true, subtree: true, characterData: true });
     return () => {
-      document.title = base;
+      observer.disconnect();
+      document.title = strip(document.title);
     };
   }, [orders.length]);
 

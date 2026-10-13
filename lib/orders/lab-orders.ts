@@ -13,7 +13,8 @@
  * already commits the lab's daily capacity, and the routing gate never sends
  * more than that ceiling. A rejection re-routes the order through the same
  * legal gate as a booking (selectLab: active, accredited for every test's
- * discipline, under capacity, not paused, nearest first). The family's price
+ * discipline, under capacity, not paused, within MAX_LAB_DISTANCE_KM of the
+ * home, nearest first). The family's price
  * is locked: it was quoted and paid, and a re-route is our problem, not
  * theirs. If no lab can take it, the order goes to ops as an incident.
  */
@@ -22,7 +23,7 @@ import 'server-only';
 import { db } from '../db';
 import { audit } from '../compliance/audit';
 import { haversineKm } from '../geo';
-import { selectLab, type RoutableLab, type RoutableTest } from '../sop/labRouting';
+import { MAX_LAB_DISTANCE_KM, selectLab, type RoutableLab, type RoutableTest } from '../sop/labRouting';
 import { testsOfOrder } from './results';
 
 export const DECISION_WINDOW_MINUTES = 30;
@@ -158,10 +159,14 @@ async function rerouteAfterRejection(
     include: { accreditation: true, rateCard: true },
   });
   const candidates: (RoutableLab & { distanceKm: number })[] = [];
+  const home = { lat: booking.address.latitude, lng: booking.address.longitude };
   for (const lab of labs) {
-    // A lab is a candidate only if its rate card offers every test, unpaused.
+    // A lab is a candidate only if its rate card offers every test, unpaused,
+    // and it is near enough for the sample to reach it within two hours.
     const offered = new Map(lab.rateCard.map((r) => [r.testId, r]));
     if (!tests.every((t) => offered.has(t.id) && !offered.get(t.id)!.isPaused)) continue;
+    const distanceKm = haversineKm(home, { lat: lab.latitude, lng: lab.longitude });
+    if (distanceKm > MAX_LAB_DISTANCE_KM) continue;
     const todayVolume = await db.booking.count({
       where: { labId: lab.id, windowStart: { gte: dayStart, lt: dayEnd }, status: { notIn: ['AWAITING_PAYMENT', 'CANCELLED'] } },
     });
@@ -174,10 +179,7 @@ async function rerouteAfterRejection(
       accreditation: lab.accreditation
         ? { certificateNumber: lab.accreditation.certificateNumber, scope: lab.accreditation.scope, validUntil: lab.accreditation.validUntil }
         : null,
-      distanceKm: haversineKm(
-        { lat: booking.address.latitude, lng: booking.address.longitude },
-        { lat: lab.latitude, lng: lab.longitude },
-      ),
+      distanceKm,
     });
   }
   const choice = selectLab(candidates, routingTests, now);
