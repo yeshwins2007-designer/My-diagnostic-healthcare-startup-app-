@@ -9,6 +9,8 @@ import { LabChooser } from '@/components/lab-chooser';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { PasskeyManager } from '@/components/passkeys';
 import { ElderLink } from '@/components/elder-link';
+import { DeleteAccount } from '@/components/delete-account';
+import { ERASE_AFTER_DAYS } from '@/lib/account/deletion';
 import { db } from '@/lib/db';
 import { listMyPasskeys } from '@/app/actions/passkeys';
 import { Badge, Button, ButtonLink, Card, H2, H3, Muted, Page, Stack } from '@/components/ui';
@@ -184,6 +186,15 @@ export default async function ProfilePage() {
             Sign out
           </Button>
         </form>
+
+        <Stack gap="sm">
+          <p className="text-small text-[var(--color-ink-soft)]">
+            <Link href="/privacy" className="inline-flex min-h-11 items-center underline">Privacy policy</Link>
+            {' · '}
+            <Link href="/support" className="inline-flex min-h-11 items-center underline">Help and support</Link>
+          </p>
+          <DeleteAccount kind="family" eraseAfterDays={ERASE_AFTER_DAYS} />
+        </Stack>
       </Stack>
     </Page>
   );

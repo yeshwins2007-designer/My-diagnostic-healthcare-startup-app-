@@ -65,7 +65,7 @@ export function PasskeySignIn() {
     });
 
   return (
-    <div className="flex flex-col gap-3">
+    <div data-native-hide className="flex flex-col gap-3">
       <div className="flex items-center gap-3 text-small text-[var(--color-ink-soft)]" aria-hidden>
         <span className="h-px flex-1 bg-[var(--color-line-strong)]" />
         or

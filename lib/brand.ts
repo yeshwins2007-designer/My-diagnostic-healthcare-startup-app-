@@ -16,6 +16,15 @@ export const brand = {
   supportWhatsApp: '+91 80 4718 2200',
   emergencyNumber: '108',
   legalEntity: 'SwasthaSetu Health Services Pvt. Ltd.',
+  /**
+   * Contacts the app stores and the DPDP Act require (privacy policy, support
+   * page, grievance officer). Replace with real, monitored ones before launch:
+   * docs/store-launch.md lists them.
+   */
+  supportEmail: 'support@medwyn.in',
+  privacyEmail: 'privacy@medwyn.in',
+  grievanceOfficer: 'Grievance Officer, MEDWYN',
+  registeredAddress: 'Registered office address to be added before launch',
 
   /**
    * What we are, and what we are not. This is not decoration: it defines what

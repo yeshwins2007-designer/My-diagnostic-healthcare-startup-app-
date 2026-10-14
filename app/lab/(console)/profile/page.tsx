@@ -10,6 +10,8 @@ import { parseScope } from '@/lib/sop/labRouting';
 import { partnerMembership } from '@/lib/queries/partner';
 import { LabLogo } from '@/components/partner/lab-logo';
 import { ProfileForm } from '@/components/partner/profile-form';
+import { DeleteAccount } from '@/components/delete-account';
+import { ERASE_AFTER_DAYS } from '@/lib/account/deletion';
 import { Badge, DataRow } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Lab profile' };
@@ -119,6 +121,7 @@ export default async function LabProfilePage() {
           ))}
         </ul>
       </section>
+      <DeleteAccount kind="partner" eraseAfterDays={ERASE_AFTER_DAYS} />
     </main>
   );
 }

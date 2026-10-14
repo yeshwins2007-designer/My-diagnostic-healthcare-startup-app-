@@ -181,7 +181,12 @@ export default async function LandingPage() {
             </Stack>
           </Card>
 
-          <footer className="border-t border-[var(--color-line)] pt-6">
+          <footer className="flex flex-col gap-2 border-t border-[var(--color-line)] pt-6">
+            <p className="flex flex-wrap gap-x-4 text-small">
+              <Link href="/privacy" className="inline-flex min-h-11 items-center underline">Privacy policy</Link>
+              <Link href="/support" className="inline-flex min-h-11 items-center underline">Help and support</Link>
+              <Link href="/trust" className="inline-flex min-h-11 items-center underline">Trust and safety</Link>
+            </p>
             <Muted>
               {brand.legalEntity} · {brand.supportPhone} · {brand.disclaimer}
             </Muted>

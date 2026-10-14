@@ -112,8 +112,19 @@ export async function checkCode(
     };
   }
 
-  // Existing account: straight in.
+  // Existing account: straight in, unless it was deleted.
   if (result.userId) {
+    const existing = await db.user.findUniqueOrThrow({ where: { id: result.userId } });
+    if (!existing.isActive) {
+      return {
+        step: 'CODE',
+        phone: parsed.data.phone,
+        intent: parsed.data.intent,
+        error: existing.deletionRequestedAt
+          ? 'This account was deleted. Its details are being erased. To use MEDWYN again, call us.'
+          : 'This account is switched off. Please call us.',
+      };
+    }
     const agent = (await headers()).get('user-agent') ?? undefined;
     await createSession(result.userId, agent);
 

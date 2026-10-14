@@ -148,6 +148,7 @@ export function CheckoutForm({
                 type="button"
                 role="radio"
                 aria-checked={on}
+                data-native-hide={m.value === 'APPLE_PAY' ? '' : undefined}
                 onClick={() => setMethod(m.value)}
                 className={`flex min-h-[var(--size-touch)] items-center gap-4 rounded-[var(--radius-control)] border px-4 py-3 text-left ${
                   on

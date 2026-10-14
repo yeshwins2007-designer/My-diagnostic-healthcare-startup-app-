@@ -3,6 +3,8 @@ import type { Metadata, Viewport } from 'next';
 import { brand } from '@/lib/brand';
 import './globals.css';
 import './apple.css';
+import './native.css';
+import { NativeBridge } from '@/components/native-bridge';
 
 /** iPhone, iPad and Mac. iPadOS reports itself as a Mac, so both count. */
 const APPLE_UA = /iPhone|iPad|iPod|Macintosh/;
@@ -13,9 +15,11 @@ const APPLE_UA = /iPhone|iPad|iPod|Macintosh/;
  * - on Apple devices, data-platform="apple", which switches on app/apple.css
  *   (and nothing else: Android and other platforms never get the attribute);
  * - on iPhone and iPad, the text size set in iOS Settings (Dynamic Type),
- *   measured from -apple-system-body and clamped so layouts still hold.
+ *   measured from -apple-system-body and clamped so layouts still hold;
+ * - inside the App Store / Google Play app (mobile/), data-native="ios" or
+ *   "android", which hides what a store app cannot do (app/native.css).
  */
-const BOOT_SCRIPT = `(function(){var d=document.documentElement;try{var r=localStorage.getItem('ss_reader');if(r)d.setAttribute('data-reader',r);var t=localStorage.getItem('ss_theme');if(t)d.setAttribute('data-theme',t);}catch(e){}try{var u=navigator.userAgent,ios=/iPhone|iPad|iPod/.test(u)||(/Macintosh/.test(u)&&navigator.maxTouchPoints>1);if(ios||/Macintosh/.test(u)){d.setAttribute('data-platform','apple');d.setAttribute('data-apple',ios?'ios':'mac');if(ios){var p=document.createElement('span');p.style.cssText='font:-apple-system-body;position:absolute;visibility:hidden';d.appendChild(p);var px=parseFloat(getComputedStyle(p).fontSize)||17;d.removeChild(p);d.style.setProperty('--dynamic-type',String(Math.min(1.35,Math.max(0.9,px/17))));}}}catch(e){}})();`;
+const BOOT_SCRIPT = `(function(){var d=document.documentElement;try{var r=localStorage.getItem('ss_reader');if(r)d.setAttribute('data-reader',r);var t=localStorage.getItem('ss_theme');if(t)d.setAttribute('data-theme',t);}catch(e){}try{var u=navigator.userAgent,ios=/iPhone|iPad|iPod/.test(u)||(/Macintosh/.test(u)&&navigator.maxTouchPoints>1);if(ios||/Macintosh/.test(u)){d.setAttribute('data-platform','apple');d.setAttribute('data-apple',ios?'ios':'mac');if(ios){var p=document.createElement('span');p.style.cssText='font:-apple-system-body;position:absolute;visibility:hidden';d.appendChild(p);var px=parseFloat(getComputedStyle(p).fontSize)||17;d.removeChild(p);d.style.setProperty('--dynamic-type',String(Math.min(1.35,Math.max(0.9,px/17))));}}}catch(e){}try{var C=window.Capacitor;if(C&&C.isNativePlatform&&C.isNativePlatform())d.setAttribute('data-native',C.getPlatform());}catch(e){}})();`;
 
 export const metadata: Metadata = {
   title: {
@@ -71,7 +75,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           dangerouslySetInnerHTML={{ __html: BOOT_SCRIPT }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <NativeBridge />
+      </body>
     </html>
   );
 }

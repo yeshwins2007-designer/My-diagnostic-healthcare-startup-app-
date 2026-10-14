@@ -1,0 +1,13 @@
+/*
+  Inside the App Store / Google Play app (data-native, set before first paint
+  by app/layout.tsx; nothing else ever sets it).
+
+  Hidden there, because an app's web view cannot do them yet:
+  - passkeys, until the app is linked to the domain (associated domains on
+    iOS, Digital Asset Links on Android);
+  - Apple Pay on the web, which iOS turns off inside apps that add scripts
+    to their web view, as every Capacitor app does.
+*/
+:root[data-native] [data-native-hide] {
+  display: none !important;
+}

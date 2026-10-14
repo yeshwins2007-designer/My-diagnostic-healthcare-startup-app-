@@ -1,6 +1,9 @@
 /**
  * Retention purge.
  *
+ * Deleted family accounts are erased here too, ERASE_AFTER_DAYS after the
+ * family deleted them in the app (lib/account/deletion.ts).
+ *
  * Two datasets are deliberately short-lived:
  *
  *   Raw GPS pings — a minute-by-minute movement history of a health worker
@@ -17,6 +20,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { haversineKm } from '../lib/geo';
+import { ERASE_AFTER_DAYS, eraseDueAccounts } from '../lib/account/deletion';
 
 const db = new PrismaClient();
 
@@ -121,6 +125,7 @@ async function main() {
   const transcripts = await purgeTranscripts();
   const suspended = await expireAccreditations();
   const signInRows = await purgeSignInCodes();
+  const erased = await eraseDueAccounts();
 
   console.log(`
 Retention purge complete.
@@ -131,6 +136,7 @@ Retention purge complete.
                     (retention: ${TRANSCRIPT_RETENTION_DAYS} days)
   Labs suspended    ${suspended} for expired accreditation
   Sign-in codes     ${signInRows} spent codes and old wrong-password counts deleted
+  Deleted accounts  ${erased} erased, ${ERASE_AFTER_DAYS} days after the family deleted them
 `);
 }
 

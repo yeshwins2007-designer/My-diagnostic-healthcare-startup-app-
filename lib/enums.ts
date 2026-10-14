@@ -312,6 +312,8 @@ export const TicketCategory = set([
   'CLINICAL_HANDOFF',
   /** A partner lab asking to change a rate in its agreement. */
   'LAB_RATE_CHANGE',
+  /** Someone deleted their account in the app (families), or asked us to close it (partners). */
+  'ACCOUNT_DELETION',
 ]);
 export const TicketPriority = set(['LOW', 'NORMAL', 'HIGH', 'URGENT']);
 export const TicketStatus = set(['OPEN', 'IN_PROGRESS', 'RESOLVED']);
@@ -360,6 +362,8 @@ export const AuditAction = set([
   'LAB_TEST_PAUSED',
   'LAB_TEST_RESUMED',
   'LAB_PROFILE_UPDATED',
+  'ACCOUNT_DELETION_REQUESTED',
+  'ACCOUNT_ERASED',
   'ACCREDITATION_EXPIRED',
   'PAYMENT_CAPTURED',
   'MANDATE_STATUS_CHANGED',

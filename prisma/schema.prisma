@@ -41,6 +41,11 @@ model User {
   /// BCP-47-ish locale key from lib/i18n: en | hi | bn | mr | te | ta | kn | gu | ml | pa | ur | as
   locale    String   @default("en")
   isActive  Boolean  @default(true)
+  /// Set when the person deletes their account in the app. The account is
+  /// closed at once; identifying details are erased after the grace period
+  /// (lib/account/deletion.ts), keeping only records the law requires.
+  deletionRequestedAt DateTime?
+  erasedAt  DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
