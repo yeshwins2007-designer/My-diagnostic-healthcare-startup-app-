@@ -1,0 +1,45 @@
+Copyright (c) 2026 SwasthaSetu Health Services Pvt. Ltd. All rights reserved.
+
+MEDWYN is the trading name of the company above; the registered entity is
+named here because a copyright notice must name the legal person that holds
+the rights, not the brand.
+
+This source code is made publicly viewable so that collaborators, partner
+laboratories and prospective users can inspect how the platform works. It is
+NOT open source, and publication here grants no licence to use it.
+
+You may:
+
+  - read and study this code
+  - fork the repository for the sole purpose of proposing a change back to it
+  - quote short excerpts with attribution, for review or commentary
+
+You may not, without prior written permission from the copyright holder:
+
+  - use this code or any substantial part of it in another product or service,
+    whether or not that product is commercial
+  - run this software to provide diagnostic, collection or health services to
+    any person
+  - redistribute, sublicense, sell or host it, modified or unmodified
+  - train a model on this repository for the purpose of reproducing it
+
+Contributions: by opening a pull request you agree that your contribution is
+licensed to the copyright holder under these same terms, and that you have the
+right to grant that licence.
+
+A note on why this is stricter than it may look. This repository implements
+clinical safety controls — NABL scope routing, bedside sample labelling,
+cold-chain custody, critical-value escalation and a human release gate. Those
+controls are load-bearing. Code lifted from here and deployed without them, or
+with them weakened, can produce results that look valid and are not. That risk
+sits with patients, which is why reuse is by permission rather than by default.
+
+To ask for a licence, or to discuss a partnership, contact the support number
+published at the repository's homepage.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
