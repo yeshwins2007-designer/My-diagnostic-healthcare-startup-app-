@@ -12,7 +12,7 @@ import { db } from '../db';
 import { generateOtp, hashToken, safeEqual } from '../compliance/crypto';
 import { getSmsProvider } from '../providers/sms';
 import { audit } from '../compliance/audit';
-import { isDemo } from '../env';
+import { appReview, isDemo } from '../env';
 import type { UserRole } from '../enums';
 
 const OTP_TTL_MINUTES = 10;
@@ -107,7 +107,10 @@ export async function requestOtp(
     });
   }
 
-  const code = generateOtp();
+  // The store reviewers' number signs in with the fixed code from the review
+  // notes, never by SMS. Phone sign-in only; every limit above still applies.
+  const review = appReview && purpose === 'LOGIN' && phone === appReview.phone ? appReview : null;
+  const code = review ? review.code : generateOtp();
   await db.otpChallenge.create({
     data: {
       phone,
@@ -116,6 +119,9 @@ export async function requestOtp(
       expiresAt: new Date(Date.now() + OTP_TTL_MINUTES * 60_000),
     },
   });
+
+  // Same answer as any other number, so the review number is not given away.
+  if (review) return { ok: true, message: `We sent a 6-digit code to ${phone}.` };
 
   const sms = getSmsProvider();
   const delivery = await sms.sendOtp(phone, code);

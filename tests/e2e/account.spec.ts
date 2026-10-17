@@ -52,3 +52,12 @@ test('a family deletes their account in the app and cannot sign back in', async 
   await expect(page.getByText(/this account was deleted/i)).toBeVisible();
   expect(page.url()).toMatch(/\/login/);
 });
+
+test('the deletion page works without the app or an account, as Google Play asks', async ({ page }) => {
+  await page.goto('/delete-account');
+  await expect(page.getByRole('heading', { name: /delete your medwyn account/i })).toBeVisible();
+  await expect(page.getByText(/choose “delete my account”/i)).toBeVisible();
+  await expect(page.getByText(/within 30 days/i)).toBeVisible();
+  await page.goto('/support');
+  await expect(page.getByRole('link', { name: 'Here’s how' })).toHaveAttribute('href', '/delete-account');
+});

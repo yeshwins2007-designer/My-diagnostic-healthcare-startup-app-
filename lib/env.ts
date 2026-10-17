@@ -52,6 +52,18 @@ const envSchema = z.object({
   MSG91_AUTH_KEY: z.string().optional(),
   MSG91_SENDER_ID: z.string().optional(),
 
+  /**
+   * App Store and Google Play review sign-in. Reviewers are outside India and
+   * cannot receive our SMS, and both stores reject an app they cannot sign
+   * in to. When both are set, codes for this one number are not sent by SMS:
+   * the fixed code below works instead, with every other rule unchanged
+   * (single use, ten minutes, attempt and hourly limits). Give the pair to
+   * the stores in the review notes only, and unset both once approved.
+   * scripts/seed-review-account.ts prepares the account behind it.
+   */
+  APP_REVIEW_PHONE: z.string().regex(/^\+91[6-9]\d{9}$/, 'Use +91 and a 10-digit mobile number').optional(),
+  APP_REVIEW_CODE: z.string().regex(/^\d{6}$/, 'Six digits').optional(),
+
   /** Email delivery (Resend) for email sign-up and password reset codes. */
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().default('MEDWYN <no-reply@medwyn.in>'),
@@ -109,6 +121,12 @@ export const providerMode = {
 } as const;
 
 export type ProviderName = keyof typeof providerMode;
+
+/** The store reviewers' number and fixed code, when both are set. */
+export const appReview =
+  env.APP_REVIEW_PHONE && env.APP_REVIEW_CODE
+    ? { phone: env.APP_REVIEW_PHONE, code: env.APP_REVIEW_CODE }
+    : null;
 
 export function isSimulated(name: ProviderName): boolean {
   return providerMode[name] === 'simulated';

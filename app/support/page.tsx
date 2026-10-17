@@ -23,7 +23,8 @@ const QUESTIONS: { q: string; a: React.ReactNode }[] = [
     q: 'How do I delete my account?',
     a: (
       <>
-        In the app, open Profile and choose “Delete my account”. Our{' '}
+        In the app, open Profile and choose “Delete my account”. No app any more?{' '}
+        <Link href="/delete-account" className="underline">Here’s how</Link>. Our{' '}
         <Link href="/privacy" className="underline">privacy policy</Link> explains what happens next.
       </>
     ),

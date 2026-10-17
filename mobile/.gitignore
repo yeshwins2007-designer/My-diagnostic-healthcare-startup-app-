@@ -9,3 +9,9 @@ android/keystore.properties
 ios/App/build/
 ios/DerivedData/
 ios/App/Pods/
+# Taken fresh from the live app on every submission (scripts/store-screenshots.ts).
+fastlane/screenshots/
+fastlane/metadata/android/*/images/phoneScreenshots/
+# Written by fastlane itself.
+fastlane/README.md
+fastlane/report.xml

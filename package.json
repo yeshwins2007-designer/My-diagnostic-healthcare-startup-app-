@@ -12,6 +12,7 @@
     "db:push": "prisma db push --skip-generate && prisma generate",
     "db:studio": "prisma studio",
     "seed": "tsx scripts/seed.ts",
+    "seed:review": "tsx scripts/seed-review-account.ts",
     "demo:track": "tsx scripts/demo-track.ts",
     "provision:voice": "tsx scripts/provision-voice-agent.ts",
     "retention:purge": "tsx scripts/retention-purge.ts",

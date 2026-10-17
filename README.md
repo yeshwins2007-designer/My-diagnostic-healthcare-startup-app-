@@ -227,6 +227,18 @@ real deliverable is the printed A5 stoplight card — which carries **no numbers
 because a value without a doctor to interpret it produces either false reassurance
 or unnecessary fear.
 
+### The App Store and Google Play apps
+
+`mobile/` holds the native shells (Capacitor) that open this web app, and
+`.github/workflows/mobile.yml` builds them in the cloud. Started by hand with
+"submit" ticked, it also takes the store screenshots from the live app
+(`scripts/store-screenshots.ts`) and sends the listing in
+`mobile/fastlane/metadata/` and both builds to the stores. Store reviewers sign
+in with a dedicated number and fixed code (`APP_REVIEW_PHONE`,
+`APP_REVIEW_CODE`; `npm run seed:review`). The accounts, keys and declarations
+only the company can provide are in
+[`docs/store-launch.md`](docs/store-launch.md).
+
 ---
 
 ## Provider adapters

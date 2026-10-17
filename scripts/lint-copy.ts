@@ -90,9 +90,11 @@ const TARGETS = [
   'lib/i18n',
   'lib/brand.ts',
   'lib/providers/voice/prompt.ts',
+  // The App Store and Google Play listings: the first thing anyone reads.
+  'mobile/fastlane/metadata',
 ];
 
-const EXTENSIONS = new Set(['.ts', '.tsx']);
+const EXTENSIONS = new Set(['.ts', '.tsx', '.txt']);
 
 /**
  * The lint rules themselves quote the banned words, and so do the tests and
