@@ -31,7 +31,7 @@ export default async function JoinPage({
               <H1>
                 {intent === 'business'
                   ? 'Register your laboratory'
-                  : 'Set up care for a parent'}
+                  : 'Set up care for an individual'}
               </H1>
               <Lead>
                 {intent === 'business'

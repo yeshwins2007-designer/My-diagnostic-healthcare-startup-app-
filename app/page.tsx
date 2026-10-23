@@ -48,7 +48,7 @@ export default async function LandingPage() {
               </H1>
 
               <div className="flex flex-wrap gap-3">
-                <ButtonLink href="/join?as=individual">Set up care for a parent</ButtonLink>
+                <ButtonLink href="/join?as=individual">Set up care for an individual</ButtonLink>
                 <a
                   href="/join?as=business"
                   className="inline-flex min-h-[var(--size-touch)] items-center justify-center rounded-[var(--radius-control)] border border-[var(--color-line-strong)] px-5 text-[0.9375rem] font-medium text-[var(--brand-ink)] hover:bg-[var(--color-primary-wash)]"
