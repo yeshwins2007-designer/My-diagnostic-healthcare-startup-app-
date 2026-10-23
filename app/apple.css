@@ -1,0 +1,364 @@
+/*
+  The Apple layer.
+
+  On an iPhone, iPad or Mac the app should feel like it was made for Apple's
+  platform: the system typeface (San Francisco), Apple's system colours,
+  Liquid Glass on everything that floats, a floating tab bar, capsule
+  buttons, segmented controls, and text that follows the size set in
+  Settings > Display & Brightness > Text Size (Dynamic Type).
+
+  Every rule below is scoped to :root[data-platform='apple'], which only the
+  detection script in app/layout.tsx sets, and only on Apple devices. On
+  Android and everywhere else none of this matches, so nothing changes there.
+
+  The rules that do not bend for the look carry over: every text colour still
+  clears 7:1 (AAA) on its surface, every control stays at least 48px tall,
+  and with Reduce Transparency or Increase Contrast turned on, glass becomes
+  solid.
+
+  Unlayered on purpose: it must win over Tailwind's utilities, which live in
+  a cascade layer.
+*/
+
+/* --- shared: type, geometry, tint ------------------------------------------- */
+:root[data-platform='apple'] {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro', system-ui, 'Noto Sans', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace;
+
+  /* iOS 27 pulled corners back from iOS 26: rounded, not pill-shaped cards. */
+  --radius-card: 1.25rem;
+  --radius-card-lg: 1.5rem;
+  --radius-control: 0.75rem;
+
+  /* Apple's system blue, deepened to hold 7:1 (the "Increase Contrast" blue). */
+  --apple-tint: #0039c6;
+  --apple-fill: rgb(118 118 128 / 0.12);
+  --apple-glass-edge: rgb(0 0 0 / 0.1);
+  --apple-glass-highlight: rgb(255 255 255 / 0.55);
+  --apple-segment: #ffffff;
+}
+
+/* Dynamic Type: the size the person chose in iOS Settings, measured before
+   first paint by the layout's script and clamped so layouts hold. */
+:root[data-apple='ios'] {
+  font-size: min(calc(100% * var(--reader-scale) * var(--dynamic-type, 1)), 150%);
+}
+
+/* SF Pro's own spacing is already tuned per size; Geist's tightening is not. */
+:root[data-platform='apple'] body {
+  font-feature-settings: normal;
+}
+:root[data-platform='apple'] :where(h1, h2, h3) {
+  letter-spacing: -0.01em;
+}
+:root[data-platform='apple'] :where(h1) {
+  font-weight: 700;
+}
+
+/* --- dark (the default, and Auto with the phone in dark mode) -------------- */
+:root[data-platform='apple']:not([data-theme='light']) {
+  --color-canvas: #000000;
+  --color-surface: #1c1c1e;
+  --color-surface-sunken: #0e0e10;
+  --color-ink: #ffffff;
+  --color-ink-soft: #e5e5ea; /* 13.6:1 on #1c1c1e */
+  --color-ink-faint: #aeaeb2; /* 7.7:1 on #1c1c1e */
+  --color-line: rgb(84 84 88 / 0.45);
+  --color-line-strong: rgb(84 84 88 / 0.85);
+
+  --color-green: #30d158; /* 8.4:1 */
+  --color-green-wash: rgb(48 209 88 / 0.12);
+  --color-yellow: #ffd60a; /* 12.1:1 */
+  --color-yellow-wash: rgb(255 214 10 / 0.1);
+  --color-red: #ff9690; /* 8.1:1 */
+  --color-red-wash: rgb(255 69 58 / 0.14);
+  --color-info: #64d2ff; /* 9.9:1 */
+  --color-info-wash: rgb(100 210 255 / 0.1);
+
+  --card-bg: var(--color-surface);
+  --card-border: transparent;
+  --glow: none;
+  --shadow-card: none;
+  --field-bg: #000000;
+  --glass-bg: rgb(28 28 30 / 0.6);
+  --glass-border: rgb(255 255 255 / 0.12);
+
+  --apple-tint: #7dbdff; /* 8.6:1 on #1c1c1e */
+  --apple-fill: rgb(118 118 128 / 0.24);
+  --apple-glass-edge: rgb(0 0 0 / 0.45);
+  --apple-glass-highlight: rgb(255 255 255 / 0.22);
+  --apple-segment: #545458; /* white label on it: 7.4:1 */
+  color-scheme: dark;
+}
+
+/* --- light ---------------------------------------------------------------- */
+:root[data-platform='apple'][data-theme='light'] {
+  --color-canvas: #f2f2f7;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #ededf2;
+  --color-ink: #000000;
+  --color-ink-soft: #3a3a3c;
+  --color-ink-faint: #48484a; /* 8.2:1 on #f2f2f7 */
+  --color-line: rgb(60 60 67 / 0.16);
+  --color-line-strong: rgb(60 60 67 / 0.34);
+  --color-green: #04533d;
+  --color-yellow: #7c350a;
+  --color-red: #8c1034;
+  --color-info: #2f4a66;
+  --card-border: transparent;
+  --glow: none;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 12px 32px -20px rgb(0 0 0 / 0.18);
+  --field-bg: #efeff1;
+  --glass-bg: rgb(255 255 255 / 0.66);
+  --glass-border: rgb(0 0 0 / 0.08);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: light) {
+  :root[data-platform='apple'][data-theme='auto'] {
+    --color-canvas: #f2f2f7;
+    --color-surface: #ffffff;
+    --color-surface-sunken: #ededf2;
+    --color-ink: #000000;
+    --color-ink-soft: #3a3a3c;
+    --color-ink-faint: #48484a;
+    --color-line: rgb(60 60 67 / 0.16);
+    --color-line-strong: rgb(60 60 67 / 0.34);
+    --color-green: #04533d;
+    --color-green-wash: #ecfdf5;
+    --color-yellow: #7c350a;
+    --color-yellow-wash: #fffbeb;
+    --color-red: #8c1034;
+    --color-red-wash: #fff1f2;
+    --color-info: #2f4a66;
+    --color-info-wash: #f1f5f9;
+    --card-border: transparent;
+    --glow: none;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 12px 32px -20px rgb(0 0 0 / 0.18);
+    --field-bg: #efeff1;
+    --glass-bg: rgb(255 255 255 / 0.66);
+    --glass-border: rgb(0 0 0 / 0.08);
+    --apple-tint: #0039c6;
+    --apple-fill: rgb(118 118 128 / 0.12);
+    --apple-glass-edge: rgb(0 0 0 / 0.1);
+    --apple-glass-highlight: rgb(255 255 255 / 0.55);
+    --apple-segment: #ffffff;
+    color-scheme: light;
+  }
+}
+
+/* --- Liquid Glass ---------------------------------------------------------- */
+/* Everything that floats (headers, the tab bar, sheets, the command menu):
+   a blurred, saturated material with a bright top edge and, as in iOS 27, a
+   darker rim so it separates from busy content behind it. */
+:root[data-platform='apple'] .glass {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border-color: var(--glass-border);
+  box-shadow:
+    inset 0 0.5px 0 var(--apple-glass-highlight),
+    inset 0 0 0 0.5px var(--apple-glass-edge);
+}
+
+/* --- floating tab bar ------------------------------------------------------ */
+/* iOS 26 and 27: the tab bar floats above the content as a glass capsule,
+   inset from the edges, and the selected tab sits in a lighter pill. */
+:root[data-platform='apple'] [data-tabbar] {
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: max(0.625rem, calc(env(safe-area-inset-bottom) - 0.75rem));
+  padding: 0.25rem;
+  border-width: 0.5px;
+  border-radius: 9999px;
+  box-shadow:
+    inset 0 0.5px 0 var(--apple-glass-highlight),
+    inset 0 0 0 0.5px var(--apple-glass-edge),
+    0 10px 30px -10px rgb(0 0 0 / 0.45);
+}
+:root[data-platform='apple'] [data-tabbar] a {
+  min-height: 3.5rem;
+  border-radius: 9999px;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+:root[data-platform='apple'] [data-tabbar] a[aria-current='page'] {
+  background: var(--apple-fill);
+  color: var(--apple-tint);
+}
+/* The top-edge light marks the selection on other platforms; the pill does here. */
+:root[data-platform='apple'] [data-tabbar] a > span[aria-hidden] {
+  display: none;
+}
+:root[data-platform='apple'] .has-bottom-nav {
+  --bottom-nav-offset: calc(4.5rem + max(0.625rem, calc(env(safe-area-inset-bottom) - 0.75rem)));
+}
+@media (min-width: 640px) {
+  :root[data-platform='apple'] .has-bottom-nav {
+    --bottom-nav-offset: 0px;
+  }
+}
+/* The scroll-edge effect: content fades out under the floating bar instead
+   of showing sharp edges around it. Sized to the bar's own strip, so it
+   never covers an action bar sitting just above. */
+@media (max-width: 639.98px) {
+  :root[data-platform='apple'] .has-bottom-nav::after {
+    content: '';
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    height: var(--bottom-nav-offset);
+    background: linear-gradient(to top, var(--color-canvas) 35%, color-mix(in oklab, var(--color-canvas) 0%, transparent));
+    pointer-events: none;
+    z-index: 29;
+  }
+}
+
+/* --- controls -------------------------------------------------------------- */
+/* Buttons are capsules, as in Apple's own apps. */
+:root[data-platform='apple'] .btn {
+  border-radius: 9999px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* Bar buttons (search, notifications, call): round glass, like the buttons
+   in an iOS 26/27 navigation bar. */
+:root[data-platform='apple'] .icon-btn {
+  border-radius: 9999px;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-color: var(--glass-border);
+  box-shadow: inset 0 0.5px 0 var(--apple-glass-highlight);
+  color: var(--color-ink);
+}
+
+/* Segmented controls: a tinted track with the chosen segment raised. */
+:root[data-platform='apple'] [data-segmented],
+:root[data-platform='apple'] .glass[data-segmented] {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+  gap: 2px;
+  padding: 2px;
+  border: 0;
+  border-radius: 9999px;
+  background: var(--apple-fill);
+}
+:root[data-platform='apple'] [data-segmented] > :where(a, button) {
+  border: 0;
+  border-radius: 9999px;
+}
+:root[data-platform='apple'] [data-segmented] > :where(a[aria-current='page'], button[aria-pressed='true'], button[aria-selected='true']) {
+  background: var(--apple-segment);
+  box-shadow:
+    0 3px 8px rgb(0 0 0 / 0.12),
+    0 3px 1px rgb(0 0 0 / 0.04);
+  color: var(--color-ink);
+}
+
+/* Links read as Apple's tint. The underline stays: colour alone is not
+   enough for someone who cannot tell colours apart. */
+:root[data-platform='apple'] :where(main, footer) a.underline {
+  color: var(--apple-tint);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+/* Checkboxes and radios take the tint, like native controls. */
+:root[data-platform='apple'] :where(input[type='checkbox'], input[type='radio']) {
+  accent-color: var(--apple-tint);
+}
+
+/* Focus follows the system: a tinted ring. */
+:root[data-platform='apple'] :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline-color: var(--apple-tint);
+}
+
+/* Native feel for controls: no text-selection or link preview on a long press. */
+:root[data-platform='apple'] :where(button, [role='button'], nav a, .btn) {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* --- sheets ---------------------------------------------------------------- */
+:root[data-platform='apple'] dialog.sheet::backdrop {
+  background: rgb(0 0 0 / 0.4);
+}
+:root[data-platform='apple'] .sheet-panel {
+  border-radius: 1.75rem;
+}
+
+/* --- accessibility settings ------------------------------------------------ */
+/* Reduce Transparency, or iOS 27's Liquid Glass slider at its tinted end, and
+   Increase Contrast: solid surfaces and visible edges instead of glass. */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  :root[data-platform='apple'] .glass {
+    background: var(--color-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-color: var(--color-line-strong);
+  }
+}
+@media (prefers-contrast: more) {
+  :root[data-platform='apple'] {
+    --card-border: var(--color-line-strong);
+    --color-line: var(--color-line-strong);
+  }
+}
+
+/* --- the calls sheet (components/calls-intro.tsx) -------------------------- */
+/* An iOS 26 and 27 sheet: glass, the deep corner radius, the system green
+   switch, and the tinted text buttons Apple uses for Back and Not Now. */
+:root[data-platform='apple'] .calls-sheet {
+  border-radius: 2.375rem 2.375rem 0 0;
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(180%);
+}
+@media (min-width: 640px) {
+  :root[data-platform='apple'] .calls-sheet {
+    border-radius: 2.375rem;
+  }
+}
+:root[data-platform='apple'] .calls-actions {
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--color-surface) 92%, transparent) 35%);
+}
+:root[data-platform='apple'] .calls-primary {
+  border-radius: 9999px;
+  background: var(--apple-tint);
+  /* Dark ink on the light blue of dark mode, white on the deep blue of light mode. */
+  color: var(--color-primary-ink);
+  font-size: calc(1.0625rem * var(--dynamic-type, 1));
+}
+:root[data-platform='apple'] .call-link {
+  color: var(--apple-tint);
+  font-weight: 500;
+}
+:root[data-platform='apple'] .call-group {
+  border: 0;
+  border-radius: 1.625rem;
+  background: var(--apple-fill);
+}
+:root[data-platform='apple'] .call-group-label {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+:root[data-platform='apple'] .call-switch {
+  background: var(--apple-fill);
+}
+:root[data-platform='apple'] .call-switch:checked {
+  background: #34c759;
+}
+:root[data-platform='apple'] .calls-dots > span[data-on='true'] {
+  background: var(--apple-tint);
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-platform='apple'] .calls-sheet {
+    background: var(--color-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
