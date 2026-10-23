@@ -2,6 +2,12 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { loadCallHistory, loadFamilyContext } from '@/lib/queries/caregiver';
 import { urgency, FOLLOW_UP_QUESTIONS } from '@/lib/sop/followUp';
+import Link from 'next/link';
+import { db } from '@/lib/db';
+import { callResultLine, callTitle } from '@/lib/voice/describe';
+import { CallTile } from '@/components/call-icons';
+import { callPolicy } from '@/lib/voice/kinds';
+import type { VoiceCallKind } from '@/lib/enums';
 import {
   Badge,
   Card,
@@ -30,6 +36,11 @@ export default async function CallsPage() {
   if (!family) redirect('/caregiver/onboarding');
 
   const calls = await loadCallHistory(family.id);
+  const assistantCalls = await db.voiceCall.findMany({
+    where: { familyId: family.id, status: { not: 'CANCELLED' } },
+    orderBy: { scheduledFor: 'desc' },
+    take: 20,
+  });
   const pending = calls.filter((c) => c.status === 'PENDING');
   const completed = calls.filter((c) => c.status === 'COMPLETED');
   const missed = calls.filter((c) => c.status === 'MISSED');
@@ -123,6 +134,35 @@ export default async function CallsPage() {
                 </Stack>
               </Card>
             ))
+          )}
+        </Stack>
+
+        <Stack gap="md">
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <H3>From our assistant</H3>
+            <Link href="/caregiver/profile#calls" className="inline-flex min-h-11 items-center font-semibold underline">
+              Choose your calls
+            </Link>
+          </div>
+          {assistantCalls.length === 0 ? (
+            <Muted>No assistant calls yet. Turn them on in Profile, and each one appears here after it is made.</Muted>
+          ) : (
+            <Card>
+              <ul className="flex flex-col divide-y divide-[var(--color-line)]">
+                {assistantCalls.map((c) => (
+                  <li key={c.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+                    <CallTile name={callPolicy(c.kind as VoiceCallKind).icon} size={30} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold">{callTitle(c.kind)}</span>
+                      <span className="block text-small text-[var(--color-ink-soft)]">{callResultLine(c)}</span>
+                    </span>
+                    <span className="shrink-0 text-small text-[var(--color-ink-faint)]">
+                      {(c.completedAt ?? c.scheduledFor).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: c.timeZone })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
           )}
         </Stack>
 

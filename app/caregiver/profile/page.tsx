@@ -10,6 +10,12 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { PasskeyManager } from '@/components/passkeys';
 import { ElderLink } from '@/components/elder-link';
 import { DeleteAccount } from '@/components/delete-account';
+import { CallSettings } from '@/components/call-settings';
+import { CallsIntro } from '@/components/calls-intro';
+import { getCallPreferences, noCalls } from '@/lib/voice/consent';
+import { firstName } from '@/lib/voice/scripts';
+import { placeName } from '@/lib/voice/time';
+import { env } from '@/lib/env';
 import { ERASE_AFTER_DAYS } from '@/lib/account/deletion';
 import { db } from '@/lib/db';
 import { listMyPasskeys } from '@/app/actions/passkeys';
@@ -36,7 +42,7 @@ function Row({ href, title, body }: { href: string; title: string; body: string 
 export default async function ProfilePage() {
   const { session, family } = await loadFamilyContext();
   const patients = family?.patients ?? [];
-  const [membership, labChoices, passkeys, elderAccess, account] = await Promise.all([
+  const [membership, labChoices, passkeys, elderAccess, account, callPrefs] = await Promise.all([
     family ? loadMembership(family.id) : null,
     Promise.all(patients.map(async (p) => [p.id, await labChoicesForPatient(p.id)] as const)),
     listMyPasskeys(),
@@ -46,9 +52,11 @@ export default async function ProfilePage() {
     }),
     db.user.findUnique({
       where: { id: session.id },
-      select: { email: true, emailVerifiedAt: true, passwordHash: true },
+      select: { email: true, emailVerifiedAt: true, passwordHash: true, locale: true, timeZone: true },
     }),
+    family ? getCallPreferences(family.id) : noCalls(),
   ]);
+  const callParents = patients.map((p) => ({ id: p.id, firstName: firstName(p.name), language: p.language }));
   const emailSignIn = account?.email && account.emailVerifiedAt && account.passwordHash ? account.email : null;
   const choicesByPatient = new Map(labChoices);
   // Unopened links past their week are dead anyway; do not list them.
@@ -154,6 +162,26 @@ export default async function ProfilePage() {
             Add another parent
           </ButtonLink>
         </Stack>
+
+        {family && (
+          <Stack gap="sm">
+            <H2>Calls from our assistant</H2>
+            <Muted>
+              Short calls that take care of the details: fasting the night before, a door nobody
+              answers, a check-in after each visit, the report being ready, a monthly update and
+              a reminder when a test is due. Each one opens by saying it is our assistant, and none
+              ever discusses results. We ring you in your own day ({placeName(account?.timeZone ?? 'Asia/Kolkata')} time).
+            </Muted>
+            <CallsIntro
+              launcherLabel="How our calls work"
+              parents={callParents}
+              familyLocale={account?.locale ?? 'en'}
+              preferences={callPrefs}
+              assistantPhone={env.ASSISTANT_PHONE_NUMBER}
+            />
+            <CallSettings parents={callParents} familyLocale={account?.locale ?? 'en'} preferences={callPrefs} />
+          </Stack>
+        )}
 
         <Stack gap="sm">
           <H2>Sign-in</H2>

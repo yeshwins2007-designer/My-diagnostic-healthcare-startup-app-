@@ -73,6 +73,12 @@ export default function PrivacyPage() {
                 <strong>Voice assistant:</strong> if you talk to it, what was said, so a coordinator
                 can follow up.
               </li>
+              <li>
+                <strong>Our assistant’s calls:</strong> only the calls you turn on. For each one,
+                when we rang, who picked up, and what came of it: for example, that fasting was
+                understood, or your answers to “was the technician on time, and gentle?”. Your
+                time zone, so we ring you at a sensible hour.
+              </li>
             </ul>
             <p>No advertising, no tracking across other apps or websites, and we never sell data.</p>
           </Section>
@@ -97,7 +103,7 @@ export default function PrivacyPage() {
               <li><strong>Razorpay</strong>, for payments.</li>
               <li><strong>Our SMS and email providers</strong>, to send sign-in codes and notices.</li>
               <li><strong>Google Maps</strong>, to find the address on the map.</li>
-              <li><strong>ElevenLabs</strong>, which runs the voice assistant, only if you use it.</li>
+              <li><strong>ElevenLabs</strong>, which runs the voice assistant and places the calls you turn on.</li>
               <li><strong>ABDM</strong>, only if you link an ABHA and agree to share a report.</li>
               <li>Authorities, only when the law requires it.</li>
             </ul>
@@ -107,7 +113,7 @@ export default function PrivacyPage() {
             <ul>
               <li>Your account: until you delete it.</li>
               <li>Technician route locations: {env.PING_RETENTION_DAYS} days, then only a summary.</li>
-              <li>Voice assistant transcripts: {env.TRANSCRIPT_RETENTION_DAYS} days.</li>
+              <li>Voice assistant transcripts, and notes from our assistant’s calls: {env.TRANSCRIPT_RETENTION_DAYS} days.</li>
               <li>
                 After you delete your account: we erase your details and your parents’ details
                 within {ERASE_AFTER_DAYS} days. Laboratories must keep the reports they sign, and

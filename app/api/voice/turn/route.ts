@@ -12,6 +12,24 @@ import { simulatedReply } from '@/lib/providers/voice';
 import { env, providerMode } from '@/lib/env';
 import { DEFAULT_LOCALE, isLocale, type Locale } from '@/lib/i18n/locales';
 import { clientKey, rateLimit } from '@/lib/rate-limit';
+import {
+  callerFromUser,
+  etaAnswer,
+  fastingAnswer,
+  nextVisitAnswer,
+  reportStatusAnswer,
+} from '@/lib/voice/answers';
+
+/**
+ * Scripted intents that have a true answer for a signed-in family: the same
+ * answers the phone line gives (lib/voice/answers.ts), from their own records.
+ */
+const REAL_ANSWERS: Record<string, (caller: NonNullable<Awaited<ReturnType<typeof callerFromUser>>>) => Promise<string>> = {
+  next_visit: (c) => nextVisitAnswer(c),
+  eta: (c) => etaAnswer(c),
+  fasting: (c) => fastingAnswer(c),
+  report_status: (c) => reportStatusAnswer(c),
+};
 
 /**
  * One conversational turn, guarded.
@@ -86,6 +104,16 @@ export async function POST(request: Request) {
       ? scripted.text
       : localisedReplacement(scripted.guard, callerLocale);
     intent = scripted.intent;
+
+    const real = scripted.guard.allowed && user?.role === 'CAREGIVER' ? REAL_ANSWERS[intent] : undefined;
+    const caller = real && user ? await callerFromUser(user.id) : null;
+    if (real && caller?.familyId) {
+      const answer = await real(caller);
+      // Our own answers pass the same output guard as any agent's would.
+      const checked = guardOutput(answer);
+      replyText = checked.allowed ? answer : localisedReplacement(checked, callerLocale);
+      if (!checked.allowed) guard = checked;
+    }
   }
 
   // 3. Persist the conversation, with retention set at creation time.

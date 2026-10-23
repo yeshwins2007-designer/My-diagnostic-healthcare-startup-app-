@@ -89,6 +89,16 @@ export async function closeAccount(userId: string, now = new Date()): Promise<Cl
       where: { familyId: { in: familyIds }, status: 'AWAITING_PAYMENT' },
       data: { status: 'CANCELLED', cancelledAt: now, cancelReason: 'Account deleted' },
     }),
+    // Nobody is called about an account that is closed.
+    db.voiceCall.updateMany({
+      where: { familyId: { in: familyIds }, status: 'SCHEDULED' },
+      data: { status: 'CANCELLED', statusReason: 'Account deleted' },
+    }),
+    db.callPreference.updateMany({ where: { familyId: { in: familyIds } }, data: { enabled: false } }),
+    db.voiceBookingRequest.updateMany({
+      where: { familyId: { in: familyIds }, status: 'NEW' },
+      data: { status: 'DECLINED' },
+    }),
     db.supportTicket.create({
       data: {
         raisedByUserId: user.id,
@@ -139,6 +149,10 @@ export async function eraseAccount(userId: string, now = new Date()): Promise<bo
         data: { withdrawnAt: now, proxyName: null },
       }),
       db.family.update({ where: { id: familyId }, data: { name: 'Deleted family' } }),
+      // Calls and phone requests carry names and numbers; their only use was the service.
+      db.voiceCall.deleteMany({ where: { familyId } }),
+      db.callPreference.deleteMany({ where: { familyId } }),
+      db.voiceBookingRequest.deleteMany({ where: { familyId } }),
     ]);
   }
 

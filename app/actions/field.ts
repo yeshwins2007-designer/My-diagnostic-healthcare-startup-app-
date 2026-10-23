@@ -14,6 +14,8 @@ import {
 import { readClock, budgetForSpecimens, evaluateIntake } from '@/lib/sop/sampleClock';
 import { isRefusal } from '@/lib/sop/types';
 import { CHECKLIST_STEPS, type ChecklistStepKey } from '@/lib/enums';
+import { callsEnabled } from '@/lib/voice/consent';
+import { onDoorNotAnswered } from '@/lib/voice/scheduler';
 
 export interface FieldActionState {
   ok: boolean;
@@ -102,6 +104,35 @@ export async function markArrived(bookingId: string): Promise<FieldActionState> 
 
   revalidatePath(`/field/visit/${bookingId}`);
   return { ok: true, message: 'Arrival recorded.' };
+}
+
+/**
+ * Nobody is opening the door. The assistant rings the parent at once, then
+ * the family, while the technician waits; what they say appears on the
+ * technician's screen. Families who have not turned door calls on are rung
+ * by the technician, from the number on the visit.
+ */
+export async function reportNoAnswer(bookingId: string): Promise<FieldActionState> {
+  const { user, technician } = await technicianOrThrow();
+  const booking = await db.booking.findFirst({ where: { id: bookingId, technicianId: technician.id } });
+  if (!booking) return { ok: false, message: 'Visit not found.' };
+
+  await audit({
+    action: 'DOOR_NOT_ANSWERED',
+    entityType: 'Booking',
+    entityId: bookingId,
+    actorUserId: user.id,
+    actorRole: 'TECHNICIAN',
+    detail: { reference: booking.reference },
+  });
+
+  if (!(await callsEnabled(booking.familyId, 'MISSED_DOOR'))) {
+    return { ok: false, message: 'This family hasn’t turned on door calls. Please ring them yourself.' };
+  }
+  const call = await onDoorNotAnswered(bookingId);
+  revalidatePath(`/field/visit/${bookingId}`);
+  if (!call) return { ok: false, message: 'There’s no number to call. Please ring the coordinator.' };
+  return { ok: true, message: 'Calling now. Stay at the door: the answer appears here.' };
 }
 
 // --- consent -----------------------------------------------------------------

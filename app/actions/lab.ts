@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { db } from '@/lib/db';
+import { onReportReleased } from '@/lib/voice/scheduler';
 import { requireRole } from '@/lib/auth/session';
 import { audit } from '@/lib/compliance/audit';
 import { encryptField } from '@/lib/compliance/crypto';
@@ -598,6 +599,10 @@ export async function verifyAndReleaseReport(reportId: string): Promise<LabActio
     actorRole: 'OPS',
     detail: { verifiedBy: user.name },
   });
+
+  // The assistant tells the family it is ready (never what is in it), if
+  // they asked for that call. Not when a value is critical: a person calls.
+  await onReportReleased(reportId, now).catch(() => null);
 
   // Publishing to ABHA happens only after release, and only where the patient
   // has an account and the lab is not publishing itself. A failure here never

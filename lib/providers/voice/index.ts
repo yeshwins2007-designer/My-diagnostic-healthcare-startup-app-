@@ -137,37 +137,43 @@ const SCRIPTED_INTENTS: { intent: string; patterns: RegExp[]; reply: string }[] 
     intent: 'next_visit',
     patterns: [/next\s*visit/i, /when.*(?:coming|visit)/i, /appointment/i, /कब\s*आ/, /agli\s*visit/i],
     reply:
-      'Your next visit is on Tuesday the fourteenth, between six thirty and seven thirty in the morning. Priya will be coming, the same technician as last month. Would you like me to move it?',
+      'Sign in, and I can tell you the date of the next visit, the time window and who is coming.',
   },
   {
     intent: 'eta',
     patterns: [/where\s*(?:is|are)/i, /how\s*(?:far|long)/i, /eta/i, /कहाँ\s*(?:है|हैं)/, /kitni\s*der/i],
     reply:
-      'Priya is about twelve minutes away and is inside your promised window. I can send you the live tracking link on WhatsApp if that helps.',
+      'Sign in, and I can tell you where the technician is right now, from their phone’s location.',
   },
   {
     intent: 'fasting',
     patterns: [/fast(?:ing)?/i, /eat|drink|khana|khali\s*pet/i, /खाली\s*पेट|उपवास/],
     reply:
-      'For tomorrow, please finish dinner by eight thirty in the evening. After that, plain water is completely fine, and please do keep drinking water. Do not stop any regular medicine unless the doctor has told you to.',
+      'The time of the last meal depends on the tests. Sign in, and I’ll tell you the exact time for your visit. Plain water is always fine. For any question about medicines, a coordinator will call you.',
   },
   {
     intent: 'reschedule',
     patterns: [/reschedul/i, /change.*(?:date|time|visit)/i, /postpone/i, /badal|badlna/i, /बदल/],
     reply:
-      'I can move that. I have Wednesday the fifteenth at six thirty to seven thirty, or Thursday the sixteenth at seven thirty to eight thirty. Which suits you better?',
+      'A coordinator can move it for you. Tell me the day that suits you better, and they will confirm the new time by message.',
   },
   {
     intent: 'report_status',
     patterns: [/report.*(?:ready|come|status)/i, /where.*report/i, /रिपोर्ट\s*(?:आ|तैयार)/],
     reply:
-      'The report was signed by the laboratory’s pathologist yesterday evening and released to your account. It is in the app under Reports, and the printed card was handed over at the visit. Your doctor is the right person to go through it with you.',
+      'Sign in, and I can tell you whether the latest report has been released. Reports appear in the app under Reports once the laboratory’s pathologist has signed them.',
   },
   {
     intent: 'billing',
     patterns: [/plan|price|cost|bill|payment|subscription/i, /कितना|पैसे|भुगतान/],
     reply:
       'You pay for the tests you book, and home collection is one hundred and ninety nine rupees. With Medwyn One, at four hundred and ninety nine rupees a month or nine hundred and ninety nine a year, every test is thirty percent off and collection is free.',
+  },
+  {
+    intent: 'book',
+    patterns: [/\bbook\b/i, /new\s*visit/i, /test\s*(?:karwana|chahiye)/i, /बुक|जांच\s*कराना/],
+    reply:
+      'You can book in the app under Book tests. Your parent can also book just by calling our assistant and saying the day; you then confirm it here and pay.',
   },
   {
     intent: 'complaint',

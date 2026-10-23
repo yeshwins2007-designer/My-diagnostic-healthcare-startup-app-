@@ -31,7 +31,8 @@ async function wipe() {
   // Order matters: children before parents.
   const tables = [
     'auditLog', 'growthGateEvaluation', 'metricSnapshot', 'voiceConversation',
-    'supportTicket', 'incident', 'followUpCall', 'criticalValueAlert',
+    'supportTicket', 'voiceCall', 'visitFeedback', 'voiceBookingRequest', 'callPreference',
+    'incident', 'followUpCall', 'criticalValueAlert',
     'reportParameter', 'report', 'consentRecord', 'visitRouteSummary',
     'locationPing', 'trackingSession', 'custodyHandoff', 'coldChainLog',
     'specimen', 'visitChecklistStep', 'reportDocument', 'bookingItem', 'ledgerEntry', 'payment',
@@ -449,6 +450,9 @@ async function main() {
         name: spec.caregiver,
         role: 'CAREGIVER',
         locale: spec.locale,
+        // Seeded families signed up before the calls sheet existed; a new
+        // sign-up sees it (components/calls-intro.tsx).
+        callsIntroSeenAt: new Date(),
         ...(withEmail
           ? {
               email: demoEmail.email,

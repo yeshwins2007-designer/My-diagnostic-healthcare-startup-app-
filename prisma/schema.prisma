@@ -46,6 +46,12 @@ model User {
   /// (lib/account/deletion.ts), keeping only records the law requires.
   deletionRequestedAt DateTime?
   erasedAt  DateTime?
+  /// IANA time zone, from the person's device. Calls to a son in London ring
+  /// at seven in his evening, not at dawn. lib/voice/time.ts.
+  timeZone  String   @default("Asia/Kolkata")
+  /// When the person was shown how the assistant's calls work (once, after
+  /// sign-up; reopenable from Profile).
+  callsIntroSeenAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -192,6 +198,9 @@ model Family {
   subscriptions Subscription[]
   bookings      Booking[]
   tickets       SupportTicket[]
+  voiceCalls    VoiceCall[]
+  callPreferences CallPreference[]
+  bookingRequests VoiceBookingRequest[]
 }
 
 model FamilyMember {
@@ -238,6 +247,9 @@ model Patient {
   /// the panel changed, or it is at its daily ceiling.
   preferredLabId String?
   preferredLab   Lab?    @relation("PatientPreferredLab", fields: [preferredLabId], references: [id], onDelete: SetNull)
+  /// The language our assistant speaks with this parent on the phone, a
+  /// locale key from lib/i18n. Empty: the family's own language.
+  language     String    @default("")
   isActive     Boolean   @default(true)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -249,6 +261,8 @@ model Patient {
   elderAccess   ElderAccess[]
   reports       Report[]
   consents      ConsentRecord[]
+  voiceCalls    VoiceCall[]
+  bookingRequests VoiceBookingRequest[]
 
   @@index([familyId])
 }
@@ -841,6 +855,7 @@ model Technician {
   bookings      Booking[]
   routes        Route[]
   handoffs      CustodyHandoff[]
+  feedback      VisitFeedback[]
 }
 
 // ---------------------------------------------------------------------------
@@ -957,6 +972,8 @@ model Booking {
   incidents      Incident[]
   careContext    CareContext?
   summaries      VisitRouteSummary[]
+  voiceCalls     VoiceCall[]
+  feedback       VisitFeedback?
 
   @@index([status])
   @@index([windowStart])
@@ -1331,6 +1348,129 @@ model VoiceConversation {
   purgeAfter    DateTime?
 
   @@index([startedAt])
+}
+
+// ---------------------------------------------------------------------------
+// The assistant's calls (lib/voice). Every one is opted into by the family,
+// made in calling hours in the listener's own time zone, and opens by saying
+// it is an automated assistant. None of them ever carries a result.
+// ---------------------------------------------------------------------------
+
+/// The family's choice for one kind of call. A row exists only once someone
+/// chose; no row means no calls of that kind.
+model CallPreference {
+  id        String   @id @default(cuid())
+  familyId  String
+  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  /// VoiceCallKind (lib/enums.ts)
+  kind      String
+  enabled   Boolean
+  /// The words shown when they chose, so we can prove what was agreed to.
+  wording   String
+  decidedByUserId String
+  decidedAt DateTime @default(now())
+
+  @@unique([familyId, kind])
+}
+
+model VoiceCall {
+  id            String   @id @default(cuid())
+  /// VoiceCallKind: FASTING_PREP | MISSED_DOOR | POST_VISIT_CHECKIN |
+  /// REPORT_READY | MONTHLY_UPDATE | DUE_NUDGE
+  kind          String
+  /// VoiceCallStatus: SCHEDULED | DIALING | COMPLETED | NO_ANSWER | FAILED |
+  /// CANCELLED | SIMULATED
+  status        String   @default("SCHEDULED")
+  /// PATIENT | FAMILY
+  recipientRole String
+  recipientName String
+  toPhone       String
+  /// The language the assistant speaks on this call (lib/i18n locale key).
+  locale        String   @default("en")
+  /// The listener's time zone: calling hours are theirs, not ours.
+  timeZone      String   @default("Asia/Kolkata")
+  familyId      String
+  family        Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  patientId     String?
+  patient       Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  bookingId     String?
+  booking       Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  /// One call per purpose: planning twice changes nothing.
+  dedupeKey     String   @unique
+  scheduledFor  DateTime
+  attempts      Int      @default(0)
+  maxAttempts   Int      @default(1)
+  lastAttemptAt DateTime?
+  completedAt   DateTime?
+  /// Why it was cancelled or failed, in words.
+  statusReason  String   @default("")
+  providerCallId String? @unique
+  /// What the call established (JSON, lib/voice/outcomes.ts), e.g. whether
+  /// the fasting instructions were repeated back correctly.
+  outcomeJson   String   @default("{}")
+  /// One or two lines for the coordinator and the family. Blanked after
+  /// TRANSCRIPT_RETENTION_DAYS; the outcome stays for the numbers.
+  summary       String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status, scheduledFor])
+  @@index([familyId, createdAt])
+  @@index([bookingId])
+}
+
+/// "Did they arrive on time? Were they gentle?", asked after every visit.
+/// The quality numbers for each technician come from here.
+model VisitFeedback {
+  id           String     @id @default(cuid())
+  bookingId    String     @unique
+  booking      Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  technicianId String?
+  technician   Technician? @relation(fields: [technicianId], references: [id], onDelete: SetNull)
+  /// FeedbackAnswer: YES | NO | UNSURE
+  onTime       String
+  gentle       String
+  comment      String     @default("")
+  /// VOICE_CALL | APP | OPS
+  source       String     @default("VOICE_CALL")
+  createdAt    DateTime   @default(now())
+
+  @@index([technicianId, createdAt])
+}
+
+/// A visit asked for by phone: a parent who just called and talked, or a
+/// family saying yes to "shall I book the usual slot?". Never a booking by
+/// itself: the family confirms it in the app and pays, so nothing is spent
+/// on a phone call and nothing is booked on a misheard date.
+model VoiceBookingRequest {
+  id          String   @id @default(cuid())
+  familyId    String?
+  family      Family?  @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  patientId   String?
+  patient     Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  /// INBOUND_CALL | DUE_NUDGE | IN_APP
+  source      String
+  callerPhone String   @default("")
+  callerName  String   @default("")
+  /// YYYY-MM-DD, as understood on the call.
+  preferredDate String @default("")
+  /// 6 to 10: the window starting at that hour and thirty minutes.
+  windowStartHour Int?
+  /// What they asked for, in their words: "the usual sugar test".
+  testsRequested String @default("")
+  /// A new or changed address, read back to them on the call.
+  addressNote String   @default("")
+  notes       String   @default("")
+  /// BookingRequestStatus: NEW | CONFIRMED | DECLINED | EXPIRED | CALLED_BACK
+  status      String   @default("NEW")
+  bookingId   String?
+  expiresAt   DateTime
+  handledByUserId String?
+  handledAt   DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([status, createdAt])
+  @@index([familyId, status])
 }
 
 // ---------------------------------------------------------------------------

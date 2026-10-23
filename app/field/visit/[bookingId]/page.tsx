@@ -8,6 +8,8 @@ import { COLD_CHAIN_MAX_C, COLD_CHAIN_MIN_C } from '@/lib/sop/coldChain';
 import { t } from '@/lib/i18n/dictionary';
 import { isLocale, type Locale } from '@/lib/i18n/locales';
 import { VisitWorkflow } from '@/components/visit-workflow';
+import { DoorRescue } from '@/components/door-rescue';
+import { readOutcome } from '@/lib/voice/outcomes';
 import {
   Badge,
   Card,
@@ -59,6 +61,12 @@ export default async function VisitPage({
   const clock = specimen
     ? readClock({ clockStartsAt: specimen.clockStartsAt, intakeAt: specimen.intakeAt })
     : null;
+
+  const hasConsent = booking.consents.some((c) => c.purpose === 'SAMPLE_COLLECTION' && c.granted);
+  const doorCalls =
+    booking.status === 'ARRIVED' && !hasConsent
+      ? await db.voiceCall.findMany({ where: { bookingId: booking.id, kind: 'MISSED_DOOR' }, orderBy: { createdAt: 'asc' } })
+      : [];
 
   const tubes = booking.items.flatMap(
     (i) => i.panel?.items.map((pi) => pi.test) ?? [],
@@ -215,6 +223,23 @@ export default async function VisitPage({
           </Card>
         )}
 
+        {booking.status === 'ARRIVED' && !hasConsent && (
+          <DoorRescue
+            bookingId={booking.id}
+            calls={doorCalls.map((c) => {
+              const o = readOutcome(c);
+              return {
+                id: c.id,
+                recipientRole: c.recipientRole,
+                recipientName: c.recipientName,
+                status: c.status,
+                doorResponse: o?.doorResponse,
+                doorMessage: o?.doorMessage,
+              };
+            })}
+          />
+        )}
+
         <VisitWorkflow
           bookingId={booking.id}
           patientName={booking.patient.name}
@@ -224,9 +249,7 @@ export default async function VisitPage({
           status={booking.status}
           labId={booking.labId ?? ''}
           labName={booking.lab?.name ?? 'the laboratory'}
-          hasConsent={booking.consents.some(
-            (c) => c.purpose === 'SAMPLE_COLLECTION' && c.granted,
-          )}
+          hasConsent={hasConsent}
           specimen={
             specimen
               ? {

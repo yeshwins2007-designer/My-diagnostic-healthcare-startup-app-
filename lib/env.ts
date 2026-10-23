@@ -44,6 +44,22 @@ const envSchema = z.object({
 
   ELEVENLABS_API_KEY: z.string().optional(),
   NEXT_PUBLIC_ELEVENLABS_AGENT_ID: z.string().optional(),
+  /**
+   * The assistant's own calls (lib/voice): the agent that places them, which
+   * `npm run provision:voice` creates, and the phone number they come from,
+   * as ElevenLabs knows it once a Twilio or SIP number is connected. Without
+   * both, calls are written down and shown in the app as "would have called",
+   * never placed.
+   */
+  ELEVENLABS_CALLS_AGENT_ID: z.string().optional(),
+  ELEVENLABS_PHONE_NUMBER_ID: z.string().optional(),
+  ELEVENLABS_PHONE_PROVIDER: z.enum(['twilio', 'sip_trunk']).default('twilio'),
+  /** Signs the post-call webhook. Without it, nobody could trust what a call reports. */
+  ELEVENLABS_WEBHOOK_SECRET: z.string().optional(),
+  /** Sent by the agent with every tool call; the tools refuse anything without it. */
+  ELEVENLABS_TOOL_SECRET: z.string().optional(),
+  /** The number parents and families call to talk to the assistant, e.g. +91 80 4718 2299. */
+  ASSISTANT_PHONE_NUMBER: z.string().optional(),
 
   ABDM_CLIENT_ID: z.string().optional(),
   ABDM_CLIENT_SECRET: z.string().optional(),
@@ -115,6 +131,8 @@ export const providerMode = {
   maps: env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? 'live' : 'simulated',
   payments: env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET ? 'live' : 'simulated',
   voice: env.ELEVENLABS_API_KEY ? 'live' : 'simulated',
+  calls:
+    env.ELEVENLABS_API_KEY && env.ELEVENLABS_CALLS_AGENT_ID && env.ELEVENLABS_PHONE_NUMBER_ID ? 'live' : 'simulated',
   abdm: env.ABDM_CLIENT_ID && env.ABDM_CLIENT_SECRET ? 'live' : 'simulated',
   sms: env.MSG91_AUTH_KEY ? 'live' : 'simulated',
   email: env.RESEND_API_KEY ? 'live' : 'simulated',
@@ -199,6 +217,11 @@ if (env.NODE_ENV === 'production' && !IS_BUILD_PHASE) {
     }
     if (!env.PUBLIC_APP_URL) {
       problems.push('PUBLIC_APP_URL is missing: passkeys must be bound to the real domain.');
+    }
+    if (env.ELEVENLABS_CALLS_AGENT_ID && !env.ELEVENLABS_WEBHOOK_SECRET) {
+      problems.push(
+        'ELEVENLABS_WEBHOOK_SECRET is missing: call outcomes (a parent who did not understand fasting, a late technician) could be forged.',
+      );
     }
   }
   if (!env.FIELD_ENCRYPTION_KEY) {

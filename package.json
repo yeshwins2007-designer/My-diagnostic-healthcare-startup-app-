@@ -16,6 +16,7 @@
     "demo:track": "tsx scripts/demo-track.ts",
     "provision:voice": "tsx scripts/provision-voice-agent.ts",
     "retention:purge": "tsx scripts/retention-purge.ts",
+    "calls:run": "tsx scripts/voice-calls.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

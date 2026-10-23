@@ -14,6 +14,7 @@ const NAV = [
   { href: '/ops/today', label: 'Today' },
   { href: '/ops/critical', label: 'Critical values' },
   { href: '/ops/follow-ups', label: 'Follow-up calls' },
+  { href: '/ops/calls', label: 'Assistant calls' },
   { href: '/ops/labs', label: 'Lab verification' },
   { href: '/ops/waitlist', label: 'Waitlist' },
   { href: '/ops/gates', label: 'Growth gates' },

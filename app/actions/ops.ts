@@ -313,3 +313,14 @@ export async function suspendLab(
     message: `${lab.name} is suspended. No further samples will route there.`,
   };
 }
+
+
+/** A coordinator rang back someone who asked for a visit by phone. */
+export async function markRequestCalledBack(requestId: string) {
+  const user = await requireRole('OPS');
+  await db.voiceBookingRequest.updateMany({
+    where: { id: requestId, status: 'NEW' },
+    data: { status: 'CALLED_BACK', handledByUserId: user.id, handledAt: new Date() },
+  });
+  revalidatePath('/ops/calls');
+}

@@ -307,3 +307,58 @@
     --color-line: var(--color-line-strong);
   }
 }
+
+/* --- the calls sheet (components/calls-intro.tsx) -------------------------- */
+/* An iOS 26 and 27 sheet: glass, the deep corner radius, the system green
+   switch, and the tinted text buttons Apple uses for Back and Not Now. */
+:root[data-platform='apple'] .calls-sheet {
+  border-radius: 2.375rem 2.375rem 0 0;
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(180%);
+}
+@media (min-width: 640px) {
+  :root[data-platform='apple'] .calls-sheet {
+    border-radius: 2.375rem;
+  }
+}
+:root[data-platform='apple'] .calls-actions {
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--color-surface) 92%, transparent) 35%);
+}
+:root[data-platform='apple'] .calls-primary {
+  border-radius: 9999px;
+  background: var(--apple-tint);
+  /* Dark ink on the light blue of dark mode, white on the deep blue of light mode. */
+  color: var(--color-primary-ink);
+  font-size: calc(1.0625rem * var(--dynamic-type, 1));
+}
+:root[data-platform='apple'] .call-link {
+  color: var(--apple-tint);
+  font-weight: 500;
+}
+:root[data-platform='apple'] .call-group {
+  border: 0;
+  border-radius: 1.625rem;
+  background: var(--apple-fill);
+}
+:root[data-platform='apple'] .call-group-label {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+:root[data-platform='apple'] .call-switch {
+  background: var(--apple-fill);
+}
+:root[data-platform='apple'] .call-switch:checked {
+  background: #34c759;
+}
+:root[data-platform='apple'] .calls-dots > span[data-on='true'] {
+  background: var(--apple-tint);
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-platform='apple'] .calls-sheet {
+    background: var(--color-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}

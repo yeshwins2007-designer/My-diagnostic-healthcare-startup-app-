@@ -190,6 +190,8 @@ const createBookingSchema = z.object({
   items: z.string().min(1),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   windowStartHour: z.coerce.number().min(6).max(10),
+  /** Set when this confirms a visit asked for by phone (lib/voice/requests.ts). */
+  requestId: z.string().max(40).optional(),
 });
 
 /**
@@ -425,6 +427,14 @@ export async function createBooking(
     actorRole: 'CAREGIVER',
     detail: { reference: booking.reference, labId: lab.id, order: orderLabel, totalPaise: price.totalPaise },
   });
+
+  if (parsed.data.requestId) {
+    // The visit asked for by phone is now a booking: it leaves the family's to-do list.
+    await db.voiceBookingRequest.updateMany({
+      where: { id: parsed.data.requestId, familyId: patient.familyId, status: 'NEW' },
+      data: { status: 'CONFIRMED', bookingId: booking.id, handledByUserId: user.id, handledAt: new Date() },
+    });
+  }
 
   revalidatePath('/caregiver');
   redirect(`/caregiver/checkout/${booking.id}`);

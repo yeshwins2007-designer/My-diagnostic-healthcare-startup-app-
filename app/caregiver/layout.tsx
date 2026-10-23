@@ -6,6 +6,10 @@ import { VoiceLauncher } from '@/components/voice-launcher';
 import { BottomNav, TopNav, type BottomNavItem } from '@/components/bottom-nav';
 import { BrandMark } from '@/components/brand-mark';
 import { CommandMenu, type CommandItem } from '@/components/command-menu';
+import { CallsIntroGate } from '@/components/calls-intro-gate';
+import { db } from '@/lib/db';
+import { env } from '@/lib/env';
+import { getCallPreferences } from '@/lib/voice/consent';
 
 // One list drives both navs. The short label is what fits a quarter of a
 // phone width under an icon; the full label is used wherever there is room.
@@ -45,6 +49,15 @@ export default async function CaregiverLayout({
   if (user.role !== 'CAREGIVER') redirect('/');
 
   const firstName = user.name.split(' ')[0];
+
+  // Shown once, after sign-up, as soon as the family has added a parent:
+  // how the assistant's calls work, and which they want.
+  const me = await db.user.findUnique({ where: { id: user.id }, select: { callsIntroSeenAt: true, locale: true } });
+  const membership = me && !me.callsIntroSeenAt
+    ? await db.familyMember.findFirst({ where: { userId: user.id }, include: { family: { include: { patients: { where: { isActive: true } } } } } })
+    : null;
+  const introParents = membership?.family.patients ?? [];
+  const introPrefs = membership && introParents.length > 0 ? await getCallPreferences(membership.familyId) : null;
 
   return (
     <div className="has-bottom-nav min-h-dvh">
@@ -90,6 +103,14 @@ export default async function CaregiverLayout({
           wants to talk to a person is rarely the moment they are on the
           "contact us" page. */}
       <VoiceLauncher />
+      {introPrefs && (
+        <CallsIntroGate
+          parents={introParents.map((p) => ({ id: p.id, firstName: p.name.split(' ')[0], language: p.language }))}
+          familyLocale={me?.locale ?? 'en'}
+          preferences={introPrefs}
+          assistantPhone={env.ASSISTANT_PHONE_NUMBER}
+        />
+      )}
       <BottomNav items={NAV.map(({ href, label, icon }) => ({ href, label, icon }))} />
     </div>
   );

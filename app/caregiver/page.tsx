@@ -16,6 +16,8 @@ import { urgency } from '@/lib/sop/followUp';
 import { OverallBandChip, type Band } from '@/components/band-chip';
 import { Morph } from '@/components/morph';
 import { Badge, ButtonLink, Card, Eyebrow, H2, H3, Metric, Page, Stack, type StatusTone } from '@/components/ui';
+import { PhoneRequests } from '@/components/phone-requests';
+import { firstName } from '@/lib/voice/scripts';
 
 export const metadata: Metadata = { title: 'Home' };
 export const dynamic = 'force-dynamic';
@@ -80,6 +82,13 @@ export default async function CaregiverHome() {
   if (!family) redirect('/caregiver/onboarding');
   if (family.patients.length === 0) redirect('/caregiver/onboarding');
 
+  // Visits a parent (or the family) asked for on the phone, to confirm here.
+  const phoneRequests = await db.voiceBookingRequest.findMany({
+    where: { familyId: family.id, status: 'NEW', expiresAt: { gt: new Date() } },
+    include: { patient: true },
+    orderBy: { createdAt: 'asc' },
+  });
+
   const labId = await labForFamily(family.id);
   const [visits, reports, pendingCall, membership, catalog] = await Promise.all([
     loadUpcomingVisits(family.id),
@@ -126,6 +135,21 @@ export default async function CaregiverHome() {
               </ButtonLink>
             </Stack>
           </Card>
+        )}
+
+        {phoneRequests.length > 0 && (
+          <PhoneRequests
+            requests={phoneRequests.map((r) => ({
+              id: r.id,
+              who: r.patient ? firstName(r.patient.name) : 'Your parent',
+              patientId: r.patientId,
+              source: r.source,
+              date: r.preferredDate,
+              hour: r.windowStartHour,
+              tests: r.testsRequested,
+              addressNote: r.addressNote,
+            }))}
+          />
         )}
 
         {/* At a glance: four readings, each one the thing to know first. */}

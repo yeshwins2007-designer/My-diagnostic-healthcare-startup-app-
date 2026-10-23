@@ -124,6 +124,14 @@ test.describe('a new family', () => {
     await page.waitForURL(/\/caregiver\/visits\?booked=/);
     await expect(page.getByText('Booked and confirmed')).toBeVisible();
 
+    // Booking done, the assistant's calls are explained once (tests/e2e/calls.spec.ts).
+    const sheet = page.getByRole('dialog', { name: /calls that take care of the small things/i });
+    await expect(sheet).toBeVisible();
+    const remembered = page.waitForResponse((r) => r.request().method() === 'POST');
+    await sheet.getByRole('button', { name: 'Not now' }).click();
+    await expect(sheet).toBeHidden();
+    await remembered;
+
     // A first visit has no "last time" to be the same as.
     const main = page.locator('main');
     await page.goto('/caregiver');

@@ -58,7 +58,7 @@ export const AGENT_TOOLS: AgentToolSpec[] = [
   {
     name: 'get_fasting_instructions',
     description:
-      'Returns the plain-language fasting instructions for an upcoming visit: what time to stop eating, and that water and regular medicines continue unless the doctor said otherwise.',
+      'Returns the plain-language fasting instructions for an upcoming visit: what time to stop eating, and that plain water is fine. Never says anything about medicines: those questions go to a coordinator.',
     parameters: objectSchema({
       booking_reference: { type: 'string', description: 'Booking reference, if known.' },
     }),
@@ -84,6 +84,34 @@ export const AGENT_TOOLS: AgentToolSpec[] = [
       booking_reference: z.string().min(3).max(20),
       preferred_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       preferred_window: z.string().max(20).optional(),
+    }),
+    mutates: true,
+  },
+  {
+    name: 'request_home_visit',
+    description:
+      'Notes a home visit the caller asks for: a parent who just wants to book by talking, or a family member. Read the date, the morning window and any new address back to the caller before calling this. It does not book or charge anything: the family confirms it in the app, or a coordinator calls back if we do not know the caller.',
+    parameters: objectSchema(
+      {
+        patient_name: { type: 'string', description: 'Who the visit is for, as the caller said it.' },
+        preferred_date: { type: 'string', description: 'The day they asked for, YYYY-MM-DD.' },
+        preferred_window_hour: {
+          type: 'integer',
+          description: 'The hour their morning window starts: 6, 7, 8, 9 or 10 (each window starts at half past).',
+        },
+        tests: { type: 'string', description: 'What they want tested, in their words, e.g. "the usual sugar test".' },
+        address_change: { type: 'string', description: 'A new or different address, only if they gave one, read back to them.' },
+        notes: { type: 'string', description: 'Anything else the technician should know, in their words.' },
+      },
+      ['preferred_date'],
+    ),
+    input: z.object({
+      patient_name: z.string().max(120).optional(),
+      preferred_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      preferred_window_hour: z.coerce.number().int().min(6).max(10).optional(),
+      tests: z.string().max(500).optional(),
+      address_change: z.string().max(500).optional(),
+      notes: z.string().max(1000).optional(),
     }),
     mutates: true,
   },
@@ -196,6 +224,9 @@ export const REVIEWED_TOOL_ALLOWLIST = [
   'get_plan_and_billing',
   'raise_support_ticket',
   'request_human_callback',
+  // Reviewed: notes a visit for the family to confirm and pay in the app.
+  // Reads and returns no clinical data, and spends nothing.
+  'request_home_visit',
 ] as const;
 
 export function auditToolSurface(): { safe: boolean; offenders: string[] } {

@@ -72,6 +72,9 @@ export function BookFlow({
   initialKind,
   initialPatientId,
   minDate,
+  initialDate,
+  initialHour,
+  requestId,
 }: {
   catalog: BookItem[];
   patients: BookPatient[];
@@ -81,6 +84,10 @@ export function BookFlow({
   initialKind: 'all' | 'panel' | 'test';
   initialPatientId: string | null;
   minDate: string;
+  /** From a visit asked for by phone: the day and window they said. */
+  initialDate?: string;
+  initialHour?: number;
+  requestId?: string;
 }) {
   const [step, setStep] = useState<'choose' | 'details'>(
     initialSelected.length > 0 ? 'details' : 'choose',
@@ -89,8 +96,8 @@ export function BookFlow({
   const [query, setQuery] = useState(initialQuery);
   const [kind, setKind] = useState(initialKind);
   const [patientId, setPatientId] = useState(initialPatientId ?? patients[0]?.id ?? '');
-  const [date, setDate] = useState(minDate);
-  const [hour, setHour] = useState(7);
+  const [date, setDate] = useState(initialDate && initialDate >= minDate ? initialDate : minDate);
+  const [hour, setHour] = useState(initialHour ?? 7);
   const [state, action] = useActionState<CaregiverActionState, FormData>(createBooking, {
     ok: false,
   });
@@ -130,6 +137,7 @@ export function BookFlow({
       <form action={action} className="flex flex-col gap-6">
         <input type="hidden" name="items" value={selected.join(',')} />
         <input type="hidden" name="patientId" value={patient?.id ?? ''} />
+        {requestId && <input type="hidden" name="requestId" value={requestId} />}
 
         <button
           type="button"

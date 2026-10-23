@@ -21,7 +21,7 @@ function tomorrow(): string {
 export default async function BookPage({
   searchParams,
 }: {
-  searchParams: Promise<{ item?: string; q?: string; kind?: string; patient?: string }>;
+  searchParams: Promise<{ item?: string; q?: string; kind?: string; patient?: string; date?: string; hour?: string; request?: string }>;
 }) {
   const params = await searchParams;
   const { family } = await loadFamilyContext();
@@ -81,6 +81,9 @@ export default async function BookPage({
         initialKind={kind}
         initialPatientId={params.patient ?? null}
         minDate={tomorrow()}
+        initialDate={/^\d{4}-\d{2}-\d{2}$/.test(params.date ?? '') ? params.date : undefined}
+        initialHour={params.hour && /^(6|7|8|9|10)$/.test(params.hour) ? Number(params.hour) : undefined}
+        requestId={params.request?.slice(0, 40)}
       />
     </Page>
   );

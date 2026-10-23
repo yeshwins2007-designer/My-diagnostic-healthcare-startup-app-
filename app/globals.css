@@ -654,3 +654,231 @@ h3 {
     break-inside: avoid;
   }
 }
+
+/*
+  The assistant's calls: the first-run sheet and the switches
+  (components/calls-intro.tsx, components/call-choices.tsx). A sheet that
+  rises from the bottom on phones and sits centred on wider screens, pages
+  that slide, and switches with a full-row tap target. app/apple.css turns
+  it into an iOS sheet on Apple devices.
+*/
+.calls-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.calls-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 0.5);
+  animation: calls-fade 0.3s ease both;
+}
+.calls-sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 30rem;
+  max-height: min(92dvh, 48rem);
+  border: 1px solid var(--color-line-strong);
+  border-bottom: 0;
+  border-radius: 1.75rem 1.75rem 0 0;
+  background: var(--color-surface);
+  box-shadow: 0 -12px 48px rgb(0 0 0 / 0.4);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  animation: calls-rise 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  outline: none;
+}
+@media (min-width: 640px) {
+  .calls-backdrop {
+    align-items: center;
+    padding: 1.5rem;
+  }
+  .calls-sheet {
+    border-bottom: 1px solid var(--color-line-strong);
+    border-radius: 1.75rem;
+  }
+}
+.calls-grab {
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 0 0.25rem;
+  cursor: grab;
+  touch-action: none;
+}
+.calls-grabber {
+  width: 2.25rem;
+  height: 0.3125rem;
+  border-radius: 9999px;
+  background: var(--color-line-strong);
+}
+.calls-dots {
+  display: inline-flex;
+  gap: 0.375rem;
+}
+.calls-dots > span {
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 9999px;
+  background: var(--color-line-strong);
+  transition: background 0.3s ease, width 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.calls-dots > span[data-on='true'] {
+  width: 1.125rem;
+  background: var(--color-ink);
+}
+.calls-viewport {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  transition: height 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.calls-track {
+  display: flex;
+  align-items: flex-start;
+  transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.calls-page {
+  flex: 0 0 100%;
+  min-width: 0;
+  max-height: min(84dvh, 44rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.5rem 1.5rem 0;
+}
+.calls-title {
+  font-size: 1.75rem;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  outline: none;
+}
+.calls-actions {
+  position: sticky;
+  bottom: 0;
+  margin: 1.5rem -1.5rem 0;
+  padding: 0.75rem 1.5rem 1.25rem;
+  background: linear-gradient(to bottom, transparent, var(--color-surface) 35%);
+}
+.calls-primary {
+  display: flex;
+  width: 100%;
+  min-height: 3.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-control);
+  background: var(--color-primary);
+  color: var(--color-primary-ink);
+  font-weight: 600;
+}
+.calls-primary:disabled {
+  opacity: 0.6;
+}
+.call-link {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.call-group-label {
+  padding: 0 1rem 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+}
+.call-group {
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-control);
+  background: var(--color-primary-wash);
+}
+.call-row {
+  position: relative;
+  display: flex;
+  min-height: 3.25rem;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+}
+.call-row + .call-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 3.75rem;
+  border-top: 1px solid var(--color-line);
+}
+.call-switch {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: 3.1875rem;
+  height: 1.9375rem;
+  border-radius: 9999px;
+  background: var(--color-line-strong);
+  cursor: pointer;
+  transition: background 0.25s ease;
+}
+.call-switch::before {
+  content: '';
+  position: absolute;
+  top: 0.125rem;
+  left: 0.125rem;
+  width: 1.6875rem;
+  height: 1.6875rem;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 3px 8px rgb(0 0 0 / 0.15), 0 1px 1px rgb(0 0 0 / 0.16);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.call-switch:checked {
+  background: var(--color-green);
+}
+.call-switch:checked::before {
+  transform: translateX(1.25rem);
+}
+.call-switch:focus-visible,
+.call-select:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+.call-select {
+  max-width: 55%;
+  min-height: 2.75rem;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink-soft);
+  text-align: right;
+  font: inherit;
+}
+@keyframes calls-rise {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes calls-fade {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .calls-sheet,
+  .calls-scrim {
+    animation: none;
+  }
+  .calls-track,
+  .calls-viewport,
+  .call-switch::before,
+  .calls-dots > span {
+    transition: none;
+  }
+}

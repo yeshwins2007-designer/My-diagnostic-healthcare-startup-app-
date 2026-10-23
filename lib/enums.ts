@@ -314,8 +314,47 @@ export const TicketCategory = set([
   'LAB_RATE_CHANGE',
   /** Someone deleted their account in the app (families), or asked us to close it (partners). */
   'ACCOUNT_DELETION',
+  /** A visit asked for by phone, to confirm with the family. */
+  'VOICE_BOOKING',
+  /** The night-before call found the parent unsure about fasting or medicines. */
+  'VISIT_PREPARATION',
+  /** The after-visit check-in heard "late" or "not gentle". */
+  'VISIT_QUALITY',
 ]);
 export const TicketPriority = set(['LOW', 'NORMAL', 'HIGH', 'URGENT']);
+
+// --- the assistant's calls (lib/voice) ----------------------------------------
+
+export const VoiceCallKind = set([
+  /** The evening before a fasting test: explain it, ask for it back. */
+  'FASTING_PREP',
+  /** The technician is at the door and nobody answers: parent, then family. */
+  'MISSED_DOOR',
+  /** After the visit: on time? gentle? */
+  'POST_VISIT_CHECKIN',
+  /** The report is released. Never what is in it. */
+  'REPORT_READY',
+  /** A one-minute monthly update for the family. */
+  'MONTHLY_UPDATE',
+  /** The next test is due: book the usual slot? */
+  'DUE_NUDGE',
+]);
+export type VoiceCallKind = (typeof VoiceCallKind.values)[number];
+export const VoiceCallStatus = set([
+  'SCHEDULED',
+  'DIALING',
+  'COMPLETED',
+  'NO_ANSWER',
+  'FAILED',
+  'CANCELLED',
+  /** No phone line set up: the call was written down, not made. */
+  'SIMULATED',
+]);
+export type VoiceCallStatus = (typeof VoiceCallStatus.values)[number];
+export const FeedbackAnswer = set(['YES', 'NO', 'UNSURE']);
+export type FeedbackAnswer = (typeof FeedbackAnswer.values)[number];
+export const BookingRequestStatus = set(['NEW', 'CONFIRMED', 'DECLINED', 'EXPIRED', 'CALLED_BACK']);
+export type BookingRequestStatus = (typeof BookingRequestStatus.values)[number];
 export const TicketStatus = set(['OPEN', 'IN_PROGRESS', 'RESOLVED']);
 
 // --- audit & gates ----------------------------------------------------------
@@ -373,6 +412,11 @@ export const AuditAction = set([
   'ABDM_REPORT_PUBLISHED',
   'VOICE_GUARDRAIL_TRIPPED',
   'VOICE_HANDED_OFF',
+  'CALL_PREFERENCES_CHANGED',
+  'VOICE_CALL_PLACED',
+  'VOICE_CALL_FINISHED',
+  'VOICE_BOOKING_REQUESTED',
+  'DOOR_NOT_ANSWERED',
   'GROWTH_GATE_EVALUATED',
   'INCIDENT_RAISED',
   'DATA_EXPORTED',

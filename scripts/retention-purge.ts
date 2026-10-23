@@ -83,6 +83,17 @@ async function purgeTranscripts() {
   return result.count;
 }
 
+async function purgeCallSummaries() {
+  // What was said on the assistant's calls goes with the transcripts. The
+  // outcome (reached or not, on time or not) stays for the quality numbers.
+  const cutoff = new Date(Date.now() - TRANSCRIPT_RETENTION_DAYS * 86_400_000);
+  const result = await db.voiceCall.updateMany({
+    where: { createdAt: { lt: cutoff }, summary: { not: '' } },
+    data: { summary: '' },
+  });
+  return result.count;
+}
+
 async function expireAccreditations() {
   // A lab whose accreditation has lapsed stops being routable the same day,
   // without anyone having to notice.
@@ -122,7 +133,7 @@ async function purgeSignInCodes() {
 
 async function main() {
   const pings = await purgePings();
-  const transcripts = await purgeTranscripts();
+  const transcripts = (await purgeTranscripts()) + (await purgeCallSummaries());
   const suspended = await expireAccreditations();
   const signInRows = await purgeSignInCodes();
   const erased = await eraseDueAccounts();
@@ -132,7 +143,7 @@ Retention purge complete.
 
   GPS pings         ${pings.deleted} deleted across ${pings.summarised} routes, each collapsed to a summary
                     (retention: ${PING_RETENTION_DAYS} days)
-  Voice transcripts ${transcripts} cleared
+  Voice transcripts ${transcripts} cleared, with the assistant's call notes
                     (retention: ${TRANSCRIPT_RETENTION_DAYS} days)
   Labs suspended    ${suspended} for expired accreditation
   Sign-in codes     ${signInRows} spent codes and old wrong-password counts deleted

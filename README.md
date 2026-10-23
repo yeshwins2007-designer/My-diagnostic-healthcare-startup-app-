@@ -227,6 +227,24 @@ real deliverable is the printed A5 stoplight card — which carries **no numbers
 because a value without a doctor to interpret it produces either false reassurance
 or unnecessary fear.
 
+### The assistant's calls
+
+`lib/voice/` makes six kinds of short call, each only if the family turned it
+on (a sheet after sign-up explains them; Profile keeps the switches): the
+night-before fasting call that asks the parent to say it back, the door call
+when nobody answers (parent, then family, while the technician waits), the
+after-visit "on time? gentle?" check-in that feeds each technician's quality
+numbers in `/ops/calls`, the report-ready call (never what is in it, and never
+when a value is critical), a one-minute monthly update, and the due-date
+reminder that can hold the usual slot. Every call rings in the listener's own
+time zone and calling hours, opens by saying it is an automated assistant, and
+carries a brief with no result in it. What a call established becomes a ticket,
+a quality record or a booking request in `lib/voice/outcomes.ts`; a visit asked
+for by phone, by a parent who just called and talked, is confirmed and paid by
+the family in the app. Run `npm run calls:run` every five minutes. Without a
+phone line (`ELEVENLABS_PHONE_NUMBER_ID`), calls are written down as what they
+would have said, never dialled.
+
 ### The App Store and Google Play apps
 
 `mobile/` holds the native shells (Capacitor) that open this web app, and
