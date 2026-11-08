@@ -99,7 +99,7 @@ export function PricingSection({
       )}
 
       <ButtonLink href="/join" className="self-start">
-        Set up care for an individual
+        Set up care for your parent
       </ButtonLink>
     </Stack>
   );
