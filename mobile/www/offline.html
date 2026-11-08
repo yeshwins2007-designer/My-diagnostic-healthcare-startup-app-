@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>MEDWYN</title>
+    <style>
+      :root { color-scheme: dark light; --bg: #09090b; --ink: #fafafa; --soft: #d4d4d8; --btn: #fafafa; --btn-ink: #09090b; }
+      @media (prefers-color-scheme: light) { :root { --bg: #f2f2f7; --ink: #000; --soft: #3a3a3c; --btn: #000; --btn-ink: #fff; } }
+      html, body { height: 100%; margin: 0; }
+      body {
+        display: flex; flex-direction: column; justify-content: center; gap: 16px;
+        padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+        background: var(--bg); color: var(--ink);
+        font: 17px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
+      }
+      h1 { margin: 0; font-size: 28px; line-height: 1.2; }
+      p { margin: 0; color: var(--soft); max-width: 32em; }
+      button {
+        align-self: flex-start; min-height: 48px; padding: 0 24px; border: 0; border-radius: 999px;
+        background: var(--btn); color: var(--btn-ink); font: inherit; font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>You’re offline</h1>
+    <p>MEDWYN needs the internet to show your parent’s visits and reports. Check your connection and try again.</p>
+    <p>In a medical emergency, call 108.</p>
+    <button type="button" onclick="location.reload()">Try again</button>
+  </body>
+</html>

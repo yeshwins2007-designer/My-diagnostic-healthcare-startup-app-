@@ -1,0 +1,26 @@
+/*
+  The partner terminal's one animation: a new order flashes so it is seen
+  from across a bench. Three pulses of the attention colour, then it rests
+  with an amber edge until someone acts. With reduced motion it does not
+  pulse; the amber edge and the "New" badge still mark it.
+*/
+@keyframes order-flash {
+  0%,
+  100% {
+    background-color: var(--card-bg);
+    box-shadow: var(--glow), 0 0 0 0 transparent;
+  }
+  50% {
+    background-color: var(--color-yellow-wash);
+    box-shadow: var(--glow), 0 0 0 4px color-mix(in oklab, var(--color-yellow) 45%, transparent);
+  }
+}
+.order-fresh {
+  border-color: var(--color-yellow);
+  animation: order-flash 0.9s var(--ease-out-soft) 3;
+}
+@media (prefers-reduced-motion: reduce) {
+  .order-fresh {
+    animation: none;
+  }
+}

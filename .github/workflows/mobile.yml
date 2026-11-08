@@ -1,0 +1,305 @@
+# Builds the App Store and Google Play apps (mobile/) in the cloud, and
+# submits them: Android on Linux, iOS on a Mac, so nobody needs Xcode or
+# Android Studio to ship. Everything works from the GitHub app on a phone or
+# iPad: Actions > Mobile apps > Run workflow.
+#
+# Always:   an Android test app (APK, installs on any Android phone) and an
+#           iOS simulator build that proves the project compiles.
+# With keys (repository secrets, see docs/store-launch.md):
+#           a signed Android App Bundle for Google Play, and an iOS build
+#           uploaded to TestFlight.
+# Run by hand with "submit" ticked:
+#           checks every key is in place, takes fresh screenshots from the
+#           live app, then sends the listing, screenshots and build to App
+#           Review and to the chosen Google Play track.
+#
+# The apps open MEDWYN_APP_URL, the permanent address of the web app. Set it
+# as a repository variable (Settings > Secrets and variables > Actions >
+# Variables), or pass it when running this workflow by hand.
+name: Mobile apps
+
+on:
+  workflow_dispatch:
+    inputs:
+      submit:
+        description: Submit to the App Store and Google Play (needs every key in docs/store-launch.md)
+        type: boolean
+        default: false
+      ios_submit_for_review:
+        description: iOS, send the build to App Review (untick to only update the listing)
+        type: boolean
+        default: true
+      android_track:
+        description: Google Play track
+        type: choice
+        options: [internal, alpha, beta, production]
+        default: internal
+      android_release_status:
+        description: Google Play release (draft until Google has reviewed the app once)
+        type: choice
+        options: [draft, completed]
+        default: draft
+      app_url:
+        description: The HTTPS address the apps open (leave empty to use the MEDWYN_APP_URL variable)
+        required: false
+  push:
+    branches: [claude/home-diagnostic-lab-app-6uo1h7]
+    paths: ['mobile/**', '.github/workflows/mobile.yml']
+
+concurrency:
+  # A push never cancels a submission in progress.
+  group: mobile-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
+
+env:
+  MEDWYN_APP_URL: ${{ inputs.app_url || vars.MEDWYN_APP_URL || 'https://app.medwyn.in' }}
+  PARTNER_HOST: ${{ vars.PARTNER_HOST }}
+  SUBMIT: ${{ inputs.submit == true }}
+  FASTLANE_VERSION: 2.240.1
+  LANG: C.UTF-8
+  LC_ALL: C.UTF-8
+
+jobs:
+  # Only when submitting: every key present, the live app answering, and
+  # screenshots taken from it (the review account's own view).
+  prepare:
+    if: inputs.submit == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Check every key is in place
+        env:
+          URL_VAR: ${{ inputs.app_url || vars.MEDWYN_APP_URL }}
+          LEGAL_ENTITY: ${{ vars.LEGAL_ENTITY }}
+          REVIEW_CONTACT_NAME: ${{ vars.REVIEW_CONTACT_NAME }}
+          REVIEW_CONTACT_PHONE: ${{ vars.REVIEW_CONTACT_PHONE }}
+          REVIEW_CONTACT_EMAIL: ${{ vars.REVIEW_CONTACT_EMAIL }}
+          APP_REVIEW_PHONE: ${{ secrets.APP_REVIEW_PHONE }}
+          APP_REVIEW_CODE: ${{ secrets.APP_REVIEW_CODE }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          missing=()
+          for name in URL_VAR LEGAL_ENTITY REVIEW_CONTACT_NAME REVIEW_CONTACT_PHONE REVIEW_CONTACT_EMAIL \
+                      APP_REVIEW_PHONE APP_REVIEW_CODE ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD \
+                      ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD PLAY_SERVICE_ACCOUNT_JSON APPLE_TEAM_ID \
+                      ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8; do
+            [ -n "${!name}" ] || missing+=("$name")
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            printf '::error::Missing before submitting (docs/store-launch.md says where each comes from): %s\n' "${missing[*]/URL_VAR/MEDWYN_APP_URL}"
+            exit 1
+          fi
+          for page in "" /privacy /support /delete-account; do
+            curl -fsS -o /dev/null --max-time 30 "${MEDWYN_APP_URL%/}$page" \
+              || { echo "::error::${MEDWYN_APP_URL%/}$page does not answer. The stores check these pages."; exit 1; }
+          done
+          echo "Every key is in place, and $MEDWYN_APP_URL answers."
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Take the store screenshots from the live app
+        env:
+          BASE_URL: ${{ env.MEDWYN_APP_URL }}
+          APP_REVIEW_PHONE: ${{ secrets.APP_REVIEW_PHONE }}
+          APP_REVIEW_CODE: ${{ secrets.APP_REVIEW_CODE }}
+        run: npx tsx scripts/store-screenshots.ts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: store-screenshots
+          path: |
+            mobile/fastlane/screenshots/
+            mobile/fastlane/metadata/android/en-US/images/phoneScreenshots/
+          if-no-files-found: error
+
+  android:
+    needs: prepare
+    # Runs on every push; when submitting, only once prepare has passed.
+    if: ${{ !cancelled() && (needs.prepare.result == 'success' || needs.prepare.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      VERSION_CODE: ${{ github.run_number }}
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Same version name as iOS
+        run: echo "VERSION_NAME=$(grep -m1 -oE 'MARKETING_VERSION = [0-9.]+' ios/App/App.xcodeproj/project.pbxproj | awk '{print $3}')" >> "$GITHUB_ENV"
+      - run: npm ci
+      - run: npx cap sync android
+
+      - name: Build the test app (APK)
+        working-directory: mobile/android
+        run: ./gradlew --no-daemon assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: medwyn-android-test-apk
+          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Signing key for Google Play
+        if: env.ANDROID_KEYSTORE_BASE64 != ''
+        working-directory: mobile/android
+        env:
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          umask 077
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > release.keystore
+          {
+            echo "storeFile=release.keystore"
+            echo "storePassword=$STORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > keystore.properties
+      - name: Build the Google Play bundle (AAB)
+        if: env.ANDROID_KEYSTORE_BASE64 != ''
+        working-directory: mobile/android
+        run: ./gradlew --no-daemon bundleRelease
+      - uses: actions/upload-artifact@v4
+        if: env.ANDROID_KEYSTORE_BASE64 != ''
+        with:
+          name: medwyn-android-play-bundle
+          path: mobile/android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
+      - uses: actions/download-artifact@v4
+        if: env.SUBMIT == 'true'
+        with:
+          name: store-screenshots
+          path: mobile/fastlane
+      - uses: ruby/setup-ruby@v1
+        if: env.SUBMIT == 'true'
+        with:
+          ruby-version: '3.3'
+      - name: Submit to Google Play
+        if: env.SUBMIT == 'true'
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          TRACK: ${{ inputs.android_track }}
+          RELEASE_STATUS: ${{ inputs.android_release_status }}
+        run: |
+          gem install fastlane -v "$FASTLANE_VERSION" --no-document
+          fastlane android submit \
+            aab:"$PWD/android/app/build/outputs/bundle/release/app-release.aab" \
+            track:"$TRACK" release_status:"$RELEASE_STATUS"
+
+  ios:
+    needs: prepare
+    if: ${{ !cancelled() && (needs.prepare.result == 'success' || needs.prepare.result == 'skipped') }}
+    runs-on: macos-15
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - run: npx cap sync ios
+      - name: Use the newest Xcode on the runner
+        run: |
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
+          xcodebuild -version
+
+      - name: Build for the iOS simulator (proves it compiles; no signing)
+        working-directory: mobile/ios/App
+        run: |
+          set -o pipefail
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build | tail -40
+
+      - name: Archive and upload to TestFlight
+        if: env.ASC_KEY_ID != '' && env.APPLE_TEAM_ID != ''
+        working-directory: mobile/ios/App
+        env:
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          set -o pipefail
+          umask 077
+          KEY="$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8"
+          printf '%s' "$ASC_KEY_P8" > "$KEY"
+          AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            "${AUTH[@]}" archive | tail -40
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+            <key>signingStyle</key><string>automatic</string>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/export" \
+            "${AUTH[@]}" | tail -40
+
+      - uses: actions/download-artifact@v4
+        if: env.SUBMIT == 'true'
+        with:
+          name: store-screenshots
+          path: mobile/fastlane
+      - uses: ruby/setup-ruby@v1
+        if: env.SUBMIT == 'true'
+        with:
+          ruby-version: '3.3'
+      - name: Submit to App Review
+        if: env.SUBMIT == 'true'
+        env:
+          FOR_REVIEW: ${{ inputs.ios_submit_for_review }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          APP_REVIEW_PHONE: ${{ secrets.APP_REVIEW_PHONE }}
+          APP_REVIEW_CODE: ${{ secrets.APP_REVIEW_CODE }}
+          LEGAL_ENTITY: ${{ vars.LEGAL_ENTITY }}
+          REVIEW_CONTACT_NAME: ${{ vars.REVIEW_CONTACT_NAME }}
+          REVIEW_CONTACT_PHONE: ${{ vars.REVIEW_CONTACT_PHONE }}
+          REVIEW_CONTACT_EMAIL: ${{ vars.REVIEW_CONTACT_EMAIL }}
+        run: |
+          gem install fastlane -v "$FASTLANE_VERSION" --no-document
+          # Waits for Apple to finish processing the build, then submits it.
+          fastlane ios submit build_number:"$GITHUB_RUN_NUMBER" submit_for_review:"$FOR_REVIEW"
