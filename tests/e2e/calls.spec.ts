@@ -88,7 +88,7 @@ test('"Not now" turns nothing on and does not ask again', async ({ page }) => {
   await newFamily(page, '94' + String(Date.now()).slice(-8));
   // The sheet waits while booking is open.
   await page.goto('/caregiver/book');
-  await expect(page.getByRole('heading', { name: 'Book tests' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Book with Medwyn One' })).toBeVisible();
   await expect(sheetOf(page)).toHaveCount(0);
   await page.goto('/caregiver/visits');
   const sheet = page.getByRole('dialog', { name: /calls that take care of the small things/i });

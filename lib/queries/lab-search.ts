@@ -18,6 +18,7 @@ import { db } from '../db';
 import { haversineKm } from '../geo';
 import { DISCIPLINE_LABELS, type Discipline } from '../enums';
 import { MAX_LAB_DISTANCE_KM, parseScope, tooFarReason } from '../sop/labRouting';
+import { loadMembership } from './catalog';
 
 export interface LabResult {
   id: string;
@@ -75,7 +76,11 @@ export async function labsForParent(userId: string, patientId: string, now = new
     home.zoneId ? db.zone.findUnique({ where: { id: home.zoneId }, select: { anchorLabId: true } }) : null,
   ]);
 
-  const chosenId = patient.preferredLabId ?? zone?.anchorLabId ?? null;
+  // A member's visits go to the area's lab unless they picked another, so for
+  // them that lab is already "theirs". Without Medwyn One, only a lab the
+  // family picked counts: the area's lab is one to choose, like any other.
+  const isMember = Boolean(await loadMembership(patient.familyId));
+  const chosenId = patient.preferredLabId ?? (isMember ? zone?.anchorLabId : null) ?? null;
   const results = labs.map((lab): LabResult => {
     const distance = Math.round(haversineKm({ lat: home.latitude, lng: home.longitude }, { lat: lab.latitude, lng: lab.longitude }) * 10) / 10;
     const acc = lab.accreditation;

@@ -33,7 +33,7 @@ export const brand = {
    */
   weAre: [
     'A care-coordination and home-collection service',
-    'Priced per test, with an optional Medwyn One membership',
+    'A Medwyn One membership, or a lab you choose yourself at its own prices',
     'Accountable for punctuality, sample handling, communication and follow-up',
     'A source of new patients for our partner labs',
   ],

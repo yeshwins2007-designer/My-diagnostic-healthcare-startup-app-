@@ -221,7 +221,12 @@ for (const scheme of ['light', 'dark'] as const) {
       const remembered = page.waitForResponse((r) => r.request().method() === 'POST');
       await page.locator('[data-calls-sheet]').getByRole('button', { name: 'Not now' }).click();
       await remembered;
+      // Not a member yet: Medwyn One first, or a lab they choose.
       await page.goto('/caregiver/book');
+      note(await inspect(page, '05a-membership-first', scheme), 'book with medwyn one');
+      await page.getByRole('link', { name: /find a lab near/i }).click();
+      await page.locator('li[data-lab]').first().getByRole('button', { name: /^Book with/ }).click();
+      await page.waitForURL(/\/caregiver\/book\?patient=/, { timeout: 30_000 });
 
       // 3 — Choose tests
       note(await inspect(page, '05-book', scheme), 'book tests');

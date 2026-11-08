@@ -84,7 +84,7 @@ test.describe('public surfaces', () => {
 });
 
 test.describe('a new family', () => {
-  test('signs up, books and pays per test, then joins Medwyn One', async ({ page }) => {
+  test('signs up, books a lab of their choice at its prices, then joins Medwyn One', async ({ page }) => {
     test.setTimeout(90_000);
     // A number that has never been seen, so this is the real first-run path.
     const phone = '97' + String(Date.now()).slice(-8);
@@ -119,8 +119,15 @@ test.describe('a new family', () => {
     await expect(sheet).toBeHidden();
     await remembered;
 
-    // Pay per test: a package at the lab's price plus the collection fee.
+    // Booking is Medwyn One's; without it, the one way in is a lab they choose.
     await page.goto('/caregiver/book');
+    await expect(page.getByRole('heading', { name: 'Book with Medwyn One' })).toBeVisible();
+    await page.getByRole('link', { name: /find a lab near saraswathi/i }).click();
+    await page.getByRole('button', { name: 'Book with Ananya Diagnostics' }).click();
+
+    // That lab's own price per test, plus the collection fee.
+    await page.waitForURL(/\/caregiver\/book\?patient=/);
+    await expect(page.locator('[data-chosen-lab]')).toContainText('Ananya Diagnostics');
     await page.getByRole('button', { name: /Elder Baseline Panel/ }).click();
     await page.getByRole('button', { name: /continue/i }).click();
     await expect(page.getByRole('heading', { name: 'Booking details' })).toBeVisible();

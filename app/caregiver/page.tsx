@@ -7,7 +7,7 @@ import {
   loadReportTimeline,
   loadPreviousTechnicianId,
 } from '@/lib/queries/caregiver';
-import { labForFamily, loadCatalog, loadMembership } from '@/lib/queries/catalog';
+import { labForFamily, loadCatalog, loadMedwynOne, loadMembership } from '@/lib/queries/catalog';
 import { db } from '@/lib/db';
 import { formatINR } from '@/lib/money';
 import { memberPrice } from '@/lib/pricing';
@@ -90,7 +90,7 @@ export default async function CaregiverHome() {
   });
 
   const labId = await labForFamily(family.id);
-  const [visits, reports, pendingCall, membership, catalog] = await Promise.all([
+  const [visits, reports, pendingCall, membership, catalog, medwynOne] = await Promise.all([
     loadUpcomingVisits(family.id),
     loadReportTimeline(family.id),
     db.followUpCall.findFirst({
@@ -99,6 +99,7 @@ export default async function CaregiverHome() {
     }),
     loadMembership(family.id),
     loadCatalog(labId),
+    loadMedwynOne(),
   ]);
 
   const next = visits[0];
@@ -110,6 +111,8 @@ export default async function CaregiverHome() {
   const openCritical = reports.find((r) => r.criticals.some((c) => c.status !== 'CLOSED'));
   const packages = catalog.filter((c) => c.kind === 'panel');
   const discount = membership?.plan.testDiscountPercent ?? 0;
+  // Non-members see what the membership would make each package cost.
+  const memberDiscount = medwynOne?.testDiscountPercent ?? 30;
 
   const band = latestReport ? BAND_READING[latestReport.overallBand as Band] : null;
   const call = pendingCall ? urgency(pendingCall.dueBy) : null;
@@ -152,6 +155,30 @@ export default async function CaregiverHome() {
           />
         )}
 
+        {/* Booking is a Medwyn One service; a particular lab, searched for
+            below, is the way in without it (lib/booking-access.ts). */}
+        {!membership && (
+          <section
+            aria-label="Medwyn One"
+            className="brand-surface relative overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--card-border)] p-6 [box-shadow:var(--glow)]"
+          >
+            <div className="brand-content flex flex-col gap-3">
+              <Eyebrow>Membership</Eyebrow>
+              <H2 className="text-h2">Book home visits with Medwyn One</H2>
+              <p className="text-[var(--color-ink-soft)]">
+                {medwynOne ? `${formatINR(medwynOne.pricePaise)} a month, or ${formatINR(medwynOne.annualPricePaise)} a year. ` : ''}
+                {memberDiscount}% off every test and package, and no home-collection charge, for the whole family.
+              </p>
+              <ButtonLink href="/caregiver/membership" className="self-start">
+                Join Medwyn One
+              </ButtonLink>
+              <p className="text-small text-[var(--color-ink-faint)]">
+                Looking for a particular lab? Search for it below and book it at that lab’s own prices.
+              </p>
+            </div>
+          </section>
+        )}
+
         {/* At a glance: four readings, each one the thing to know first. */}
         <section
           aria-label="At a glance"
@@ -178,7 +205,7 @@ export default async function CaregiverHome() {
             value={membership ? `${discount}%` : 'Not joined'}
             unit={membership ? 'off' : undefined}
             tone={membership ? 'green' : 'neutral'}
-            sub={membership ? 'Free collection' : 'Paying per test'}
+            sub={membership ? 'Free collection' : medwynOne ? `${formatINR(medwynOne.annualPricePaise)} a year` : 'Join to book'}
           />
           <Metric
             className="p-4"
@@ -236,51 +263,28 @@ export default async function CaregiverHome() {
           <Tile href="/caregiver/membership" label="Medwyn One" icon="star" />
         </nav>
 
-        {(packages.length > 0 || !membership) && (
+        {packages.length > 0 && (
           <section aria-label="Packages" className="snap-row -mx-5 px-5 pb-1 sm:-mx-8 sm:px-8">
-            {!membership && (
-              <Link
-                href="/caregiver/membership"
-                className="brand-surface tap-surface flex min-h-44 flex-col justify-between gap-6 rounded-[var(--radius-card-lg)] border border-[var(--color-line-strong)] p-5"
-              >
-                <span className="flex items-center justify-between gap-3">
-                  <Eyebrow>Membership</Eyebrow>
-                  <span className="reading text-small text-[var(--color-ink-faint)]">₹499 / mo</span>
-                </span>
-                <span className="brand-content flex flex-col gap-1.5">
-                  <span className="text-h3 font-semibold">Medwyn One</span>
-                  <span className="text-small text-[var(--color-ink-soft)]">30% off every test and free home collection. From ₹499 a month.</span>
-                </span>
-                <span className="btn-glow inline-flex min-h-11 items-center self-start rounded-[var(--radius-control)] px-4 text-small font-medium !text-[var(--color-primary-ink)]">
-                  Join now
-                </span>
-              </Link>
-            )}
             {packages.map((p) => (
               <Link
                 key={p.key}
-                href={`/caregiver/book?item=${encodeURIComponent(p.key)}`}
+                href={membership ? `/caregiver/book?item=${encodeURIComponent(p.key)}` : '/caregiver/membership'}
                 className="brand-surface tap-surface flex min-h-44 flex-col justify-between gap-6 rounded-[var(--radius-card-lg)] border border-[var(--color-line-strong)] p-5"
               >
                 <span className="flex items-center justify-between gap-3">
                   <Eyebrow>Package · {p.includes.length} tests</Eyebrow>
-                  {discount > 0 && <span className="eyebrow !text-[var(--color-green)]">−{discount}%</span>}
+                  <span className="eyebrow !text-[var(--color-green)]">−{discount || memberDiscount}%</span>
                 </span>
                 <span className="brand-content flex flex-col gap-1.5">
                   <span className="text-h3 font-semibold">{p.name}</span>
                   <span className="reading flex items-baseline gap-2 text-lead">
-                    {discount > 0 ? (
-                      <>
-                        <strong className="font-medium">{formatINR(memberPrice(p.pricePaise, discount))}</strong>{' '}
-                        <s className="text-small text-[var(--color-ink-faint)]">{formatINR(p.pricePaise)}</s>
-                      </>
-                    ) : (
-                      <strong className="font-medium">{formatINR(p.pricePaise)}</strong>
-                    )}
+                    <strong className="font-medium">{formatINR(memberPrice(p.pricePaise, discount || memberDiscount))}</strong>{' '}
+                    <s className="text-small text-[var(--color-ink-faint)]">{formatINR(p.pricePaise)}</s>
                   </span>
+                  {!membership && <span className="text-small text-[var(--color-ink-faint)]">With Medwyn One</span>}
                 </span>
                 <span className="btn-glow inline-flex min-h-11 items-center self-start rounded-[var(--radius-control)] px-4 text-small font-medium !text-[var(--color-primary-ink)]">
-                  Book now
+                  {membership ? 'Book now' : 'Join to book'}
                 </span>
               </Link>
             ))}

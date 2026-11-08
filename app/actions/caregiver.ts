@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { db } from '@/lib/db';
+import { bookingAccess, chosenLabUnavailable, NEEDS_MEMBERSHIP } from '@/lib/booking-access';
 import { requireRole } from '@/lib/auth/session';
 import { audit } from '@/lib/compliance/audit';
 import { ageBandFor, VISIT_MINUTES_BY_MOBILITY } from '@/lib/enums';
@@ -254,6 +255,10 @@ export async function createBooking(
   }
   if (!zone?.anchorLabId) return { ok: false, message: 'That zone has no laboratory yet.' };
 
+  // Members book anything; anyone else, only at a lab they chose (lib/booking-access.ts).
+  const access = bookingAccess({ isMember: Boolean(membership), chosenLabId: patient.preferredLabId });
+  if (access.mode === 'NEEDS_MEMBERSHIP') return { ok: false, ...NEEDS_MEMBERSHIP };
+
   // Every distinct test the lab has to run, for the accreditation-scope check.
   const allTests = [
     ...new Map(
@@ -353,6 +358,11 @@ export async function createBooking(
     return { ok: false, reason: routed.check.reason, remedy: routed.check.remedy };
   }
   const lab = routed.lab;
+  // Booked without a membership because of the lab they chose: it is that lab, or nothing.
+  if (access.mode === 'CHOSEN_LAB' && lab.id !== access.labId) {
+    const chosen = await db.lab.findUnique({ where: { id: access.labId }, select: { name: true } });
+    return { ok: false, ...chosenLabUnavailable(chosen?.name ?? 'The lab you chose') };
+  }
 
   // Continuity: a member's assigned technician, else whoever came last time.
   const previous = await db.booking.findFirst({

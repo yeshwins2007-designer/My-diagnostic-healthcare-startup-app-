@@ -176,8 +176,15 @@ export async function requestVisitAnswer(
   if (!caller.familyId) {
     return `Thank you. I've noted a visit for ${slot}. A coordinator will call you back to set it up, from ${brand.supportPhone}.`;
   }
-  return caller.patientId
-    ? `Thank you, I've noted a visit for ${slot}. Your family will confirm it in the app, and we'll call you the evening before.`
+  if (caller.patientId) {
+    return `Thank you, I've noted a visit for ${slot}. Your family will confirm it in the app, and we'll call you the evening before.`;
+  }
+  // Without Medwyn One or a lab they chose, the app will ask for one of the
+  // two before it books: say so now, not at the confirm button.
+  const member = await db.subscription.findFirst({ where: { familyId: caller.familyId, status: 'ACTIVE', plan: { code: 'MEDWYN_ONE' } } });
+  const needsChoice = !member && !patient?.preferredLabId;
+  return needsChoice
+    ? `I've noted a visit for ${slot}. To confirm it in the app, join Medwyn One, or choose a lab${patient ? ` for ${firstName(patient.name)}` : ''} from the home screen search and book at that lab's prices. We hold it for two days.`
     : `I've noted a visit for ${slot}. Please confirm it in the app, where you choose the tests and pay. We hold it for two days.`;
 }
 
@@ -190,7 +197,7 @@ export async function planAnswer(caller: Caller): Promise<string> {
   });
   return sub
     ? `You're a ${sub.plan.name} member: a discount on every test and no home-collection charge. You can cancel it any time in the app.`
-    : 'You pay per test, plus a home-collection charge for each visit. Medwyn One, our optional membership, takes money off every test and removes the collection charge.';
+    : 'Home visits are part of Medwyn One, our membership: a discount on every test and no home-collection charge, for the whole family. You can also choose a particular lab yourself and book it at that lab’s own prices, plus the collection charge.';
 }
 
 export async function callbackAnswer(caller: Caller, reason: string, urgency: 'NORMAL' | 'HIGH' | 'URGENT', category = 'CLINICAL_HANDOFF'): Promise<string> {

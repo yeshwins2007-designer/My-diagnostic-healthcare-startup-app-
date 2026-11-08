@@ -28,9 +28,9 @@ def review_notes
 
     Signing in: choose Phone, enter the user name above as the mobile number, tap "Send me a code", and enter the password above as the code. No SMS is sent to this number.
 
-    The account has a sample parent whose address is inside our service area. You can browse tests, see the partner labs near that address, choose a time and reach checkout. Please do not complete a payment: it is a real charge for a technician's home visit.
+    The account has a sample parent whose address is inside our service area. Booking is part of the Medwyn One membership; to reach checkout without joining, search for a lab on the home screen, tap "Book with" that lab, choose a test and a time. Please do not complete a payment: it is a real charge for a technician's home visit.
 
-    Payments are for physical services delivered outside the app (a home blood-sample collection and laboratory tests), through Razorpay, as guideline 3.1.5(a) allows. The optional Medwyn One membership only lowers the price of those visits and unlocks no digital content.
+    Payments are for physical services delivered outside the app (a home blood-sample collection and laboratory tests), through Razorpay, as guideline 3.1.5(a) allows. The Medwyn One membership lowers the price of those visits and waives the collection charge; it unlocks no digital content.
 
     Account deletion: Profile, then "Delete my account".
     Location: used only on the device, to sort labs by distance, when "Use my current location" is tapped. It is never sent to our servers.

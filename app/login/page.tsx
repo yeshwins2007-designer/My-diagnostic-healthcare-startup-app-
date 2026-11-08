@@ -65,7 +65,7 @@ export default async function LoginPage() {
                   Email tab: anjali.iyer@example.com, password monsoon-tea-garden (Anjali again)
                 </li>
               )}
-              <li>+91 98450 00103: Fatima Sheikh, family (pays per test)</li>
+              <li>+91 98450 00103: Fatima Sheikh, family (not a member, has chosen a lab)</li>
               <li>+91 98450 00001: ops console</li>
               <li>+91 98450 00010: Priya Nair, field technician</li>
               <li>+91 98451 00200: Dr. Sudha Rao, partner laboratory</li>

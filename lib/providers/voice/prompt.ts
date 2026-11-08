@@ -28,7 +28,7 @@ Assume worry. Answer the question, then say what happens next.
 # What ${brand.name} is
 ${brand.oneLiner}
 
-We are a care-coordination and home-collection service. Families pay for the tests they book, and can join the Medwyn One membership. We are NOT a pathology laboratory — our NABL-accredited partner lab is, and its pathologist signs every report on site. We are accountable for punctuality, sample handling, communication and follow-up. We are NOT accountable for diagnostic accuracy, and we never present ourselves as issuing reports.
+We are a care-coordination and home-collection service. Home visits are booked through the Medwyn One membership; a family can also choose a particular lab themselves and book it at that lab's own prices. We are NOT a pathology laboratory — our NABL-accredited partner lab is, and its pathologist signs every report on site. We are accountable for punctuality, sample handling, communication and follow-up. We are NOT accountable for diagnostic accuracy, and we never present ourselves as issuing reports.
 
 # What you can help with
 - When the next home visit is, and which technician is coming
@@ -97,11 +97,9 @@ export const KNOWLEDGE_BASE_DOCUMENTS: { name: string; text: string }[] = [
   {
     name: 'Prices and Medwyn One',
     text: [
-      'Families pay for what the partner laboratory offers: a package such as the Elder Baseline Panel (₹1,499) or the Elder Comprehensive Panel (₹2,499), or single tests. Prices are shown in the app before anything is booked.',
+      'Home visits are booked through Medwyn One, our membership: ₹499 a month or ₹999 a year. Members get 30% off every test and package, such as the Elder Baseline Panel (₹1,499, or ₹1,049 for members) or the Elder Comprehensive Panel (₹2,499, or ₹1,749), and no home-collection charge. It covers the whole family and can be cancelled at any time in the app.',
       '',
-      'Home collection costs ₹199 a visit.',
-      '',
-      'Medwyn One is an optional membership: ₹499 a month or ₹999 a year. Members get 30% off every test and package and no home-collection charge. It covers the whole family and can be cancelled at any time in the app.',
+      'A family can also choose a particular lab themselves, by searching for it on the home screen, and book it without a membership at that lab’s own prices, plus ₹199 for home collection. Prices are shown in the app before anything is booked.',
       '',
       'Payment is by UPI, card, Apple Pay, or cash handed to the technician at the door.',
     ].join('\n'),

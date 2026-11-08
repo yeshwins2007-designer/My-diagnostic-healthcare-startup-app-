@@ -457,4 +457,22 @@ describe('when someone calls us', () => {
     await answers.requestVisitAnswer(stranger, { preferred_date: '2027-01-12' });
     expect(await db.supportTicket.count({ where: { category: 'VOICE_BOOKING', subject: { contains: '+919000000002' } } })).toBe(1);
   });
+
+  it('tells a family without Medwyn One, before they reach the app, what confirming will need', async () => {
+    const answers = await import('@/lib/voice/answers');
+    const f = await family();
+    const caregiver = await answers.callerFromPhone(f.user.phone);
+    const without = await answers.requestVisitAnswer(caregiver, { preferred_date: '2027-01-12' });
+    expect(without).toContain('join Medwyn One, or choose a lab for Lakshmi');
+
+    const plan = await db.plan.upsert({
+      where: { code: 'MEDWYN_ONE' },
+      update: {},
+      create: { code: 'MEDWYN_ONE', name: 'Medwyn One', tagline: '', pricePaise: 49_900, annualPricePaise: 99_900, testDiscountPercent: 30 },
+    });
+    await db.subscription.create({ data: { familyId: f.fam.id, planId: plan.id, status: 'ACTIVE', effectivePricePaise: 49_900 } });
+    const member = await answers.requestVisitAnswer(caregiver, { preferred_date: '2027-01-13' });
+    expect(member).toContain('Please confirm it in the app');
+    expect(member).not.toContain('Medwyn One');
+  });
 });

@@ -54,10 +54,9 @@ const PLATFORMS = [
 /** What each screenshot shows, in listing order. */
 const SHOTS = [
   { file: '1_home', path: '/caregiver', caption: 'Your parents’ blood tests, looked after at home' },
-  { file: '2_labs', path: '/caregiver/labs', caption: 'Accredited labs near their home' },
-  { file: '3_book', path: '/caregiver/book', caption: 'Choose the tests. Pay per test.' },
-  { file: '4_membership', path: '/caregiver/membership', caption: 'Less per test, and no home-collection charge' },
-  { file: '5_elder', path: '/elder', caption: 'Big, simple buttons for your parent' },
+  { file: '2_membership', path: '/caregiver/membership', caption: 'Medwyn One: less for every test, no collection charge' },
+  { file: '3_labs', path: '/caregiver/labs', caption: 'Or choose a particular lab near their home' },
+  { file: '4_elder', path: '/elder', caption: 'Big, simple buttons for your parent' },
 ];
 
 async function signIn(page: Page) {

@@ -485,6 +485,10 @@ async function main() {
         careNotes: spec.conditions.includes('Dementia')
           ? 'Greet slowly and re-introduce yourself each visit. Daughter must be present.'
           : '',
+        // Fatima is not a member and chose her mother's lab herself, so she
+        // books at that lab's prices (lib/booking-access.ts). The other
+        // non-members see Medwyn One first when they book.
+        preferredLabId: spec.phone === '+919845000103' ? anchorLab.id : null,
       },
     });
 

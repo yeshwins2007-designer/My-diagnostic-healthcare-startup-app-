@@ -1,9 +1,12 @@
 import type { Metadata } from 'next';
 import { db } from '@/lib/db';
 import { loadFamilyContext } from '@/lib/queries/caregiver';
-import { labForFamily, loadCatalog, loadMembership, membershipTerms } from '@/lib/queries/catalog';
+import { labForFamily, loadCatalog, loadMedwynOne, loadMembership, membershipTerms } from '@/lib/queries/catalog';
+import { bookingAccess } from '@/lib/booking-access';
 import { BookFlow } from '@/components/book-flow';
-import { Page } from '@/components/ui';
+import { MembershipGate } from '@/components/membership-gate';
+import Link from 'next/link';
+import { Card, Page } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Book tests' };
 export const dynamic = 'force-dynamic';
@@ -25,18 +28,41 @@ export default async function BookPage({
 }) {
   const params = await searchParams;
   const { family } = await loadFamilyContext();
+  const membership = family ? await loadMembership(family.id) : null;
+
+  // Medwyn One members book for anyone; otherwise only for a parent whose
+  // lab the family chose, at that lab's prices (lib/booking-access.ts).
+  const allParents = family?.patients ?? [];
+  const bookableParents = allParents.filter(
+    (p) => bookingAccess({ isMember: Boolean(membership), chosenLabId: p.preferredLabId }).mode !== 'NEEDS_MEMBERSHIP',
+  );
+  // Asked for a parent who can't be booked yet: their gate, never another
+  // parent's booking in their place.
+  const asked = allParents.find((p) => p.id === params.patient);
+  if (bookableParents.length === 0 || (asked && !bookableParents.includes(asked))) {
+    const gateFor = asked ?? allParents[0];
+    return (
+      <Page>
+        <MembershipGate
+          parentName={gateFor ? gateFor.name.split(' ')[0] : 'your parent'}
+          patientId={gateFor?.id}
+          plan={await loadMedwynOne()}
+        />
+      </Page>
+    );
+  }
+
   // The parent being booked for decides the lab, and so the catalogue: after
   // "Book with this lab" it must be that lab's tests on offer.
-  const forParent = family?.patients.find((p) => p.id === params.patient);
+  const forParent = bookableParents.find((p) => p.id === params.patient) ?? (membership ? undefined : bookableParents[0]);
   const forParentZone = forParent?.addresses.find((a) => a.isPrimary)?.zoneId ?? forParent?.addresses[0]?.zoneId;
   const labId =
     forParent?.preferredLabId ??
     (forParentZone ? (await db.zone.findUnique({ where: { id: forParentZone } }))?.anchorLabId : null) ??
     (await labForFamily(family?.id ?? null));
 
-  const [catalog, membership, labs] = await Promise.all([
+  const [catalog, labs] = await Promise.all([
     loadCatalog(labId),
-    family ? loadMembership(family.id) : null,
     db.lab.findMany({ select: { id: true, name: true } }),
   ]);
   const labName = new Map(labs.map((l) => [l.id, l.name]));
@@ -45,7 +71,7 @@ export default async function BookPage({
     (await db.zone.findMany({ select: { id: true, anchorLabId: true } })).map((z) => [z.id, z.anchorLabId]),
   );
 
-  const patients = (family?.patients ?? [])
+  const patients = bookableParents
     .map((p) => {
       const address = p.addresses.find((a) => a.isPrimary) ?? p.addresses[0];
       if (!address?.zoneId) return null;
@@ -62,8 +88,21 @@ export default async function BookPage({
   const initialSelected = params.item && catalog.some((c) => c.key === params.item) ? [params.item] : [];
   const kind = params.kind === 'panel' || params.kind === 'test' ? params.kind : 'all';
 
+  const chosenLabName = !membership && forParent?.preferredLabId ? labName.get(forParent.preferredLabId) : undefined;
+
   return (
     <Page>
+      {chosenLabName && (
+        <Card className="mb-5">
+          <p data-chosen-lab>
+            Booking with <strong>{chosenLabName}</strong>, the lab you chose, at its own prices.{' '}
+            <Link href="/caregiver/membership" className="font-semibold underline">
+              Medwyn One
+            </Link>{' '}
+            members pay less for every test and nothing for home collection.
+          </p>
+        </Card>
+      )}
       <BookFlow
         catalog={catalog.map(({ key, kind, name, description, pricePaise, fastingHours, includes }) => ({
           key,
@@ -79,7 +118,7 @@ export default async function BookPage({
         initialSelected={initialSelected}
         initialQuery={params.q ?? ''}
         initialKind={kind}
-        initialPatientId={params.patient ?? null}
+        initialPatientId={forParent?.id ?? params.patient ?? null}
         minDate={tomorrow()}
         initialDate={/^\d{4}-\d{2}-\d{2}$/.test(params.date ?? '') ? params.date : undefined}
         initialHour={params.hour && /^(6|7|8|9|10)$/.test(params.hour) ? Number(params.hour) : undefined}

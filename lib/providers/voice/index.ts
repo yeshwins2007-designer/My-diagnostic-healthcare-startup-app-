@@ -167,7 +167,7 @@ const SCRIPTED_INTENTS: { intent: string; patterns: RegExp[]; reply: string }[] 
     intent: 'billing',
     patterns: [/plan|price|cost|bill|payment|subscription/i, /कितना|पैसे|भुगतान/],
     reply:
-      'You pay for the tests you book, and home collection is one hundred and ninety nine rupees. With Medwyn One, at four hundred and ninety nine rupees a month or nine hundred and ninety nine a year, every test is thirty percent off and collection is free.',
+      'Home visits are part of Medwyn One: four hundred and ninety nine rupees a month, or nine hundred and ninety nine a year. Every test is thirty percent off and home collection is free. You can also choose a particular lab yourself and pay that lab’s prices, plus one hundred and ninety nine rupees for collection.',
   },
   {
     intent: 'book',

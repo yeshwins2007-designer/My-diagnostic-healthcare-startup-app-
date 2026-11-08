@@ -106,6 +106,9 @@ export function BookFlow({
   const chosen = selected.map((k) => byKey.get(k)).filter((i): i is BookItem => !!i);
   const price = quote(chosen, membership);
   const withoutMembership = quote(chosen, null);
+  // What this same visit costs a member, for the nudge below: the family's
+  // own basket, not a brochure number.
+  const asMember = quote(chosen, { testDiscountPercent: 30, freeCollection: true });
   const patient = patients.find((p) => p.id === patientId) ?? patients[0];
   const fasting = Math.max(0, ...chosen.map((i) => i.fastingHours));
 
@@ -296,7 +299,7 @@ export function BookFlow({
             <span>
               <span className="block font-semibold">Save with Medwyn One</span>
               <span className="text-small text-[var(--color-ink-soft)]">
-                30% off every test and free home collection, from ₹499 a month.
+                This visit would be {formatINR(asMember.totalPaise)}, {formatINR(withoutMembership.totalPaise - asMember.totalPaise)} less: 30% off every test and no collection charge.
               </span>
             </span>
             <span aria-hidden className="text-lead text-[var(--color-primary)]">→</span>
