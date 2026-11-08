@@ -128,7 +128,7 @@ jobs:
             echo "| Surface | Number |"
             echo "| --- | --- |"
             echo '| Family, Medwyn One member | `+919845000101` |'
-            echo '| Family, pays per test | `+919845000103` |'
+            echo '| Family, not a member, has chosen a lab | `+919845000103` |'
             echo '| Ops console | `+919845000001` |'
             echo '| Field technician | `+919845000010` |'
             echo '| Partner lab owner (sign in at `/lab/login`) | `+919845100200` |'
@@ -192,7 +192,7 @@ jobs:
               f"Live preview is up: {url}\n\n"
               f"It stays up until {expires}.\n\n"
               "Sign in with `+919845000101` (family, Medwyn One member), `+919845000103` "
-              "(family, pays per test), `+919845000001` (ops), "
+              "(family, not a member, has chosen a lab), `+919845000001` (ops), "
               "`+919845000010` (field) or `+919845100200` (lab). The code is shown "
               "on screen because SMS is not configured.\n\n"
               "Partner labs sign in at **/lab/login**: `+919845100200` (owner) or "
