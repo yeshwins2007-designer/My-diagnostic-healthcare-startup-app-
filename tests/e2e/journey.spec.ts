@@ -107,10 +107,20 @@ test.describe('a new family', () => {
     await page.getByLabel(/^City/).fill('Bengaluru');
     await page.getByLabel(/^State/).fill('Karnataka');
     await page.getByLabel(/pincode/i).fill('560011'); // the zone's own centre
-    await page.getByRole('button', { name: /add and book tests/i }).click();
+    await page.getByRole('button', { name: /save and continue/i }).click();
+
+    // Straight to their home screen, where the assistant's calls are
+    // explained once (tests/e2e/calls.spec.ts).
+    await page.waitForURL(/\/caregiver$/);
+    const sheet = page.getByRole('dialog', { name: /calls that take care of the small things/i });
+    await expect(sheet).toBeVisible();
+    const remembered = page.waitForResponse((r) => r.request().method() === 'POST');
+    await sheet.getByRole('button', { name: 'Not now' }).click();
+    await expect(sheet).toBeHidden();
+    await remembered;
 
     // Pay per test: a package at the lab's price plus the collection fee.
-    await page.waitForURL(/\/caregiver\/book\?patient=/);
+    await page.goto('/caregiver/book');
     await page.getByRole('button', { name: /Elder Baseline Panel/ }).click();
     await page.getByRole('button', { name: /continue/i }).click();
     await expect(page.getByRole('heading', { name: 'Booking details' })).toBeVisible();
@@ -123,14 +133,6 @@ test.describe('a new family', () => {
     await page.getByRole('button', { name: /apple pay/i }).click();
     await page.waitForURL(/\/caregiver\/visits\?booked=/);
     await expect(page.getByText('Booked and confirmed')).toBeVisible();
-
-    // Booking done, the assistant's calls are explained once (tests/e2e/calls.spec.ts).
-    const sheet = page.getByRole('dialog', { name: /calls that take care of the small things/i });
-    await expect(sheet).toBeVisible();
-    const remembered = page.waitForResponse((r) => r.request().method() === 'POST');
-    await sheet.getByRole('button', { name: 'Not now' }).click();
-    await expect(sheet).toBeHidden();
-    await remembered;
 
     // A first visit has no "last time" to be the same as.
     const main = page.locator('main');
@@ -221,7 +223,7 @@ test.describe('the radius rule', () => {
     // Whitefield — roughly 17 km from the Jayanagar anchor.
     await page.getByLabel(/pincode/i).fill('560066');
 
-    await page.getByRole('button', { name: /add and book tests/i }).click();
+    await page.getByRole('button', { name: /save and continue/i }).click();
 
     await expect(page.getByText(/we don’t visit this area yet/i)).toBeVisible();
     await expect(page.getByText(/waitlist/i).first()).toBeVisible();

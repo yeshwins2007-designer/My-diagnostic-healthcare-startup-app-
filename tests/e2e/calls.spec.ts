@@ -24,8 +24,9 @@ async function newFamily(page: Page, phone: string) {
   await page.getByLabel(/^City/).fill('Bengaluru');
   await page.getByLabel(/^State/).fill('Karnataka');
   await page.getByLabel(/pincode/i).fill('560011');
-  await page.getByRole('button', { name: /add and book tests/i }).click();
-  await page.waitForURL(/\/caregiver\/book/);
+  await page.getByRole('button', { name: /save and continue/i }).click();
+  // Signed up and parent added: straight to their home screen.
+  await page.waitForURL(/\/caregiver$/);
 }
 
 const sheetOf = (page: Page) => page.locator('[data-calls-sheet]');
@@ -34,10 +35,7 @@ test('a new family is shown the calls once, chooses some, and finds them in Prof
   test.setTimeout(90_000);
   await newFamily(page, '95' + String(Date.now()).slice(-8));
 
-  // Never over booking.
-  await expect(sheetOf(page)).toHaveCount(0);
-
-  await page.goto('/caregiver');
+  // Home, with the sheet straight away.
   const sheet = page.getByRole('dialog', { name: /calls that take care of the small things/i });
   await expect(sheet).toBeVisible();
   await expect(sheet).toContainText('We call Saraswathi about fasting');
@@ -88,6 +86,10 @@ test('a new family is shown the calls once, chooses some, and finds them in Prof
 test('"Not now" turns nothing on and does not ask again', async ({ page }) => {
   test.setTimeout(90_000);
   await newFamily(page, '94' + String(Date.now()).slice(-8));
+  // The sheet waits while booking is open.
+  await page.goto('/caregiver/book');
+  await expect(page.getByRole('heading', { name: 'Book tests' })).toBeVisible();
+  await expect(sheetOf(page)).toHaveCount(0);
   await page.goto('/caregiver/visits');
   const sheet = page.getByRole('dialog', { name: /calls that take care of the small things/i });
   await expect(sheet).toBeVisible();

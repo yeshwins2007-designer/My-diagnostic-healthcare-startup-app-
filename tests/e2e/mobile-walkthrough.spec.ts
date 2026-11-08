@@ -215,8 +215,13 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.locator('input[name="state"]').fill(IN_ZONE.state);
       await page.locator('input[name="pincode"]').fill(IN_ZONE.pincode);
 
-      await page.getByRole('button', { name: /add and book tests/i }).click();
-      await page.waitForURL(/\/caregiver\/book/, { timeout: 30_000 });
+      await page.getByRole('button', { name: /save and continue/i }).click();
+      // Home first, with the calls sheet once; then on to booking.
+      await page.waitForURL(/\/caregiver$/, { timeout: 30_000 });
+      const remembered = page.waitForResponse((r) => r.request().method() === 'POST');
+      await page.locator('[data-calls-sheet]').getByRole('button', { name: 'Not now' }).click();
+      await remembered;
+      await page.goto('/caregiver/book');
 
       // 3 — Choose tests
       note(await inspect(page, '05-book', scheme), 'book tests');

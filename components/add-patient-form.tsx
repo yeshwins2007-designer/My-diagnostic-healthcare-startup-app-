@@ -19,7 +19,7 @@ function Submit() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" full disabled={pending}>
-      {pending ? 'Checking the address…' : 'Add and book tests'}
+      {pending ? 'Checking the address…' : 'Save and continue'}
     </Button>
   );
 }

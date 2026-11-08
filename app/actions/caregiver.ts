@@ -179,7 +179,9 @@ export async function addPatient(
   });
 
   revalidatePath('/caregiver');
-  redirect(`/caregiver/book?patient=${patient.id}`);
+  // Home, not booking: a new family sees their dashboard first (and the
+  // calls sheet, once), and books from there when they are ready.
+  redirect('/caregiver');
 }
 
 // --- booking a visit ---------------------------------------------------------
